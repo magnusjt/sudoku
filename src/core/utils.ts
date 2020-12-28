@@ -1,5 +1,10 @@
 import { Point, Board, Effect, Field, EliminationEffect, NoneEffect, Actor } from './types'
 
+export const unique = arr => [...new Set(arr)]
+export const difference = (arr1, arr2, isEqual) => {
+    return arr1.filter(a => !arr2.some(b => isEqual(a, b)))
+}
+
 export const pointsEqual = (pointA: Point, pointB: Point) => pointA.x === pointB.x && pointA.y === pointB.y
 
 let allPoints
@@ -65,59 +70,51 @@ export const getAffectedPoints = (point: Point): Point[] => {
     ].filter(p => !pointsEqual(p, point))
 }
 
-export const getBoardField = (board: Board, point: Point) => board[point.y][point.x]
+export const getBoardCell = (board: Board, point: Point) => board[point.y][point.x]
 
-export const updateBoardField = (board: Board, point: Point, updates: Partial<Field>) => {
-    board = [...board]
-    board[point.y] = [...board[point.y]]
-    board[point.y][point.x] = {...board[point.y][point.x], ...updates}
-    return board
-}
-
-export const setCandidates = (board: Board, point: Point, candidates: number[]) => {
-    return updateBoardField(board, point, {candidates})
-}
-
-export const removeCandidate = (board: Board, point: Point, number: number) => {
-    const candidates = getBoardField(board, point).candidates
+export const removeCandidate = (board: Board, point: Point, number: number): Effect => {
+    const candidates = getBoardCell(board, point).candidates
     const nextCandidates = candidates.filter(x => x !== number)
     if(nextCandidates.length === candidates.length){
-        return {board, effect: {type: 'none'} as NoneEffect}
+        return {type: 'none'} as NoneEffect
     }
-    return {
-        board: setCandidates(board, point, nextCandidates),
-        effect: {type: 'elimination', point, numbers: [number]} as EliminationEffect
-    }
+    return {type: 'elimination', point, numbers: [number]} as EliminationEffect
 }
 
-export const removeCandidateFromAffectedPoints = (board: Board, point: Point, number: number) => {
-    const effects: Effect[] = []
-    getAffectedPoints(point)
-        .forEach(affectedPoint => {
-            const result = removeCandidate(board, affectedPoint, number)
-            board = result.board
-            if(result.effect.type !== 'none'){
-                effects.push(result.effect)
-            }
-        })
-    return {board, effects}
+export const removeCandidateFromPoints = (board: Board, points: Point[], number: number): Effect[] => {
+    return points
+        .map(point => removeCandidate(board, point, number))
+        .filter(eff => eff.type !== 'none')
+}
+
+export const removeCandidateFromAffectedPoints = (board: Board, point: Point, number: number): Effect[] => {
+    return removeCandidateFromPoints(board, getAffectedPoints(point), number)
 }
 
 export const isBoardFinished = (board: Board) => {
-    return getAllPoints().every(point => getBoardField(board, point).value !== null)
+    return getAllPoints().every(point => getBoardCell(board, point).value !== null)
 }
 
-export const setAllSingleCandidates = (board: Board) => {
-    const effects: Effect[] = []
-    const actors: Actor[] = []
-    getAllPoints().forEach(point => {
-        const field = getBoardField(board, point)
-        if(field.value === null && field.candidates.length === 1){
-            const value = field.candidates[0]
-            board = updateBoardField(board, point, {value})
-            effects.push({type: 'value', point, number: value})
-            actors.push({point})
+const cloneBoard = (board: Board) => {
+    return [...board].map(row => [...row].map(cell => {
+        return {
+            ...cell,
+            candidates: [...cell.candidates]
+        }
+    }))
+}
+
+export const applyEffects = (board: Board, effects: Effect[]) => {
+    board = cloneBoard(board)
+
+    effects.forEach(effect => {
+        if(effect.type === 'elimination'){
+            board[effect.point.y][effect.point.x].candidates = board[effect.point.y][effect.point.x].candidates.filter(c => !effect.numbers.includes(c))
+        }else if(effect.type === 'value'){
+            board[effect.point.y][effect.point.x].value = effect.number
+            board[effect.point.y][effect.point.x].candidates = []
         }
     })
-    return {board, effects, actors}
+
+    return board
 }

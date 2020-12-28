@@ -1,6 +1,6 @@
-import { Board, Field } from './types'
-import { basicElimination, hiddenSingle, nakedSingle } from './techniques'
-import { isBoardFinished, setAllSingleCandidates } from './utils'
+import { Board, Field, Technique } from './types'
+import { basicElimination, hiddenSingle, nakedSingle, pointer } from './techniques'
+import { applyEffects, isBoardFinished } from './utils'
 
 export const boardFromInput = (input: number[][]) => {
     const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -25,17 +25,17 @@ export const boardFromInput = (input: number[][]) => {
     return board
 }
 
-const techniques = [
-    {type: 'setValues', fn: setAllSingleCandidates},
+const techniques: {type: string, fn: Technique}[] = [
     {type: 'basic', fn: basicElimination},
     {type: 'nakedSingle', fn: nakedSingle},
     {type: 'hiddenSingle', fn: hiddenSingle},
+    {type: 'pointer', fn: pointer},
 ]
 
 const runTechnique = (board) => {
     for(let technique of techniques){
         const result = technique.fn(board)
-        if(result.effects.length > 0){
+        if(result){
             return {
                 ...result,
                 technique: technique.type
@@ -43,21 +43,14 @@ const runTechnique = (board) => {
         }
     }
 
-    return {
-        board,
-        effects: [],
-        actors: [],
-        technique: 'none'
-    }
+    return null
 }
 
 export const runBasicEliminations = (board) => {
     let res = basicElimination(board)
-    board = res.board
-
-    while(res.effects.length > 0){
+    while(res){
+        board = applyEffects(board, res.effects)
         res = basicElimination(board)
-        board = res.board
     }
 
     return board
@@ -65,8 +58,9 @@ export const runBasicEliminations = (board) => {
 
 export const iterate = (board) => {
     const result = runTechnique(board)
-    if(result.effects.length > 0){
-        return result
+    if(result){
+        board = applyEffects(board, result.effects)
+        return {board, ...result}
     }
 
     if(isBoardFinished(board)){

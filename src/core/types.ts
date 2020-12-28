@@ -28,3 +28,5 @@ export type ValueEffect = {
 export type Actor = {
     point: Point
 }
+
+export type Technique = (board: Board) => {effects: Effect[], actors: Actor[]} | null
