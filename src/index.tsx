@@ -52,6 +52,20 @@ function App(props){
         const res = sudoku.iterate(next.board)
         setNext(res)
     }
+    const skip = () => {
+        setBoard(next.board)
+
+        let skipList = ['none', 'basic', 'nakedSingle', 'hiddenSingle', 'pointer']
+        let prevBoard = next.board
+        let res = sudoku.iterate(next.board)
+        while(skipList.includes(res.technique)){
+            prevBoard = res.board
+            res = sudoku.iterate(res.board)
+        }
+
+        setBoard(prevBoard)
+        setNext({board: prevBoard, effects: [], actors: [], technique: 'NA'})
+    }
 
     return (
         <div>
@@ -63,14 +77,26 @@ function App(props){
             <br />
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <button onClick={iterate}>Iterate</button>
+                <button onClick={skip}>Skip</button>
             </div>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <div>
                     Technique: {next.technique}
+                    <br />
+                    Effects
                     {next.effects.map(effect => {
                         return (
                             <div>
                                 {JSON.stringify(effect, null, 2)}
+                            </div>
+                        )
+                    })}
+                    <br />
+                    Actors:
+                    {next.actors.map(actor => {
+                        return (
+                            <div>
+                                {JSON.stringify(actor, null, 2)}
                             </div>
                         )
                     })}

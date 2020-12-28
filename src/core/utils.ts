@@ -118,3 +118,7 @@ export const applyEffects = (board: Board, effects: Effect[]) => {
 
     return board
 }
+
+export const candidatesEqual = (a: number[], b: number[]) => {
+    return a.length === b.length && a.every((n, i) => n === b[i])
+}

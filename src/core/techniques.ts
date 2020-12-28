@@ -1,4 +1,5 @@
 import {
+    candidatesEqual,
     difference,
     getAllClosedRegions,
     getAllPoints,
@@ -58,7 +59,7 @@ export const hiddenSingle: Technique = (board: Board) => {
     return null
 }
 
-export const pointer = (board: Board) => {
+export const pointer: Technique = (board: Board) => {
     for(let points of getAllClosedRegions()){
         for(let n = 1; n <= 9; n++){
             const pointsWithN = points.filter(p => getBoardCell(board, p).candidates.some(c => c === n))
@@ -84,5 +85,53 @@ export const pointer = (board: Board) => {
             }
         }
     }
+    return null
+}
+
+export const nakedPair: Technique = (board: Board) => {
+    for(let points of getAllClosedRegions()){
+        const pointsWith2Cands = points.filter(p => getBoardCell(board, p).candidates.length === 2)
+
+        for(let i = 0; i < pointsWith2Cands.length; i++){
+            for(let j = i+1; j < pointsWith2Cands.length; j++){
+                const pointA = pointsWith2Cands[i]
+                const pointB = pointsWith2Cands[j]
+                const candidatesA = getBoardCell(board, pointA).candidates
+                const candidatesB = getBoardCell(board, pointB).candidates
+                if(candidatesEqual(candidatesA, candidatesB)){
+                    const pointsToRemove = points.filter(p => !pointsEqual(p, pointA) && !pointsEqual(p, pointB))
+                    const effects = [
+                        ...removeCandidateFromPoints(board, pointsToRemove, candidatesA[0]),
+                        ...removeCandidateFromPoints(board, pointsToRemove, candidatesA[1])
+                    ]
+
+                    if(effects.length > 0){
+                        return {
+                            effects,
+                            actors: [{point: pointA}, {point: pointB}]
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+    return null
+}
+
+export const hiddenPair: Technique = (board: Board) => {
+    return null
+}
+
+export const nakedTriple: Technique = (board: Board) => {
+    return null
+}
+
+export const hiddenTriple: Technique = (board: Board) => {
+    return null
+}
+
+export const xWing: Technique = (board: Board) => {
+
     return null
 }

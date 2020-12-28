@@ -1,5 +1,5 @@
 import { Board, Field, Technique } from './types'
-import { basicElimination, hiddenSingle, nakedSingle, pointer } from './techniques'
+import { basicElimination, hiddenSingle, nakedPair, nakedSingle, pointer } from './techniques'
 import { applyEffects, isBoardFinished } from './utils'
 
 export const boardFromInput = (input: number[][]) => {
@@ -30,6 +30,7 @@ const techniques: {type: string, fn: Technique}[] = [
     {type: 'nakedSingle', fn: nakedSingle},
     {type: 'hiddenSingle', fn: hiddenSingle},
     {type: 'pointer', fn: pointer},
+    {type: 'nakedPair', fn: nakedPair},
 ]
 
 const runTechnique = (board) => {
