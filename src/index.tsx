@@ -134,17 +134,34 @@ const BoardDisplay = (props: {board: Board, effects: Effect[], actors: Actor[]})
     const board = props.board
     const effectHighlights = props.effects.map(eff => (eff as any).point).filter(x => !!x)
     const actorHighlights = props.actors.map(actor => actor.point)
+    const [selectedCell, setSelectedCell] = React.useState<Point | null>(null)
+    const toggleSelectedCell = (point) => {
+        if(selectedCell && pointsEqual(point, selectedCell)){
+            setSelectedCell(null)
+        }else{
+            setSelectedCell(point)
+        }
+    }
+    const highlightedNumber = selectedCell ? board[selectedCell.y][selectedCell.x].value : null
 
     return (
         <div>
             {board.map((row, y) => {
                 const cells = row.map((cell, x) => {
+                    const selected = selectedCell && selectedCell.x === x && selectedCell.y === y
+
                     let bg = 'white'
                     if(effectHighlights.some(p => pointsEqual(p, {x, y}))){
                         bg = '#b0c9f6'
                     }
                     if(actorHighlights.some(p => pointsEqual(p, {x, y}))){
                         bg = '#c5f6b0'
+                    }
+                    if(selected){
+                        bg = '#ffc0b0'
+                    }
+                    if((cell.value && cell.value === highlightedNumber) || cell.candidates.some(c => c === highlightedNumber)){
+                        bg = '#ffc0b0'
                     }
 
                     let style: any = {
@@ -164,7 +181,7 @@ const BoardDisplay = (props: {board: Board, effects: Effect[], actors: Actor[]})
                     }
 
                     return (
-                        <div style={style}>
+                        <div style={style} onClick={() => toggleSelectedCell({x, y})}>
                             {cell.value === null
                                 ? (
                                     <>

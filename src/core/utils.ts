@@ -1,11 +1,24 @@
-import { Point, Board, Effect, Field, EliminationEffect, NoneEffect, Actor } from './types'
+import { Point, Board, Effect, EliminationEffect, NoneEffect } from './types'
 
 export const unique = arr => [...new Set(arr)]
+export const uniqueBy = (arr, isEqual) => {
+    const result: any[] = []
+    arr.forEach(a => {
+        if(!result.some(b => isEqual(a, b))){
+            result.push(a)
+        }
+    })
+    return arr
+}
 export const difference = (arr1, arr2, isEqual) => {
     return arr1.filter(a => !arr2.some(b => isEqual(a, b)))
 }
+export const arraysEqual = (arr1, arr2, isEqual) => {
+    return arr1.length === arr2.length && arr1.every((a, i) => isEqual(a, arr2[i]))
+}
 
 export const pointsEqual = (pointA: Point, pointB: Point) => pointA.x === pointB.x && pointA.y === pointB.y
+export const pointListsEqual = (pointsA: Point[], pointsB: Point[]) => arraysEqual(pointsA, pointsB, pointsEqual)
 
 let allPoints
 export const getAllPoints = (): Point[] => {
@@ -45,21 +58,38 @@ export const getBox = (point: Point): Point[] => {
     }
     return box
 }
-
-export const getAllClosedRegions = (): Point[][] => {
-    const regions: Point[][] = []
+export const getAllRows = (): Point[][] => {
+    const rows: Point[][] = []
     for(let y = 0; y < 9; y++){
-        regions.push(getRow(y))
+        rows.push(getRow(y))
     }
+    return rows
+}
+
+export const getAllCols = (): Point[][] => {
+    const cols: Point[][] = []
     for(let x = 0; x < 9; x++){
-        regions.push(getColumn(x))
+        cols.push(getColumn(x))
     }
+    return cols
+}
+
+export const getAllBoxes = (): Point[][] => {
+    const boxes: Point[][] = []
     for(let k = 0; k < 9; k++){
         const x = (k % 3) * 3
         const y = Math.floor(k / 3) * 3
-        regions.push(getBox({x, y}))
+        boxes.push(getBox({x, y}))
     }
-    return regions
+    return boxes
+}
+
+export const getAllClosedRegions = (): Point[][] => {
+    return [
+        ...getAllRows(),
+        ...getAllCols(),
+        ...getAllBoxes()
+    ]
 }
 
 export const getAffectedPoints = (point: Point): Point[] => {
@@ -69,6 +99,10 @@ export const getAffectedPoints = (point: Point): Point[] => {
         ...getBox(point)
     ].filter(p => !pointsEqual(p, point))
 }
+
+export const getRowNumber = (point: Point) => point.y
+export const getColNumber = (point: Point) => point.x
+export const getBoxNumber = (point: Point) => (1 + Math.floor(point.x / 3)) * (1 + Math.floor(point.y/3)) - 1
 
 export const getBoardCell = (board: Board, point: Point) => board[point.y][point.x]
 
@@ -119,6 +153,4 @@ export const applyEffects = (board: Board, effects: Effect[]) => {
     return board
 }
 
-export const candidatesEqual = (a: number[], b: number[]) => {
-    return a.length === b.length && a.every((n, i) => n === b[i])
-}
+export const candidatesEqual = (a: number[], b: number[]) => arraysEqual(a, b, (a, b) => a === b)

@@ -1,4 +1,4 @@
-export type Field = {
+export type Cell = {
     value: number | null
     candidates: number[]
 
@@ -7,7 +7,7 @@ export type Point = {
     x: number
     y: number
 }
-export type Board = Field[][]
+export type Board = Cell[][]
 
 export type Effect = EliminationEffect | NoneEffect | ValueEffect
 
