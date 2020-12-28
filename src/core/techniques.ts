@@ -192,7 +192,7 @@ export const hiddenPair: Technique = (board: Board) => {
                 if(effects.length > 0){
                     return {
                         effects,
-                        actors: pointsWithA.map(point => ({point}))
+                        actors: pointsWithAny.map(point => ({point}))
                     }
                 }
             }
@@ -228,7 +228,7 @@ export const nakedTriple: Technique = (board: Board) => {
                     if (effects.length > 0) {
                         return {
                             effects,
-                            actors: [{point: pointA}, {point: pointB}]
+                            actors: [{point: pointA}, {point: pointB}, {point: pointC}]
                         }
                     }
                 }
@@ -261,7 +261,7 @@ export const hiddenTriple: Technique = (board: Board) => {
                     if(effects.length > 0){
                         return {
                             effects,
-                            actors: pointsWithA.map(point => ({point}))
+                            actors: pointsWithAny.map(point => ({point}))
                         }
                     }
                 }
