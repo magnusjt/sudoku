@@ -1,5 +1,21 @@
 import { Point, Board, Effect, EliminationEffect, NoneEffect } from './types'
 
+export const getCombinations = <T>(items: T[], len: number, initIndex = 0) => {
+    if(len === 0) return []
+    const combos: T[][] = []
+    // NB: Stop loop before it gets so far as to not have enough items left for a full combo
+    for(let i = initIndex; i < items.length-len+1; i++){
+        const rest = getCombinations(items, len - 1, i + 1)
+        if(rest.length === 0){
+            combos.push([items[i]])
+        }
+        for(let combo of rest){
+            combos.push([items[i], ...combo])
+        }
+    }
+    return combos
+}
+
 export const unique = arr => [...new Set(arr)]
 export const uniqueBy = (arr, isEqual) => {
     const result: any[] = []
@@ -12,6 +28,9 @@ export const uniqueBy = (arr, isEqual) => {
 }
 export const difference = (arr1, arr2, isEqual) => {
     return arr1.filter(a => !arr2.some(b => isEqual(a, b)))
+}
+export const intersection = (arr1, arr2, isEqual) => {
+    return uniqueBy([...arr1, ...arr2], isEqual).filter(x => arr1.some(a => isEqual(a, x) && arr2.some(a => isEqual(a, x))))
 }
 export const arraysEqual = (arr1, arr2, isEqual) => {
     return arr1.length === arr2.length && arr1.every((a, i) => isEqual(a, arr2[i]))

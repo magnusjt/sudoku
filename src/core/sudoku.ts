@@ -6,7 +6,7 @@ import {
     hiddenTriple, inversePointer,
     nakedPair,
     nakedSingle, nakedTriple,
-    pointer, uniqueRectangle,
+    pointer, skyscraper, uniqueRectangle,
     xWing
 } from './techniques'
 import { applyEffects, isBoardFinished } from './utils'
@@ -45,6 +45,7 @@ const techniques: {type: string, fn: Technique}[] = [
     {type: 'hiddenPair', fn: hiddenPair},
     {type: 'hiddenTriple', fn: hiddenTriple},
     {type: 'xWing', fn: xWing},
+    {type: 'skyscraper', fn: skyscraper},
     {type: 'uniqueRectangle', fn: uniqueRectangle},
 ]
 

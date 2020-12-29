@@ -1,6 +1,7 @@
 import {
+    arraysEqual,
     candidatesExcept,
-    difference,
+    difference, getAffectedPoints,
     getAllBoxes,
     getAllClosedRegions,
     getAllCols,
@@ -10,9 +11,9 @@ import {
     getBox,
     getBoxNumber,
     getColNumber,
-    getColumn,
+    getColumn, getCombinations,
     getRow,
-    getRowNumber, groupBy,
+    getRowNumber, groupBy, intersection,
     pointsEqual,
     removeCandidateFromAffectedPoints,
     removeCandidateFromPoints,
@@ -286,58 +287,89 @@ export const hiddenTriple: Technique = (board: Board) => {
  * Two rows has the same candidate in only two cols. The rest of the columns can be eliminated.
  */
 export const xWing: Technique = (board: Board) => {
-    // Just a shitty way to avoid writing this twice. Example for rows:
-    // getAllRegions -> getAllRows()
-    // getInverseRegion -> getColumn(point)
-    // getInverseRegionNumber -> get point x value
-    const findXWing = (cand, getAllRegions, getInverseRegion, getInverseRegionNumber) => {
-        // Finds all regions where there is only two cells for a candidate.
-        // Groups these by a hash of the x coords if rows, or y coords if col.
-        // These groups will then contain two lists of two points if there is an x wing
-        const obj = getAllRegions()
-            .map(row => row.filter(p => getBoardCell(board, p).candidates.some(c => c === cand)))
-            .filter(points => points.length === 2)
-            .reduce((obj, points) => {
-                const hash = points.map(getInverseRegionNumber).join(',')
-                obj[hash] = (obj[hash] ?? [])
-                obj[hash].push(points)
-                return obj
-            }, {})
+    const getXWingResult = (xWingPoints: Point[], getLineNumber, getLine, cand) => {
+        const lines = Object.values<Point[]>(groupBy(xWingPoints, getLineNumber)).filter(points => points.length === 2)
+        if(lines.length !== 2) return null
 
-        const xWings = Object.values<Point[][]>(obj).filter(list => list.length === 2)
+        const pointsToRemove = lines.flatMap(points => getLine(getLineNumber(points[0])))
+        const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
+        const actors = xWingPoints.map(point => ({point}))
 
-        for(let xWingPointLists of xWings){
-            const inverseRegionNumbers = unique(xWingPointLists.flatMap(list => list.map(getInverseRegionNumber)))
-            const inverseRegions = inverseRegionNumbers.map(getInverseRegion)
-            const xWingPoints = xWingPointLists.flat()
-
-            const pointsToRemove = inverseRegions.flatMap(points => difference(points, xWingPoints, pointsEqual))
-            const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
-            const actors = xWingPoints.map(point => ({point}))
-
-            if(effects.length > 0){
-                return {effects, actors}
-            }
+        if(effects.length > 0){
+            return {effects, actors}
         }
-        return null
     }
 
+    const allPoints = getAllPoints()
     for(let cand = 1; cand <= 9; cand++){
-        let result = findXWing(cand, getAllRows, getColumn, getColNumber)
-        if(result) return result
+        const pointsWithN = allPoints.filter(p => getBoardCell(board, p).candidates.includes(cand))
+        const colsWithTwo = Object.values<Point[]>(groupBy(pointsWithN, getColNumber)).filter(points => points.length === 2)
+        const rowsWithTwo = Object.values<Point[]>(groupBy(pointsWithN, getRowNumber)).filter(points => points.length === 2)
 
-        result = findXWing(cand, getAllCols, getRow, getRowNumber)
-        if(result) return result
+        for(let [colA, colB] of getCombinations(colsWithTwo, 2)){
+            const result = getXWingResult([...colA, ...colB], getRowNumber, getRow, cand)
+            if(result) return result
+        }
+
+        for(let [rowA, rowB] of getCombinations(rowsWithTwo, 2)){
+            const result = getXWingResult([...rowA, ...rowB], getColNumber, getColumn, cand)
+            if(result) return result
+        }
     }
     return null
 }
 
+const getAffectedPointsInCommon = (points: Point[]) => {
+    return points
+        .map(getAffectedPoints)
+        .reduce<Point[] | null>((inCommon, current) => {
+            if(!inCommon) return current
+            return intersection(inCommon, current, pointsEqual)
+        }, null)
+}
 
 /**
- * Two candidates on the same row or column may force some other cells to be filled in each case.
- * The cells that these in turn eliminate may overlap with each other. And so we can eliminate them.
+ * Basically an x-wing where one candidate is not aligned.
+ * The line (row or col) where the points are aligned force the candidate to be placed in one of the other two points.
+ * All other cells that sees these two candidates can be eliminated.
  */
 export const skyscraper: Technique = (board: Board) => {
+    const getSkyscraperResult = (skyscraperPoints: Point[], getLineNumber, cand: number) => {
+        const pointsOnLine = Object.values<Point[]>(
+            groupBy(skyscraperPoints, getLineNumber)
+        ).filter(points => points.length === 2)[0]
+
+        if(!pointsOnLine) return null
+
+        const pointsToCheck = difference(skyscraperPoints, pointsOnLine, pointsEqual)
+        const affectedInCommon = getAffectedPointsInCommon(pointsToCheck)
+        const pointsToRemove = difference(affectedInCommon, skyscraperPoints, pointsEqual)
+
+        const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
+        const actors = skyscraperPoints.map(point => ({point}))
+
+        if(effects.length > 0){
+            return {effects, actors}
+        }
+        return null
+    }
+
+    const allPoints = getAllPoints()
+    for(let cand = 1; cand <= 9; cand++){
+        const pointsWithN = allPoints.filter(p => getBoardCell(board, p).candidates.includes(cand))
+        const colsWithTwo = Object.values<Point[]>(groupBy(pointsWithN, getColNumber)).filter(points => points.length === 2)
+        const rowsWithTwo = Object.values<Point[]>(groupBy(pointsWithN, getRowNumber)).filter(points => points.length === 2)
+
+        for(let [colA, colB] of getCombinations(colsWithTwo, 2)){
+            const result = getSkyscraperResult([...colA, ...colB], getRowNumber, cand)
+            if(result) return result
+        }
+
+        for(let [rowA, rowB] of getCombinations(rowsWithTwo, 2)){
+            const result = getSkyscraperResult([...rowA, ...rowB], getColNumber, cand)
+            if(result) return result
+        }
+    }
     return null
 }
 
@@ -348,6 +380,12 @@ export const skyscraper: Technique = (board: Board) => {
  *
  * Type 1: 3 corners with two possible candidates. We can eliminate those candidates from the fourth corner
  * (any value that would "resolve" the uniqueness would either make the 3 corners have 0 candidates, or itself eliminate the 4 corner candidates like we would otherwise)
+ * TODO: Type 2: 1 extra candidate in two cells that are not diagonals. This will then create a pointer, since the candidate must be in either of those cells.
+ * TODO: Type 3: Same as type 2, but more candidates. Treat the cells of the rectangle as one virtual cell, and look for naked pair/triple/quad.
+ * TODO: Type 4: Same as type 3, but this time check if one of the rectangle candidates are only in the rectangle cells in that box/column/row. If so, delete the other rectangle candidate.
+ * TODO: Type 5: Same as type 2, but the extra candidate is on a diagonal. The candidate must be in one of these. See if there are cells that sees both of these, and eliminate the cand from those.
+ * TODO: Type 6: See if one of the rectangle candidates form an x-wing. If so, it must be placed on two points diagonally. If this removes all other candidates from the rectangle, it is invalid, and so can be eliminated.
+ * TODO: Hidden, avoidable 1/2, BUG, missing candidates. These seem a bit too exotic tbh.
  */
 export const uniqueRectangle: Technique = (board: Board) => {
     for(let points of getAllRows()){
@@ -382,3 +420,4 @@ export const uniqueRectangle: Technique = (board: Board) => {
 
     return null
 }
+
