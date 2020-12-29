@@ -291,7 +291,8 @@ export const xWing: Technique = (board: Board) => {
         const lines = Object.values<Point[]>(groupBy(xWingPoints, getLineNumber)).filter(points => points.length === 2)
         if(lines.length !== 2) return null
 
-        const pointsToRemove = lines.flatMap(points => getLine(getLineNumber(points[0])))
+        const pointsOnLines = lines.flatMap(points => getLine(getLineNumber(points[0])))
+        const pointsToRemove = difference(pointsOnLines, xWingPoints, pointsEqual)
         const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
         const actors = xWingPoints.map(point => ({point}))
 
