@@ -8,7 +8,7 @@ export const uniqueBy = (arr, isEqual) => {
             result.push(a)
         }
     })
-    return arr
+    return result
 }
 export const difference = (arr1, arr2, isEqual) => {
     return arr1.filter(a => !arr2.some(b => isEqual(a, b)))
@@ -16,9 +16,21 @@ export const difference = (arr1, arr2, isEqual) => {
 export const arraysEqual = (arr1, arr2, isEqual) => {
     return arr1.length === arr2.length && arr1.every((a, i) => isEqual(a, arr2[i]))
 }
+export const groupBy = (arr, by) => {
+    return arr.reduce((groups, item) => {
+        const key = by(item)
+        groups[key] = (groups[key] ?? [])
+        groups[key].push(item)
+        return groups
+    }, {})
+}
 
 export const pointsEqual = (pointA: Point, pointB: Point) => pointA.x === pointB.x && pointA.y === pointB.y
 export const pointListsEqual = (pointsA: Point[], pointsB: Point[]) => arraysEqual(pointsA, pointsB, pointsEqual)
+
+export const allCandidates = Array(9).fill(0).map((_, i) => i + 1)
+
+export const candidatesExcept = (cands: number[]) => difference(allCandidates, cands, (a,b) => a === b)
 
 let allPoints
 export const getAllPoints = (): Point[] => {
@@ -106,19 +118,25 @@ export const getBoxNumber = (point: Point) => (1 + Math.floor(point.x / 3)) * (1
 
 export const getBoardCell = (board: Board, point: Point) => board[point.y][point.x]
 
-export const removeCandidate = (board: Board, point: Point, number: number): Effect => {
-    const candidates = getBoardCell(board, point).candidates
-    const nextCandidates = candidates.filter(x => x !== number)
-    if(nextCandidates.length === candidates.length){
+export const removeCandidates = (board: Board, point: Point, numbers: number[]): Effect => {
+    if(!getBoardCell(board, point).candidates.some(x => numbers.includes(x))){
         return {type: 'none'} as NoneEffect
     }
-    return {type: 'elimination', point, numbers: [number]} as EliminationEffect
+    return {type: 'elimination', point, numbers} as EliminationEffect
+}
+
+export const removeCandidate = (board: Board, point: Point, number: number): Effect => {
+    return removeCandidates(board, point, [number])
+}
+
+export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
+    return points
+        .map(point => removeCandidates(board, point, numbers))
+        .filter(eff => eff.type !== 'none')
 }
 
 export const removeCandidateFromPoints = (board: Board, points: Point[], number: number): Effect[] => {
-    return points
-        .map(point => removeCandidate(board, point, number))
-        .filter(eff => eff.type !== 'none')
+    return removeCandidatesFromPoints(board, points, [number])
 }
 
 export const removeCandidateFromAffectedPoints = (board: Board, point: Point, number: number): Effect[] => {

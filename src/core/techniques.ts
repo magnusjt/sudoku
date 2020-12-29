@@ -1,10 +1,24 @@
 import {
-    difference, getAllBoxes,
-    getAllClosedRegions, getAllCols,
-    getAllPoints, getAllRows,
-    getBoardCell, getBox, getBoxNumber, getColNumber, getColumn,
-    getRow, getRowNumber, pointsEqual,
-    removeCandidateFromAffectedPoints, removeCandidateFromPoints, unique, uniqueBy
+    candidatesExcept,
+    difference,
+    getAllBoxes,
+    getAllClosedRegions,
+    getAllCols,
+    getAllPoints,
+    getAllRows,
+    getBoardCell,
+    getBox,
+    getBoxNumber,
+    getColNumber,
+    getColumn,
+    getRow,
+    getRowNumber, groupBy,
+    pointsEqual,
+    removeCandidateFromAffectedPoints,
+    removeCandidateFromPoints,
+    removeCandidatesFromPoints,
+    unique,
+    uniqueBy
 } from './utils'
 import { Board, Point, Technique } from './types'
 
@@ -19,11 +33,10 @@ export const basicElimination: Technique = (board: Board) => {
         }
 
         const effects = removeCandidateFromAffectedPoints(board, point, cell.value)
+        const actors = [{point}]
+
         if(effects.length > 0){
-            return {
-                actors: [{point}],
-                effects
-            }
+            return {effects, actors}
         }
     }
     return null
@@ -59,7 +72,7 @@ export const hiddenSingle: Technique = (board: Board) => {
                 if(removedCandidates.length > 0){
                     return {
                         effects: [{type: 'elimination', point, numbers: removedCandidates}],
-                        actors: points.filter(p => !pointsEqual(p, point)).map(point => ({point}))
+                        actors: difference(points, [point], pointsEqual).map(point => ({point}))
                     }
                 }
             }
@@ -92,12 +105,10 @@ export const pointer: Technique = (board: Board) => {
                 pointsToRemove = difference(getRow(pointsWithN[0].y), pointsWithN, pointsEqual)
             }
             const effects = removeCandidateFromPoints(board, pointsToRemove, n)
+            const actors = pointsWithN.map(point => ({point}))
+
             if(effects.length > 0){
-                const actors = pointsWithN.map(point => ({point}))
-                return {
-                    actors,
-                    effects
-                }
+                return {effects, actors}
             }
         }
     }
@@ -122,17 +133,31 @@ export const inversePointer: Technique = (board: Board) => {
             if(unique(pointsWithN.map(getBoxNumber)).length === 1){
                 const pointsToRemove = difference(getBox(pointsWithN[0]), pointsWithN, pointsEqual)
                 const effects = removeCandidateFromPoints(board, pointsToRemove, n)
+                const actors = pointsWithN.map(point => ({point}))
+
                 if(effects.length > 0){
-                    const actors = pointsWithN.map(point => ({point}))
-                    return {
-                        actors,
-                        effects
-                    }
+                    return {effects, actors}
                 }
             }
         }
     }
     return null
+}
+
+const findNakedPairs = (board: Board, points: Point[]) => {
+    const pairs: {points: Point[], candidates: number[]}[] = []
+    const pointsWith2Cands = points.filter(p => getBoardCell(board, p).candidates.length === 2)
+
+    for(let i = 0; i < pointsWith2Cands.length; i++){
+        for(let j = i+1; j < pointsWith2Cands.length; j++){
+            const pointsInside = [pointsWith2Cands[i], pointsWith2Cands[j]]
+            const allCandidates = unique(pointsInside.flatMap(p => getBoardCell(board, p).candidates)) as number[]
+            if(allCandidates.length !== 2) continue
+
+            pairs.push({points: pointsInside, candidates: allCandidates})
+        }
+    }
+    return pairs
 }
 
 /**
@@ -144,23 +169,16 @@ export const nakedPair: Technique = (board: Board) => {
 
         for(let i = 0; i < pointsWith2Cands.length; i++){
             for(let j = i+1; j < pointsWith2Cands.length; j++){
-                const pointA = pointsWith2Cands[i]
-                const pointB = pointsWith2Cands[j]
-
-                const candidatesA = getBoardCell(board, pointA).candidates
-                const candidatesB = getBoardCell(board, pointB).candidates
-
-                const allCandidates = unique([...candidatesA, ...candidatesB]) as number[]
+                const pointsInside = [pointsWith2Cands[i], pointsWith2Cands[j]]
+                const allCandidates = unique(pointsInside.flatMap(p => getBoardCell(board, p).candidates)) as number[]
                 if(allCandidates.length !== 2) continue
 
-                const pointsToRemove = points.filter(p => !pointsEqual(p, pointA) && !pointsEqual(p, pointB))
-                const effects = allCandidates.flatMap(c => removeCandidateFromPoints(board, pointsToRemove, c))
+                const pointsOutside = difference(points, pointsInside, pointsEqual)
+                const effects = removeCandidatesFromPoints(board, pointsOutside, allCandidates)
+                const actors = pointsInside.map(point => ({point}))
 
                 if(effects.length > 0){
-                    return {
-                        effects,
-                        actors: [{point: pointA}, {point: pointB}]
-                    }
+                    return {effects, actors}
                 }
             }
         }
@@ -181,19 +199,18 @@ export const hiddenPair: Technique = (board: Board) => {
                 const pointsWithB = points.filter(p => getBoardCell(board, p).candidates.includes(candB))
                 if(pointsWithB.length !== 2) continue
 
-                const pointsWithAny = uniqueBy([...pointsWithA, ...pointsWithB], pointsEqual)
-                if(pointsWithAny !== 2) continue
+                const pointsInside = uniqueBy([...pointsWithA, ...pointsWithB], pointsEqual)
+                if(pointsInside.length !== 2) continue
 
-                const pointsToRemove = difference(points, pointsWithA, pointsEqual)
+                const pointsOutside = difference(points, pointsInside, pointsEqual)
                 const effects = [
-                    ...removeCandidateFromPoints(board, pointsToRemove, candA),
-                    ...removeCandidateFromPoints(board, pointsToRemove, candB)
+                    ...removeCandidatesFromPoints(board, pointsOutside, [candA, candB]),
+                    ...removeCandidatesFromPoints(board, pointsInside, candidatesExcept([candA, candB]))
                 ]
+                const actors = pointsInside.map(point => ({point}))
+
                 if(effects.length > 0){
-                    return {
-                        effects,
-                        actors: pointsWithAny.map(point => ({point}))
-                    }
+                    return {effects, actors}
                 }
             }
         }
@@ -211,25 +228,16 @@ export const nakedTriple: Technique = (board: Board) => {
         for(let i = 0; i < pointsWith3Cands.length; i++){
             for(let j = i+1; j < pointsWith3Cands.length; j++){
                 for(let k = j+1; k < pointsWith3Cands.length; k++) {
-                    const pointA = pointsWith3Cands[i]
-                    const pointB = pointsWith3Cands[j]
-                    const pointC = pointsWith3Cands[k]
-
-                    const candidatesA = getBoardCell(board, pointA).candidates
-                    const candidatesB = getBoardCell(board, pointB).candidates
-                    const candidatesC = getBoardCell(board, pointC).candidates
-
-                    const allCandidates = unique([...candidatesA, ...candidatesB, ...candidatesC]) as number[]
+                    const pointsInside = [pointsWith3Cands[i], pointsWith3Cands[j], pointsWith3Cands[k]]
+                    const allCandidates = unique(pointsInside.flatMap(p => getBoardCell(board, p).candidates)) as number[]
                     if(allCandidates.length !== 3) continue
 
-                    const pointsToRemove = points.filter(p => !pointsEqual(p, pointA) && !pointsEqual(p, pointB) && !pointsEqual(p, pointC))
-                    const effects = allCandidates.flatMap(c => removeCandidateFromPoints(board, pointsToRemove, c))
+                    const pointsOutside = difference(points, pointsInside, pointsEqual)
+                    const effects = removeCandidatesFromPoints(board, pointsOutside, allCandidates)
+                    const actors = pointsInside.map(point => ({point}))
 
                     if (effects.length > 0) {
-                        return {
-                            effects,
-                            actors: [{point: pointA}, {point: pointB}, {point: pointC}]
-                        }
+                        return {effects, actors}
                     }
                 }
             }
@@ -252,17 +260,18 @@ export const hiddenTriple: Technique = (board: Board) => {
                     const pointsWithC = points.filter(p => getBoardCell(board, p).candidates.includes(candC))
                     if(pointsWithC.length < 2 || pointsWithC.length > 3) continue
 
-                    const pointsWithAny = uniqueBy([...pointsWithA, ...pointsWithB, ...pointsWithC], pointsEqual)
-                    if(pointsWithAny.length !== 3) continue
+                    const pointsInside = uniqueBy([...pointsWithA, ...pointsWithB, ...pointsWithC], pointsEqual)
+                    if(pointsInside.length !== 3) continue
 
-                    const pointsToRemove = difference(points, pointsWithAny, pointsEqual)
-                    const allCandidates = [candA, candB, candC]
-                    const effects = allCandidates.flatMap(c => removeCandidateFromPoints(board, pointsToRemove, c))
+                    const pointsOutside = difference(points, pointsInside, pointsEqual)
+                    const effects = [
+                        ...removeCandidatesFromPoints(board, pointsOutside, [candA, candB, candC]),
+                        ...removeCandidatesFromPoints(board, pointsInside, candidatesExcept([candA, candB, candC]))
+                    ]
+                    const actors = pointsInside.map(point => ({point}))
+
                     if(effects.length > 0){
-                        return {
-                            effects,
-                            actors: pointsWithAny.map(point => ({point}))
-                        }
+                        return {effects, actors}
                     }
                 }
             }
@@ -295,35 +304,81 @@ export const xWing: Technique = (board: Board) => {
                 return obj
             }, {})
 
-        for(let pointsList of Object.values<Point[][]>(obj)){
-            if(pointsList.length === 2){
-                const inverseRegions = pointsList[0].map(getInverseRegion)
-                const xWingPoints = pointsList.flatMap(points => points)
+        const xWings = Object.values<Point[][]>(obj).filter(list => list.length === 2)
 
-                const pointsToRemove = [
-                    ...difference(inverseRegions[0], xWingPoints, pointsEqual),
-                    ...difference(inverseRegions[1], xWingPoints, pointsEqual)
-                ]
+        for(let xWingPointLists of xWings){
+            const inverseRegionNumbers = unique(xWingPointLists.flatMap(list => list.map(getInverseRegionNumber)))
+            const inverseRegions = inverseRegionNumbers.map(getInverseRegion)
+            const xWingPoints = xWingPointLists.flat()
 
-                const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
-                if(effects.length > 0){
-                    return {
-                        effects,
-                        actors: xWingPoints.map(point => ({point}))
-                    }
-                }
+            const pointsToRemove = inverseRegions.flatMap(points => difference(points, xWingPoints, pointsEqual))
+            const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
+            const actors = xWingPoints.map(point => ({point}))
+
+            if(effects.length > 0){
+                return {effects, actors}
             }
         }
         return null
     }
 
     for(let cand = 1; cand <= 9; cand++){
-
-        let result = findXWing(cand, getAllRows, point => getColumn(point.x), getColNumber)
+        let result = findXWing(cand, getAllRows, getColumn, getColNumber)
         if(result) return result
 
-        result = findXWing(cand, getAllCols, point => getRow(point.y), getRowNumber)
+        result = findXWing(cand, getAllCols, getRow, getRowNumber)
         if(result) return result
     }
+    return null
+}
+
+
+/**
+ * Two candidates on the same row or column may force some other cells to be filled in each case.
+ * The cells that these in turn eliminate may overlap with each other. And so we can eliminate them.
+ */
+export const skyscraper: Technique = (board: Board) => {
+    return null
+}
+
+/**
+ * pairs of numbers in a rectangle shape cannot only contain those pairs.
+ * Otherwise the sudoku can't be unique.
+ * Only applies if there's only two boxes in play.
+ *
+ * Type 1: 3 corners with two possible candidates. We can eliminate those candidates from the fourth corner
+ * (any value that would "resolve" the uniqueness would either make the 3 corners have 0 candidates, or itself eliminate the 4 corner candidates like we would otherwise)
+ */
+export const uniqueRectangle: Technique = (board: Board) => {
+    for(let points of getAllRows()){
+        const pairs = findNakedPairs(board, points)
+        for(let pair of pairs){
+            const colPairs = [
+                ...findNakedPairs(board, getColumn(pair.points[0].x)),
+                ...findNakedPairs(board, getColumn(pair.points[1].x))
+            ]
+
+            const matchingPairs = colPairs
+                .filter(colPair => unique([...colPair.candidates, ...pair.candidates]).length === 2) // Has the same two candidates
+                .filter(colPair => difference(pair.points, colPair.points, pointsEqual).length === 1) // Shares one point
+                .filter(colPair => unique([...colPair.points, ...pair.points].map(getBoxNumber)).length === 2) // In exactly two boxes
+
+            for(let colPair of matchingPairs){
+                const corners = uniqueBy([...colPair.points, ...pair.points], pointsEqual)
+                const missingCorner = {
+                    x: Object.values<any>(groupBy(corners, p => p.x)).filter(xs => xs.length === 1).map(xs => xs[0])[0].x,
+                    y: Object.values<any>(groupBy(corners, p => p.y)).filter(ys => ys.length === 1).map(ys => ys[0])[0].y
+                }
+                const candidates = pair.candidates
+                const effects = removeCandidatesFromPoints(board, [missingCorner], candidates)
+                const actors = corners.map(point => ({point}))
+
+                if(effects.length > 0){
+                    return {effects, actors}
+                }
+            }
+        }
+    }
+
     return null
 }
