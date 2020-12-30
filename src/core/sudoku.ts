@@ -1,15 +1,12 @@
 import { Board, Cell, Technique } from './types'
-import {
-    basicElimination,
-    hiddenPair,
-    hiddenSingle,
-    hiddenTriple, inversePointer,
-    nakedPair,
-    nakedSingle, nakedTriple,
-    pointer, skyscraper, uniqueRectangle,
-    xWing
-} from './techniques'
 import { applyEffects, isBoardFinished } from './utils'
+import { basicElimination } from './solvers/basic'
+import { hiddenSingle, nakedSingle } from './solvers/singles'
+import { inversePointer, pointer } from './solvers/pointer'
+import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair, nakedQuad, nakedTriple } from './solvers/subset'
+import { xWing } from './solvers/fish'
+import { skyscraper } from './solvers/skyscraper'
+import { uniqueRectangle } from './solvers/uniqueRectangle'
 
 export const boardFromInput = (input: number[][]) => {
     const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -42,8 +39,10 @@ const techniques: {type: string, fn: Technique}[] = [
     {type: 'inversePointer', fn: inversePointer},
     {type: 'nakedPair', fn: nakedPair},
     {type: 'nakedTriple', fn: nakedTriple},
+    {type: 'nakedQuad', fn: nakedQuad},
     {type: 'hiddenPair', fn: hiddenPair},
     {type: 'hiddenTriple', fn: hiddenTriple},
+    {type: 'hiddenQuad', fn: hiddenQuad},
     {type: 'xWing', fn: xWing},
     {type: 'skyscraper', fn: skyscraper},
     {type: 'uniqueRectangle', fn: uniqueRectangle},

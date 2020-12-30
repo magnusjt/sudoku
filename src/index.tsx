@@ -55,7 +55,7 @@ function App(props){
     const skip = () => {
         setBoard(next.board)
 
-        let skipList = ['none', 'basic', 'nakedSingle', 'hiddenSingle', 'nakedPair', 'pointer']
+        let skipList = ['none', 'basic', 'nakedSingle', 'hiddenSingle', 'pointer']
         let prevBoard = next.board
         let res = sudoku.iterate(next.board)
         while(skipList.includes(res.technique)){

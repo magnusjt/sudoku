@@ -1,6 +1,6 @@
-import { Point, Board, Effect, EliminationEffect, NoneEffect } from './types'
+import { Point, Board, Effect, EliminationEffect, NoneEffect, Technique } from './types'
 
-export const getCombinations = <T>(items: T[], len: number, initIndex = 0) => {
+export const getCombinations = <T>(items: T[], len: number, initIndex = 0): T[][] => {
     if(len === 0) return []
     const combos: T[][] = []
     // NB: Stop loop before it gets so far as to not have enough items left for a full combo
@@ -16,9 +16,23 @@ export const getCombinations = <T>(items: T[], len: number, initIndex = 0) => {
     return combos
 }
 
-export const unique = arr => [...new Set(arr)]
-export const uniqueBy = (arr, isEqual) => {
-    const result: any[] = []
+export const first = <T>(iterable: Iterable<T>) => iterable[Symbol.iterator]().next().value
+export const allResults = (iterable: Iterable<ReturnType<Technique>>) => {
+    return Array.from(iterable)
+        .reduce<ReturnType<Technique>>((allResults, result) => {
+            if(result === null) return allResults
+            if(allResults === null){
+                allResults = {effects: [], actors: []}
+            }
+            allResults.effects.push(...result.effects)
+            allResults.actors.push(...result.actors)
+            return allResults
+        }, null)
+}
+
+export const unique = <T>(arr: T[]): T[] => [...new Set(arr)]
+export const uniqueBy = <T>(arr: T[], isEqual): T[] => {
+    const result: T[] = []
     arr.forEach(a => {
         if(!result.some(b => isEqual(a, b))){
             result.push(a)
@@ -26,16 +40,20 @@ export const uniqueBy = (arr, isEqual) => {
     })
     return result
 }
-export const difference = (arr1, arr2, isEqual) => {
+export const difference = <T>(arr1: T[], arr2: T[], isEqual): T[] => {
     return arr1.filter(a => !arr2.some(b => isEqual(a, b)))
 }
-export const intersection = (arr1, arr2, isEqual) => {
+export const intersection = <T>(arr1: T[], arr2: T[], isEqual): T[] => {
     return uniqueBy([...arr1, ...arr2], isEqual).filter(x => arr1.some(a => isEqual(a, x) && arr2.some(a => isEqual(a, x))))
+}
+export const intersectionOfAll = <T>(arr: T[][], isEqual): T[] => {
+    return uniqueBy(arr.flat(), isEqual).filter(x => arr.every(subArr => subArr.some(a => isEqual(a, x))))
 }
 export const arraysEqual = (arr1, arr2, isEqual) => {
     return arr1.length === arr2.length && arr1.every((a, i) => isEqual(a, arr2[i]))
 }
-export const groupBy = (arr, by) => {
+type Groups<T> = {[key: string]: T[]}
+export const groupBy = <T>(arr: T[], by): Groups<T> => {
     return arr.reduce((groups, item) => {
         const key = by(item)
         groups[key] = (groups[key] ?? [])
@@ -115,13 +133,17 @@ export const getAllBoxes = (): Point[][] => {
     return boxes
 }
 
-export const getAllClosedRegions = (): Point[][] => {
+export const getAllHouses = (): Point[][] => {
     return [
         ...getAllRows(),
         ...getAllCols(),
         ...getAllBoxes()
     ]
 }
+
+export const getAllHousesMinusFilledPoints = (board: Board) => getAllHouses()
+    .map(points => points.filter(p => getBoardCell(board, p).value === null))
+    .filter(points => points.length > 0)
 
 export const getAffectedPoints = (point: Point): Point[] => {
     return [
@@ -138,10 +160,11 @@ export const getBoxNumber = (point: Point) => (1 + Math.floor(point.x / 3)) * (1
 export const getBoardCell = (board: Board, point: Point) => board[point.y][point.x]
 
 export const removeCandidates = (board: Board, point: Point, numbers: number[]): Effect => {
-    if(!getBoardCell(board, point).candidates.some(x => numbers.includes(x))){
+    const candidatesToRemove = getBoardCell(board, point).candidates.filter(x => numbers.includes(x))
+    if(candidatesToRemove.length === 0){
         return {type: 'none'} as NoneEffect
     }
-    return {type: 'elimination', point, numbers} as EliminationEffect
+    return {type: 'elimination', point, numbers: candidatesToRemove} as EliminationEffect
 }
 
 export const removeCandidate = (board: Board, point: Point, number: number): Effect => {
