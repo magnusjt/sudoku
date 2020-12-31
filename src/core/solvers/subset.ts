@@ -7,7 +7,7 @@ import {
     first,
     getAllHousesMinusFilledPoints,
     getBoardCell,
-    getCombinations,
+    getCombinations, getPointsWithCandidates,
     pointsEqual,
     removeCandidatesFromPoints,
     uniqueBy
@@ -36,7 +36,7 @@ function *subsetGenerator(board: Board, len: number){
     const minInstanceEachCand = 2 // True for pair, triple, and quad. Just hardcode it.
     for(let points of getAllHousesMinusFilledPoints(board)){
         for(let candidates of getCombinations(allCandidates, len)){
-            const subsetPointLists = candidates.map(cand => points.filter(p => getBoardCell(board, p).candidates.includes(cand)))
+            const subsetPointLists = candidates.map(cand => getPointsWithCandidates(board, points, [cand]))
             const everyCandIsRepresented = subsetPointLists.every(points => points.length >= minInstanceEachCand && points.length <= len)
             if(!everyCandIsRepresented) continue
 

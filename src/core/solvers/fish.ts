@@ -4,10 +4,9 @@ import {
     difference,
     first,
     getAllUnfilledPoints,
-    getBoardCell,
     getColNumber,
     getColumn,
-    getCombinations,
+    getCombinations, getPointsWithCandidates,
     getRow,
     getRowNumber,
     groupBy,
@@ -35,7 +34,7 @@ function *fishGenerator(board: Board, len: number){
     const allPoints = getAllUnfilledPoints(board)
 
     for(let cand = 1; cand <= 9; cand++){
-        const pointsWithCand = allPoints.filter(p => getBoardCell(board, p).candidates.includes(cand))
+        const pointsWithCand = getPointsWithCandidates(board, allPoints, [cand])
 
         const rowsWithLen = Object.values<Point[]>(groupBy(pointsWithCand, getRowNumber))
             .filter(points => points.length >= minInstancesPerHouse && points.length <= len)

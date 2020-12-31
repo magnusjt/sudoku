@@ -1,4 +1,4 @@
-import { Point, Board, Effect, EliminationEffect, NoneEffect, Technique } from './types'
+import { Point, Board, Effect, EliminationEffect, NoneEffect, Technique, Cell } from './types'
 
 export const getCombinations = <T>(items: T[], len: number, initIndex = 0): T[][] => {
     if(len === 0) return []
@@ -155,6 +155,11 @@ export const getAffectedPoints = (point: Point): Point[] => {
     ].filter(p => !pointsEqual(p, point))
 }
 
+// Finds every point which "sees" all of the given points
+export const getAffectedPointsInCommon = (points: Point[]): Point[] => {
+    return intersectionOfAll(points.map(getAffectedPoints), pointsEqual)
+}
+
 export const getRowNumber = (point: Point) => point.y
 export const getColNumber = (point: Point) => point.x
 export const getBoxNumber = (point: Point) => (1 + Math.floor(point.x / 3)) * (1 + Math.floor(point.y/3)) - 1
@@ -216,3 +221,12 @@ export const applyEffects = (board: Board, effects: Effect[]) => {
 }
 
 export const candidatesEqual = (a: number[], b: number[]) => arraysEqual(a, b, (a, b) => a === b)
+
+export const pointsWhere = (board: Board, points: Point[], filter: (cell: Cell) => boolean): Point[] =>
+    points.filter(point => filter(getBoardCell(board, point)))
+
+export const getPointsWithCandidates = (board: Board, points: Point[], cands: number[]) =>
+    pointsWhere(board, points, (cell) => cands.every(cand => cell.candidates.includes(cand)))
+
+export const getPointsWithNCandidates = (board: Board, points: Point[], n: number) =>
+    pointsWhere(board, points, (cell) => cell.candidates.length === n)
