@@ -1,10 +1,10 @@
 import { Board, Cell, Technique } from './types'
 import { applyEffects, isBoardFinished } from './utils'
-import { basicElimination } from './solvers/basic'
+import { allBasicEliminations, basicElimination } from './solvers/basic'
 import { hiddenSingle, nakedSingle } from './solvers/singles'
 import { inversePointer, pointer } from './solvers/pointer'
 import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair, nakedQuad, nakedTriple } from './solvers/subset'
-import { xWing } from './solvers/fish'
+import { jellyfish, swordfish, xWing } from './solvers/fish'
 import { skyscraper } from './solvers/skyscraper'
 import { uniqueRectangle } from './solvers/uniqueRectangle'
 
@@ -43,9 +43,11 @@ const techniques: {type: string, fn: Technique}[] = [
     {type: 'hiddenPair', fn: hiddenPair},
     {type: 'hiddenTriple', fn: hiddenTriple},
     {type: 'hiddenQuad', fn: hiddenQuad},
-    {type: 'xWing', fn: xWing},
+    {type: 'xwing', fn: xWing},
     {type: 'skyscraper', fn: skyscraper},
     {type: 'uniqueRectangle', fn: uniqueRectangle},
+    {type: 'swordfish', fn: swordfish},
+    {type: 'jellyfish', fn: jellyfish},
 ]
 
 const runTechnique = (board) => {
@@ -62,13 +64,32 @@ const runTechnique = (board) => {
     return null
 }
 
-export const runBasicEliminations = (board) => {
-    let res = basicElimination(board)
-    while(res){
-        board = applyEffects(board, res.effects)
-        res = basicElimination(board)
+export const applyTechniques = (board: Board, techniqueTypes: string[]) => {
+    while(true){
+        if(isBoardFinished(board)){
+            return board
+        }
+        let moreToGo = false
+        for(let techType of techniqueTypes){
+            const tech = techniques.find(t => t.type === techType)
+            if(!tech) throw new Error('Unknown technique type')
+            const res = tech.fn(board)
+            if(res){
+                board = applyEffects(board, res.effects)
+                moreToGo = true
+            }
+        }
+        if(!moreToGo){
+            return board
+        }
     }
+}
 
+export const runBasicEliminations = (board) => {
+    const res = allBasicEliminations(board)
+    if(res){
+        board = applyEffects(board, res.effects)
+    }
     return board
 }
 

@@ -1,7 +1,9 @@
 import { Board, Point, Technique } from '../types'
 import {
+    allResults,
     difference,
-    getAllPoints,
+    first,
+    getAllUnfilledPoints,
     getBoardCell,
     getColNumber,
     getColumn,
@@ -13,41 +15,59 @@ import {
     removeCandidateFromPoints
 } from '../utils'
 
-/**
- * Looks like 4 corners of a rectangle, where either the rows or cols are empty otherwise.
- * Two columns has the same candidate in only two rows. The rest of the rows can be eliminated
- * Two rows has the same candidate in only two cols. The rest of the columns can be eliminated.
- */
-export const xWing: Technique = (board: Board) => {
-    const getXWingResult = (xWingPoints: Point[], getLineNumber, getLine, cand) => {
-        const lines = Object.values<Point[]>(groupBy(xWingPoints, getLineNumber)).filter(points => points.length === 2)
-        if(lines.length !== 2) return null
+function *fishGenerator(board: Board, len: number){
+    const getFishResult = (fishPoints: Point[], getLineNumber, getLine, cand) => {
+        const lines = Object.values<Point[]>(groupBy(fishPoints, getLineNumber))
+        if(lines.length !== len) return null
 
         const pointsOnLines = lines.flatMap(points => getLine(getLineNumber(points[0])))
-        const pointsToRemove = difference(pointsOnLines, xWingPoints, pointsEqual)
+        const pointsToRemove = difference(pointsOnLines, fishPoints, pointsEqual)
+
         const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
-        const actors = xWingPoints.map(point => ({point}))
+        const actors = fishPoints.map(point => ({point}))
 
         if(effects.length > 0){
             return {effects, actors}
         }
     }
 
-    const allPoints = getAllPoints()
-    for(let cand = 1; cand <= 9; cand++){
-        const pointsWithN = allPoints.filter(p => getBoardCell(board, p).candidates.includes(cand))
-        const colsWithTwo = Object.values<Point[]>(groupBy(pointsWithN, getColNumber)).filter(points => points.length === 2)
-        const rowsWithTwo = Object.values<Point[]>(groupBy(pointsWithN, getRowNumber)).filter(points => points.length === 2)
+    const minInstancesPerHouse = 2
+    const allPoints = getAllUnfilledPoints(board)
 
-        for(let [colA, colB] of getCombinations(colsWithTwo, 2)){
-            const result = getXWingResult([...colA, ...colB], getRowNumber, getRow, cand)
-            if(result) return result
+    for(let cand = 1; cand <= 9; cand++){
+        const pointsWithCand = allPoints.filter(p => getBoardCell(board, p).candidates.includes(cand))
+
+        const rowsWithLen = Object.values<Point[]>(groupBy(pointsWithCand, getRowNumber))
+            .filter(points => points.length >= minInstancesPerHouse && points.length <= len)
+
+        for(let rows of getCombinations(rowsWithLen, len)){
+            const result = getFishResult(rows.flat(), getColNumber, getColumn, cand)
+            if(result) yield result
         }
 
-        for(let [rowA, rowB] of getCombinations(rowsWithTwo, 2)){
-            const result = getXWingResult([...rowA, ...rowB], getColNumber, getColumn, cand)
-            if(result) return result
+        const colsWithLen = Object.values<Point[]>(groupBy(pointsWithCand, getColNumber))
+            .filter(points => points.length >= minInstancesPerHouse && points.length <= len)
+
+        for(let cols of getCombinations(colsWithLen, len)){
+            const result = getFishResult(cols.flat(), getRowNumber, getRow, cand)
+            if(result) yield result
         }
     }
     return null
 }
+
+/**
+ * Looks like 4 corners of a rectangle, where either the rows or cols are empty otherwise.
+ * Two columns has the same candidate in only two rows. The rest of the rows can be eliminated
+ * Two rows has the same candidate in only two cols. The rest of the columns can be eliminated.
+ */
+export const xWing: Technique = (board: Board) => first(fishGenerator(board, 2))
+export const allXWings: Technique = (board: Board) => allResults(fishGenerator(board, 2))
+
+export const swordfish: Technique = (board: Board) => first(fishGenerator(board, 3))
+export const allSwordfish: Technique = (board: Board) => allResults(fishGenerator(board, 3))
+
+export const jellyfish: Technique = (board: Board) => first(fishGenerator(board, 4))
+export const allJellyfish: Technique = (board: Board) => allResults(fishGenerator(board, 4))
+
+// NB: Larger fish can always be decomposed into smaller fish, so no point looking

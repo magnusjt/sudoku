@@ -82,6 +82,8 @@ export const getAllPoints = (): Point[] => {
     return points
 }
 
+export const getAllUnfilledPoints = (board: Board): Point[] => getAllPoints().filter(p => getBoardCell(board, p).value === null)
+
 export const getColumn = (x: number): Point[] => {
     const col: Point[] = []
     for(let y = 0; y < 9; y++){
@@ -141,7 +143,7 @@ export const getAllHouses = (): Point[][] => {
     ]
 }
 
-export const getAllHousesMinusFilledPoints = (board: Board) => getAllHouses()
+export const getAllHousesMinusFilledPoints = (board: Board): Point[][] => getAllHouses()
     .map(points => points.filter(p => getBoardCell(board, p).value === null))
     .filter(points => points.length > 0)
 

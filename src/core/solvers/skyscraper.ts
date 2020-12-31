@@ -2,7 +2,7 @@ import { Board, Point, Technique } from '../types'
 import {
     difference,
     getAffectedPoints,
-    getAllPoints,
+    getAllPoints, getAllUnfilledPoints,
     getBoardCell,
     getColNumber,
     getCombinations,
@@ -43,7 +43,7 @@ export const skyscraper: Technique = (board: Board) => {
         return null
     }
 
-    const allPoints = getAllPoints()
+    const allPoints = getAllUnfilledPoints(board)
     for(let cand = 1; cand <= 9; cand++){
         const pointsWithN = allPoints.filter(p => getBoardCell(board, p).candidates.includes(cand))
         const colsWithTwo = Object.values<Point[]>(groupBy(pointsWithN, getColNumber)).filter(points => points.length === 2)
