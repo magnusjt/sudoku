@@ -13,7 +13,30 @@ Supported solvers:
 
 # TODO
 
-Solvers:
+GUI:
+- Ability to enter digits and candidates manually (how to interact with the solver?)
+- Set input mode using keyboard shortcuts and/or buttons
+- Digit selection outside of the grid (also important for mobile)
+- Interaction with solver:
+ - Turn on/off
+ - Ability to display which techniques are possible for the current board (but not show the solution)
+ - Ability to skip past easy techniques
+- Choose a sudoku from pre generated
+- Save progress and/or total points etc. Server side or just local?
+
+Generate sudokus:
+- Find out if the sudoku has a unique solution
+- Require a certain technique (probably need to optimize the hell out of the solvers)
+- Choose difficulty (maybe add techniques into different difficulty buckets, and require them for solutions randomly based on difficulty)
+- Maybe consider generating a bunch of solutions offline. Don't know if it can be fast enough for real time.
+
+Optimize solvers:
+- NB: Not if readability is sacrificed
+- Use actual sets for difference, intersection, etc. There are often few points though, so might not be faster in all cases.
+- Candidates can probably be sets, idk.
+- Don't generate rows/cols each time. Can be precalculated.
+
+Add support for solvers (maybe skip the most advanced stuff?):
 - 2-string kite
 - Finned fish
 - Sashimi fish
