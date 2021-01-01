@@ -14,7 +14,6 @@ import {
     removeCandidateFromPoints
 } from '../utils'
 
-
 /**
  * Basically an x-wing where one candidate is not aligned.
  * The line (row or col) where the points are aligned force the candidate to be placed in one of the other two points.
