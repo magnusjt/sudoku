@@ -8,6 +8,7 @@ import { jellyfish, swordfish, xWing } from './solvers/fish'
 import { skyscraper } from './solvers/skyscraper'
 import { uniqueRectangle } from './solvers/uniqueRectangle'
 import { xyWing, xyzWing } from './solvers/wing'
+import { emptyRectangle } from './solvers/emptyRectangle'
 
 export const boardFromInput = (input: number[][]) => {
     const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -47,6 +48,7 @@ const techniques: {type: string, fn: Technique}[] = [
     {type: 'xwing', fn: xWing},
     {type: 'uniqueRectangle', fn: uniqueRectangle},
     {type: 'skyscraper', fn: skyscraper},
+    {type: 'emptyRectangle', fn: emptyRectangle},
     {type: 'xywing', fn: xyWing},
     {type: 'xyzwing', fn: xyzWing},
     {type: 'swordfish', fn: swordfish},

@@ -125,11 +125,14 @@ export const getAllCols = (): Point[][] => {
     return cols
 }
 
+export const getBoxX = (boxNumber: number) => (boxNumber % 3) * 3
+export const getBoxY = (boxNumber: number) => Math.floor(boxNumber / 3) * 3
+
 export const getAllBoxes = (): Point[][] => {
     const boxes: Point[][] = []
     for(let k = 0; k < 9; k++){
-        const x = (k % 3) * 3
-        const y = Math.floor(k / 3) * 3
+        const x = getBoxX(k)
+        const y = getBoxY(k)
         boxes.push(getBox({x, y}))
     }
     return boxes
@@ -155,6 +158,15 @@ export const getAffectedPoints = (point: Point): Point[] => {
     ].filter(p => !pointsEqual(p, point))
 }
 
+export const getRowsOutsideBox = boxNumber => {
+    const boxY = getBoxY(boxNumber)
+    return getAllRows().filter(points => points[0].y < boxY || points[0].y >= boxY + 3)
+}
+export const getColsOutsideBox = boxNumber => {
+    const boxX = getBoxX(boxNumber)
+    return getAllCols().filter(points => points[0].x < boxX || points[0].x >= boxX + 3)
+}
+
 // Finds every point which "sees" all of the given points
 export const getAffectedPointsInCommon = (points: Point[]): Point[] => {
     return intersectionOfAll(points.map(getAffectedPoints), pointsEqual)
@@ -162,7 +174,7 @@ export const getAffectedPointsInCommon = (points: Point[]): Point[] => {
 
 export const getRowNumber = (point: Point) => point.y
 export const getColNumber = (point: Point) => point.x
-export const getBoxNumber = (point: Point) => (1 + Math.floor(point.x / 3)) * (1 + Math.floor(point.y/3)) - 1
+export const getBoxNumber = (point: Point) => (Math.floor(point.x / 3)) + (3 * Math.floor(point.y/3))
 
 export const getBoardCell = (board: Board, point: Point) => board[point.y][point.x]
 

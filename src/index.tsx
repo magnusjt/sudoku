@@ -133,6 +133,7 @@ const Candidates = (props) => {
 const BoardDisplay = (props: {board: Board, effects: Effect[], actors: Actor[]}) => {
     const board = props.board
     const effectHighlights = props.effects.map(eff => (eff as any).point).filter(x => !!x)
+    const setValueEffectHighlights = props.effects.filter(eff => eff.type === 'value').map(eff => (eff as any).point).filter(x => !! x)
     const actorHighlights = props.actors.map(actor => actor.point)
     const [selectedCell, setSelectedCell] = React.useState<Point | null>(null)
     const toggleSelectedCell = (point) => {
@@ -142,10 +143,16 @@ const BoardDisplay = (props: {board: Board, effects: Effect[], actors: Actor[]})
             setSelectedCell(point)
         }
     }
+    const onKeyPress = (e: React.KeyboardEvent) => {
+        if(typeof e.key === 'number' && e.key >= 1 && e.key <= 9){
+
+        }
+    }
+
     const highlightedNumber = selectedCell ? board[selectedCell.y][selectedCell.x].value : null
 
     return (
-        <div>
+        <div onKeyPress={onKeyPress}>
             {board.map((row, y) => {
                 const cells = row.map((cell, x) => {
                     const selected = selectedCell && selectedCell.x === x && selectedCell.y === y
@@ -156,6 +163,9 @@ const BoardDisplay = (props: {board: Board, effects: Effect[], actors: Actor[]})
                     }
                     if(actorHighlights.some(p => pointsEqual(p, {x, y}))){
                         bg = '#c5f6b0'
+                    }
+                    if(setValueEffectHighlights.some(p => pointsEqual(p, {x, y}))){
+                        bg = '#85ffff'
                     }
                     if(selected){
                         bg = '#ffc0b0'
