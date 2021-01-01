@@ -33,7 +33,7 @@ export const boardFromInput = (input: number[][]) => {
     return board
 }
 
-const techniques: {type: string, fn: Technique}[] = [
+export const techniques: {type: string, fn: Technique}[] = [
     {type: 'basic', fn: basicElimination},
     {type: 'nakedSingle', fn: nakedSingle},
     {type: 'hiddenSingle', fn: hiddenSingle},
@@ -55,7 +55,7 @@ const techniques: {type: string, fn: Technique}[] = [
     {type: 'jellyfish', fn: jellyfish},
 ]
 
-const runTechnique = (board) => {
+export const runTechnique = (board) => {
     for(let technique of techniques){
         const result = technique.fn(board)
         if(result){

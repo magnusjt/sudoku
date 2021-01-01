@@ -30,3 +30,10 @@ export type Actor = {
 }
 
 export type Technique = (board: Board) => {effects: Effect[], actors: Actor[]} | null
+
+export type SolveResult = {
+    board: Board
+    effects: Effect[]
+    actors: Actor[]
+    technique: string
+}

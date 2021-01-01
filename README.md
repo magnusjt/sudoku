@@ -13,6 +13,9 @@ Supported solvers:
 
 # TODO
 
+GUI/Solver:
+- Solver actors/effects can display the candidates as well, not just the cell. But maybe it's nice to have to work for it a bit?
+
 GUI:
 - Ability to enter digits and candidates manually (how to interact with the solver?)
 - Set input mode using keyboard shortcuts and/or buttons
@@ -23,6 +26,7 @@ GUI:
  - Ability to skip past easy techniques
 - Choose a sudoku from pre generated
 - Save progress and/or total points etc. Server side or just local?
+- Input custom board
 
 Generate sudokus:
 - Find out if the sudoku has a unique solution
