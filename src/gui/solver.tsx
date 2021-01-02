@@ -1,29 +1,22 @@
 import React from 'react'
-import * as sudoku from '../core/sudoku'
 import { Board, Point, SolveResult } from '../core/types'
 import * as solve from '../core/solve'
+import { getTechniquesUntilNextValue } from '../core/sudoku'
 
 export type SolverProps = {
     board: Board
-    onSolveResult: (solveResult: SolveResult | null, prevBoard: Board) => void
     solveResult: SolveResult | null
-}
-
-const getSolverBoard = (board: Board) => {
-    board = sudoku.resetCandidates(board)
-    board = solve.applyBasicEliminations(board)
-    return board
+    onSolveResult: (solveResult: SolveResult | null, prevBoard: Board) => void
 }
 
 const pointToStr = (point: Point) => `r${point.y+1}c${point.x+1}`
 
 export const Solver = (props: SolverProps) => {
-    const {board: activeBoard, solveResult, onSolveResult} = props
-    const solverBoard = React.useMemo(() => getSolverBoard(activeBoard), [activeBoard])
-    const nextTechniqueResult = React.useMemo(() => solve.runTechnique(solverBoard), [solverBoard])
+    const {board, solveResult, onSolveResult} = props
+    const nextTechniques = React.useMemo(() => getTechniquesUntilNextValue(board), [board])
     const [skippedTechniques, setSkippedTechniques] = React.useState<string[]>([])
 
-    const onToggleTechnique = (type: string) => {
+    const onToggleTechnique = React.useCallback((type: string) => {
         setSkippedTechniques(s => {
             if(s.some(t => t === type)){
                 return s.filter(t => t !== type)
@@ -31,20 +24,23 @@ export const Solver = (props: SolverProps) => {
                 return [...s, type]
             }
         })
-    }
-    const iterate = () => {
-        let prevBoard = solverBoard
-        let res = solve.iterate(solverBoard)
+    }, [])
+
+    const iterate = React.useCallback(() => {
+        let boardBeforeSolve = board
+        let res = solve.iterate(boardBeforeSolve)
         while(res !== null && skippedTechniques.includes(res.technique)){
-            prevBoard = res.board
-            res = solve.iterate(res.board)
+            boardBeforeSolve = res.board
+            res = solve.iterate(boardBeforeSolve)
         }
-        onSolveResult(res, prevBoard)
-    }
+        onSolveResult(res, boardBeforeSolve)
+    }, [board, skippedTechniques, onSolveResult])
 
     return (
         <div>
-            Next available technique: {nextTechniqueResult?.technique}
+            Techniques needed for next value:
+            <br />
+            {nextTechniques.map(t => <div>{t}</div>)}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <button onClick={iterate}>Iterate</button>
             </div>

@@ -9,6 +9,7 @@ import {
     removeCandidateFromAffectedPoints,
     removeCandidatesFromPoints
 } from './utils'
+import * as solve from './solve'
 
 export const boardFromInput = (input: number[][], withCandidates = true) => {
     const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9]
@@ -83,4 +84,24 @@ export const applyInputValue = (board: Board, points: Point[], digit: number, mo
     }
 
     return applyEffects(board, effects)
+}
+
+export const prepareMessedUpBoardForSolver = (board: Board) => {
+    board = resetCandidates(board)
+    board = solve.applyBasicEliminations(board)
+    return board
+}
+
+export const getTechniquesUntilNextValue = (board: Board) => {
+    const techniques: string[] = []
+
+    let res = solve.iterate(board)
+    res !== null && techniques.push(res.technique)
+
+    while(res !== null && !res.effects.some(eff => eff.type === 'value')){
+        res = solve.iterate(res.board)
+        res !== null && techniques.push(res.technique)
+    }
+
+    return techniques
 }

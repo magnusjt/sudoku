@@ -3,7 +3,7 @@ import React from 'react'
 import { BoardDisplay } from './board'
 import { Solver } from './solver'
 import { Board, InputMode, Point, SolveResult } from '../core/types'
-import { applyInputValue } from '../core/sudoku'
+import { applyInputValue, prepareMessedUpBoardForSolver } from '../core/sudoku'
 
 /*
 const input = [ // Easy
@@ -44,14 +44,21 @@ const input = [ // Expert
 ]
 let initialBoard = sudoku.boardFromInput(input, false)
 
-export function App(props){
+export function App(){
     const [board, setBoard] = React.useState(initialBoard)
     const [solveResult, setSolveResult] = React.useState<SolveResult | null>(null)
     const [solverEnabled, setSolverEnabled] = React.useState(false)
     const [inputMode, setInputMode] = React.useState<InputMode>('value')
+    const solverBoard = React.useMemo(() => {
+        if(solveResult === null){
+            return prepareMessedUpBoardForSolver(board)
+        }else{
+            return solveResult.board
+        }
+    }, [board, solveResult])
 
-    const onSetSolveResult = (solveResult: SolveResult | null, prevBoard: Board) => {
-        setBoard(prevBoard)
+    const onSetSolveResult = (solveResult: SolveResult | null, boardBeforeSolve: Board) => {
+        setBoard(boardBeforeSolve)
         setSolveResult(solveResult)
     }
     const toggleSolver = () => {
@@ -65,6 +72,7 @@ export function App(props){
     const onSetDigit = (digit: number, points: Point[]) => {
         const nextBoard = applyInputValue(board, points, digit, inputMode)
         setBoard(nextBoard)
+        setSolveResult(null) // Remove solve result whenever input is applied. The solve may not be valid anymore.
     }
     const onKeyDown = (e) => {
         if(e.key.toLowerCase() === 'a') setInputMode('value')
@@ -87,7 +95,7 @@ export function App(props){
                 {solverEnabled &&
                     <div>
                         <Solver
-                            board={solveResult?.board ?? board}
+                            board={solverBoard}
                             solveResult={solveResult}
                             onSolveResult={onSetSolveResult}
                         />
