@@ -1,7 +1,7 @@
 export type Cell = {
     value: number | null
     candidates: number[]
-
+    given: boolean
 }
 export type Point = {
     x: number
@@ -37,3 +37,5 @@ export type SolveResult = {
     actors: Actor[]
     technique: string
 }
+
+export type InputMode = 'normal' | 'candidates'

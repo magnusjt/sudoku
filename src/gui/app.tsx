@@ -2,7 +2,8 @@ import * as sudoku from '../core/sudoku'
 import React from 'react'
 import { BoardDisplay } from './board'
 import { Solver } from './solver'
-import { Board, SolveResult } from '../core/types'
+import { Board, InputMode, Point, SolveResult } from '../core/types'
+import { applyInputValue } from '../core/sudoku'
 
 /*
 const input = [ // Easy
@@ -41,35 +42,60 @@ const input = [ // Expert
     [4, 0, 0, 0, 0, 0, 8, 0, 0],
     [0, 1, 8, 0, 0, 6, 7, 5, 0],
 ]
-let initialBoard = sudoku.boardFromInput(input)
-initialBoard = sudoku.runBasicEliminations(initialBoard)
+let initialBoard = sudoku.boardFromInput(input, false)
 
 export function App(props){
     const [board, setBoard] = React.useState(initialBoard)
-    const [next, setNext] = React.useState<SolveResult | null>(null)
-    const nextBoard = next?.board ?? board
+    const [solveResult, setSolveResult] = React.useState<SolveResult | null>(null)
+    const [solverEnabled, setSolverEnabled] = React.useState(false)
+    const [inputMode, setInputMode] = React.useState<InputMode>('normal')
 
-    const setSolveResult = (solveResult: SolveResult | null, prevBoard: Board) => {
+    const onSetSolveResult = (solveResult: SolveResult | null, prevBoard: Board) => {
         setBoard(prevBoard)
-        setNext(solveResult)
+        setSolveResult(solveResult)
     }
-    const onSetDigit = () => {
-
+    const toggleSolver = () => {
+        if(solverEnabled){
+            setSolverEnabled(false)
+            setSolveResult(null)
+        }else{
+            setSolverEnabled(true)
+        }
+    }
+    const onSetDigit = (digit: number, points: Point[]) => {
+        const nextBoard = applyInputValue(board, points, digit, inputMode)
+        setBoard(nextBoard)
+    }
+    const onKeyDown = (e) => {
+        if(e.key.toLowerCase() === 'a'){
+            setInputMode('normal')
+        }
+        if(e.key.toLowerCase() === 's'){
+            setInputMode('candidates')
+        }
+        console.log(e.key)
     }
 
     return (
-        <div>
+        <div onKeyDown={onKeyDown} tabIndex={-1}>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <BoardDisplay
-                    board={board}
-                    solveResult={next}
-                    onSetDigit={onSetDigit}
-                />
-                <Solver
-                    board={nextBoard}
-                    solveResult={next}
-                    onSolveResult={setSolveResult}
-                />
+                <div>
+                    <BoardDisplay
+                        board={board}
+                        solveResult={solveResult}
+                        onSetDigit={onSetDigit}
+                    />
+                    <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver' : 'Show solver'}</button>
+                </div>
+                {solverEnabled &&
+                    <div>
+                        <Solver
+                            board={solveResult?.board ?? board}
+                            solveResult={solveResult}
+                            onSolveResult={onSetSolveResult}
+                        />
+                    </div>
+                }
             </div>
         </div>
     )

@@ -186,10 +186,6 @@ export const removeCandidates = (board: Board, point: Point, numbers: number[]):
     return {type: 'elimination', point, numbers: candidatesToRemove} as EliminationEffect
 }
 
-export const removeCandidate = (board: Board, point: Point, number: number): Effect => {
-    return removeCandidates(board, point, [number])
-}
-
 export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
     return points
         .map(point => removeCandidates(board, point, numbers))
@@ -208,7 +204,7 @@ export const isBoardFinished = (board: Board) => {
     return getAllPoints().every(point => getBoardCell(board, point).value !== null)
 }
 
-const cloneBoard = (board: Board) => {
+export const cloneBoard = (board: Board) => {
     return [...board].map(row => [...row].map(cell => {
         return {
             ...cell,

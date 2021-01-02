@@ -1,7 +1,7 @@
 import React from 'react'
 import * as sudoku from '../core/sudoku'
 import { Board, Point, SolveResult } from '../core/types'
-import { techniques } from '../core/sudoku'
+import { resetCandidates, runBasicEliminations, techniques } from '../core/sudoku'
 
 export type SolverProps = {
     board: Board
@@ -9,11 +9,18 @@ export type SolverProps = {
     solveResult: SolveResult | null
 }
 
+const getSolverBoard = (board: Board) => {
+    board = resetCandidates(board)
+    board = runBasicEliminations(board)
+    return board
+}
+
 const pointToStr = (point: Point) => `r${point.y+1}c${point.x+1}`
 
 export const Solver = (props: SolverProps) => {
-    const {board, solveResult, onSolveResult} = props
-    const nextTechniqueResult = React.useMemo(() => sudoku.runTechnique(board), [board])
+    const {board: activeBoard, solveResult, onSolveResult} = props
+    const solverBoard = React.useMemo(() => getSolverBoard(activeBoard), [activeBoard])
+    const nextTechniqueResult = React.useMemo(() => sudoku.runTechnique(solverBoard), [solverBoard])
     const [skippedTechniques, setSkippedTechniques] = React.useState<string[]>([])
 
     const onToggleTechnique = (type: string) => {
@@ -26,8 +33,8 @@ export const Solver = (props: SolverProps) => {
         })
     }
     const iterate = () => {
-        let prevBoard = board
-        let res = sudoku.iterate(board)
+        let prevBoard = solverBoard
+        let res = sudoku.iterate(solverBoard)
         while(skippedTechniques.includes(res.technique)){
             prevBoard = res.board
             res = sudoku.iterate(res.board)

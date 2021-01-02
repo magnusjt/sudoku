@@ -1,5 +1,5 @@
-import { Board, Cell, Technique } from './types'
-import { applyEffects, isBoardFinished } from './utils'
+import { Board, Cell, InputMode, Point, Technique } from './types'
+import { allCandidates, applyEffects, cloneBoard, getAllPoints, getBoardCell, isBoardFinished } from './utils'
 import { allBasicEliminations, basicElimination } from './solvers/basic'
 import { hiddenSingle, nakedSingle } from './solvers/singles'
 import { inversePointer, pointer } from './solvers/pointer'
@@ -10,7 +10,7 @@ import { uniqueRectangle } from './solvers/uniqueRectangle'
 import { xyWing, xyzWing } from './solvers/wing'
 import { emptyRectangle } from './solvers/emptyRectangle'
 
-export const boardFromInput = (input: number[][]) => {
+export const boardFromInput = (input: number[][], withCandidates = true) => {
     const candidates = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     let board: Board = []
     for(let y = 0; y < 9; y++){
@@ -19,16 +19,25 @@ export const boardFromInput = (input: number[][]) => {
             if(input[y][x] !== 0){
                 row.push({
                     value: input[y][x],
+                    given: true,
                     candidates: []
                 })
             }else{
                 row.push({
                     value: null,
-                    candidates
+                    given: false,
+                    candidates: withCandidates ? candidates : []
                 })
             }
         }
         board.push(row)
+    }
+    return board
+}
+export const resetCandidates = (board: Board) => {
+    board = cloneBoard(board)
+    for(let point of getAllPoints()){
+        board[point.y][point.x].candidates = board[point.y][point.x].value === null ? allCandidates : []
     }
     return board
 }
@@ -110,4 +119,39 @@ export const iterate = (board) => {
     }
 
     return {board, effects: [], actors: [], technique: 'wtf'}
+}
+
+export const applyInputValue = (board: Board, points: Point[], digit: number, mode: InputMode) => {
+    board = cloneBoard(board)
+
+    if(points.length === 1){
+        const point = points[0]
+        const cell = getBoardCell(board, point)
+        if(mode === 'candidates' && cell.value === null){
+            if(cell.candidates.includes(digit)){
+                cell.candidates = cell.candidates.filter(c => c !== digit)
+            }else{
+                cell.candidates.push(digit)
+            }
+        }else if(mode === 'normal' && !cell.given){
+            if(cell.value === digit){
+                cell.value = null
+            }else{
+                cell.value = digit
+            }
+        }
+    }else if(points.length >= 2){
+        points.forEach(point => {
+            const cell = getBoardCell(board, point)
+            if(cell.value === null){
+                if(cell.candidates.includes(digit)){
+                    cell.candidates = cell.candidates.filter(c => c !== digit)
+                }else{
+                    cell.candidates.push(digit)
+                }
+            }
+        })
+    }
+
+    return board
 }
