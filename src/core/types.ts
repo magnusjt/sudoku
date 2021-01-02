@@ -9,7 +9,7 @@ export type Point = {
 }
 export type Board = Cell[][]
 
-export type Effect = EliminationEffect | NoneEffect | ValueEffect
+export type Effect = EliminationEffect | NoneEffect | ValueEffect | AddCandidatesEffect
 
 export type NoneEffect = {type: 'none'}
 
@@ -18,11 +18,16 @@ export type EliminationEffect = {
     point: Point
     numbers: number[]
 }
+export type AddCandidatesEffect = {
+    type: 'addCandidates'
+    point: Point
+    numbers: number[]
+}
 
 export type ValueEffect = {
     type: 'value',
     point: Point,
-    number: number
+    number: number | null
 }
 
 export type Actor = {
@@ -38,4 +43,4 @@ export type SolveResult = {
     technique: string
 }
 
-export type InputMode = 'normal' | 'candidates'
+export type InputMode = 'value' | 'candidates' | 'erase'

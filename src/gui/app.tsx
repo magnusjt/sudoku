@@ -48,7 +48,7 @@ export function App(props){
     const [board, setBoard] = React.useState(initialBoard)
     const [solveResult, setSolveResult] = React.useState<SolveResult | null>(null)
     const [solverEnabled, setSolverEnabled] = React.useState(false)
-    const [inputMode, setInputMode] = React.useState<InputMode>('normal')
+    const [inputMode, setInputMode] = React.useState<InputMode>('value')
 
     const onSetSolveResult = (solveResult: SolveResult | null, prevBoard: Board) => {
         setBoard(prevBoard)
@@ -67,13 +67,8 @@ export function App(props){
         setBoard(nextBoard)
     }
     const onKeyDown = (e) => {
-        if(e.key.toLowerCase() === 'a'){
-            setInputMode('normal')
-        }
-        if(e.key.toLowerCase() === 's'){
-            setInputMode('candidates')
-        }
-        console.log(e.key)
+        if(e.key.toLowerCase() === 'a') setInputMode('value')
+        if(e.key.toLowerCase() === 's') setInputMode('candidates')
     }
 
     return (
@@ -85,6 +80,8 @@ export function App(props){
                         solveResult={solveResult}
                         onSetDigit={onSetDigit}
                     />
+                    <button onClick={() => setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</button>
+                    <button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</button>
                     <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver' : 'Show solver'}</button>
                 </div>
                 {solverEnabled &&

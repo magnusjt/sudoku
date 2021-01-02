@@ -1,4 +1,4 @@
-import { Point, Board, Effect, EliminationEffect, NoneEffect, Technique, Cell } from './types'
+import { Point, Board, Effect, EliminationEffect, NoneEffect, Technique, Cell, AddCandidatesEffect } from './types'
 
 export const getCombinations = <T>(items: T[], len: number, initIndex = 0): T[][] => {
     if(len === 0) return []
@@ -179,16 +179,32 @@ export const getBoxNumber = (point: Point) => (Math.floor(point.x / 3)) + (3 * M
 export const getBoardCell = (board: Board, point: Point) => board[point.y][point.x]
 
 export const removeCandidates = (board: Board, point: Point, numbers: number[]): Effect => {
-    const candidatesToRemove = getBoardCell(board, point).candidates.filter(x => numbers.includes(x))
-    if(candidatesToRemove.length === 0){
+    const cell = getBoardCell(board, point)
+    const candidatesToRemove = cell.candidates.filter(x => numbers.includes(x))
+    if(candidatesToRemove.length === 0 || cell.value !== null){
         return {type: 'none'} as NoneEffect
     }
     return {type: 'elimination', point, numbers: candidatesToRemove} as EliminationEffect
 }
 
+export const addCandidates = (board: Board, point: Point, numbers: number[]): Effect => {
+    const cell = getBoardCell(board, point)
+    const candidatesToAdd = numbers.filter(x => !cell.candidates.includes(x))
+    if(candidatesToAdd.length === 0 || cell.value !== null){
+        return {type: 'none'} as NoneEffect
+    }
+    return {type: 'addCandidates', point, numbers: candidatesToAdd} as AddCandidatesEffect
+}
+
 export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
     return points
         .map(point => removeCandidates(board, point, numbers))
+        .filter(eff => eff.type !== 'none')
+}
+
+export const addCandidatesToPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
+    return points
+        .map(point => addCandidates(board, point, numbers))
         .filter(eff => eff.type !== 'none')
 }
 
@@ -217,8 +233,11 @@ export const applyEffects = (board: Board, effects: Effect[]) => {
     board = cloneBoard(board)
 
     effects.forEach(effect => {
-        if(effect.type === 'elimination'){
+        if(effect.type === 'elimination') {
             board[effect.point.y][effect.point.x].candidates = board[effect.point.y][effect.point.x].candidates.filter(c => !effect.numbers.includes(c))
+        }else if(effect.type === 'addCandidates'){
+            board[effect.point.y][effect.point.x].candidates.push(...effect.numbers)
+            board[effect.point.y][effect.point.x].candidates = unique(board[effect.point.y][effect.point.x].candidates)
         }else if(effect.type === 'value'){
             board[effect.point.y][effect.point.x].value = effect.number
             board[effect.point.y][effect.point.x].candidates = []
@@ -238,3 +257,14 @@ export const getPointsWithCandidates = (board: Board, points: Point[], cands: nu
 
 export const getPointsWithNCandidates = (board: Board, points: Point[], n: number) =>
     pointsWhere(board, points, (cell) => cell.candidates.length === n)
+
+export const getErrors = (board: Board) => {
+    return getAllPoints().filter(point => pointHasError(board, point))
+}
+
+export const pointHasError = (board: Board, point: Point): boolean => {
+    const cell = getBoardCell(board, point)
+    if(cell.given) return false
+    if(cell.value === null) return false
+    return getAffectedPoints(point).some(p => getBoardCell(board, p).value === cell.value)
+}

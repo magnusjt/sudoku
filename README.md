@@ -1,5 +1,16 @@
 # Sudoku
 
+GUI:
+- Ability to enter digits and candidates manually while still using solver (solver keeps a separate board with all candidates)
+- Multi input/removal of candidates and add to selection using keyboard shortcut
+- Set input mode using keyboard shortcuts and buttons
+- Interaction with solver:
+    - Turn on/off
+    - Ability to display which techniques are possible for the current board (but not show the solution)
+    - Ability to skip past easy techniques
+- Auto removes affected digits
+- Checks for errors (does a simple check for stupid mistakes, doesn't check against solution)
+
 Supported solvers:
 - Basic sudoku eliminations
 - Naked/hidden singles
@@ -11,22 +22,24 @@ Supported solvers:
 - Unique rectangle type 1
 - Empty rectangle, also with 2 candidates
 
+Bugs:
+- Selecting multiple cells bugs out if dragging outside the board
+
 # TODO
 
 GUI/Solver:
 - Solver actors/effects can display the candidates as well, not just the cell. But maybe it's nice to have to work for it a bit?
+- Take into account the entered candidates?
+- Calc correct solution and show errors according to that, to prevent annoying mistakes
 
 GUI:
-- Ability to enter digits and candidates manually (how to interact with the solver?)
-- Set input mode using keyboard shortcuts and/or buttons
 - Digit selection outside of the grid (also important for mobile)
-- Interaction with solver:
- - Turn on/off
- - Ability to display which techniques are possible for the current board (but not show the solution)
- - Ability to skip past easy techniques
 - Choose a sudoku from pre generated
 - Save progress and/or total points etc. Server side or just local?
 - Input custom board
+- Undo
+- Eraser tool
+- Color tool
 
 Generate sudokus:
 - Find out if the sudoku has a unique solution

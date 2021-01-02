@@ -1,6 +1,6 @@
 import { Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../core/types'
 import React from 'react'
-import { getAffectedPoints, pointsEqual } from '../core/utils'
+import { getAffectedPoints, pointHasError, pointsEqual } from '../core/utils'
 
 const Candidates = (props) => {
     const height = props.height
@@ -29,6 +29,7 @@ type CellDisplayProps = {
     solveResult: SolveResult | null
     selected: boolean
     affected: boolean
+    board: Board
     cell: Cell
     point: Point
     highlightedNumber: number | null
@@ -36,11 +37,12 @@ type CellDisplayProps = {
 
 const CellDisplay = (props: CellDisplayProps) => {
     const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
-    const {point, selected, affected, cell, highlightedNumber} = props
+    const {board, point, selected, affected, cell, highlightedNumber} = props
 
     const hasElimination = effects.filter((eff: Effect) => eff.type === 'elimination').some((eff) => pointsEqual((eff as ValueEffect).point, point))
     const hasSetValue = effects.filter((eff: Effect) => eff.type === 'value').some((eff) => pointsEqual((eff as ValueEffect).point, point))
     const hasActor = actors.some(actor => pointsEqual(actor.point, point))
+    const hasError = React.useMemo(() => pointHasError(board, point), [board, point])
 
     let bg = 'white'
 
@@ -53,6 +55,8 @@ const CellDisplay = (props: CellDisplayProps) => {
     if((cell.value && cell.value === highlightedNumber) || cell.candidates.some(c => c === highlightedNumber)){
         bg = '#ffc0b0'
     }
+
+    if(hasError) bg = '#fc4444'
 
     let style: any = {
         backgroundColor: bg,
@@ -149,6 +153,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                             }}
                         >
                             <CellDisplay
+                                board={board}
                                 cell={cell}
                                 selected={selected}
                                 affected={affected}
