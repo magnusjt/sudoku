@@ -22,6 +22,9 @@ Supported solvers:
 - Unique rectangle type 1
 - Empty rectangle, also with 2 candidates
 
+Generate sudokus:
+- Find out if the sudoku has a unique solution
+
 Bugs:
 - Selecting multiple cells bugs out if dragging outside the board
 
@@ -42,7 +45,6 @@ GUI:
 - Color tool
 
 Generate sudokus:
-- Find out if the sudoku has a unique solution
 - Require a certain technique (probably need to optimize the hell out of the solvers)
 - Choose difficulty (maybe add techniques into different difficulty buckets, and require them for solutions randomly based on difficulty)
 - Maybe consider generating a bunch of solutions offline. Don't know if it can be fast enough for real time.

@@ -1,9 +1,9 @@
-import {input as xWingInput1} from './sudokus/xWing'
-import {input as swordfishInput1} from './sudokus/swordfish'
-import {input as jellyfishInput1} from './sudokus/jellyfish'
-import { createTestBoard } from './util'
-import { swordfish, xWing, jellyfish } from '../core/solvers/fish'
-import { applyTechniques } from '../core/solve'
+import {input as xWingInput1} from '../sudokus/xWing'
+import {input as swordfishInput1} from '../sudokus/swordfish'
+import {input as jellyfishInput1} from '../sudokus/jellyfish'
+import { createTestBoard } from '../util'
+import { swordfish, xWing, jellyfish } from '../../core/solvers/fish'
+import { applyTechniques } from '../../core/solve'
 
 test('x-wing 1', () => {
     const board = createTestBoard(xWingInput1)

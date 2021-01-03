@@ -8,7 +8,9 @@ import { uniqueRectangle } from './solvers/uniqueRectangle'
 import { skyscraper } from './solvers/skyscraper'
 import { emptyRectangle } from './solvers/emptyRectangle'
 import { xyWing, xyzWing } from './solvers/wing'
-import { applyEffects, isBoardFinished } from './utils'
+import { applyEffects, isBoardFinished, unique } from './utils'
+import { bruteForce } from './solvers/bruteForce'
+import { resetCandidates } from './sudoku'
 
 export const techniques: {type: string, fn: Technique}[] = [
     {type: 'basic', fn: basicElimination},
@@ -30,6 +32,7 @@ export const techniques: {type: string, fn: Technique}[] = [
     {type: 'xyzwing', fn: xyzWing},
     {type: 'swordfish', fn: swordfish},
     {type: 'jellyfish', fn: jellyfish},
+    {type: 'bruteForce', fn: bruteForce}
 ]
 
 /**
@@ -93,4 +96,21 @@ export const iterate = (board: Board): SolveResult | null => {
     }
 
     return null
+}
+
+export const getTechniquesRequiredForSolvingBoard = (board: Board) => {
+    board = resetCandidates(board)
+    const techniques: string[] = []
+    while(true){
+        const res = iterate(board)
+        if(res === null){
+            throw new Error('Unsupported technique required')
+        }
+        if(res.technique === 'done'){
+            break
+        }
+        board = res.board
+        techniques.push(res.technique)
+    }
+    return unique(techniques)
 }

@@ -268,3 +268,8 @@ export const pointHasError = (board: Board, point: Point): boolean => {
     if(cell.value === null) return false
     return getAffectedPoints(point).some(p => getBoardCell(board, p).value === cell.value)
 }
+
+export const canPutDigit = (board: Board, point: Point, digit: number) => {
+    const affected = getAffectedPoints(point)
+    return !affected.some(p => getBoardCell(board, p).value === digit)
+}

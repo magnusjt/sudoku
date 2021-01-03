@@ -1,9 +1,11 @@
-import * as sudoku from '../core/sudoku'
 import React from 'react'
 import { BoardDisplay } from './board'
 import { Solver } from './solver'
 import { Board, InputMode, Point, SolveResult } from '../core/types'
 import { applyInputValue, prepareMessedUpBoardForSolver } from '../core/sudoku'
+import { generateBoards } from '../core/generate'
+import { getTechniquesRequiredForSolvingBoard } from '../core/solve'
+import { first } from '../core/utils'
 
 /*
 const input = [ // Easy
@@ -42,7 +44,9 @@ const input = [ // Expert
     [4, 0, 0, 0, 0, 0, 8, 0, 0],
     [0, 1, 8, 0, 0, 6, 7, 5, 0],
 ]
-let initialBoard = sudoku.boardFromInput(input, false)
+//let initialBoard = sudoku.boardFromInput(input, false)
+let initialBoard = first(generateBoards(30))
+console.log(getTechniquesRequiredForSolvingBoard(initialBoard))
 
 export function App(){
     const [board, setBoard] = React.useState(initialBoard)

@@ -1,6 +1,6 @@
-import {input as skyscraperInput1} from './sudokus/skyscraper'
-import { createTestBoard } from './util'
-import { skyscraper } from '../core/solvers/skyscraper'
+import {input as skyscraperInput1} from '../sudokus/skyscraper'
+import { createTestBoard } from '../util'
+import { skyscraper } from '../../core/solvers/skyscraper'
 
 test('skyscraper 1', () => {
     const board = createTestBoard(skyscraperInput1)

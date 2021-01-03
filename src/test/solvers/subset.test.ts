@@ -1,9 +1,9 @@
-import {input as hiddenPairInput1} from './sudokus/hiddenPair'
-import {input as nakedPairInput1} from './sudokus/nakedPair'
-import {input as hiddenTripleInput1} from './sudokus/hiddenTriple'
-import {input as hiddenQuadInput1} from './sudokus/hiddenQuad'
-import { createTestBoard } from './util'
-import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair } from '../core/solvers/subset'
+import {input as hiddenPairInput1} from '../sudokus/hiddenPair'
+import {input as nakedPairInput1} from '../sudokus/nakedPair'
+import {input as hiddenTripleInput1} from '../sudokus/hiddenTriple'
+import {input as hiddenQuadInput1} from '../sudokus/hiddenQuad'
+import { createTestBoard } from '../util'
+import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair } from '../../core/solvers/subset'
 
 test('hidden pair 1', () => {
     const board = createTestBoard(hiddenPairInput1)

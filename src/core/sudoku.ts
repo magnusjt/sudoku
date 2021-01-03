@@ -98,7 +98,7 @@ export const getTechniquesUntilNextValue = (board: Board) => {
     let res = solve.iterate(board)
     res !== null && techniques.push(res.technique)
 
-    while(res !== null && !res.effects.some(eff => eff.type === 'value')){
+    while(res !== null && res.technique !== 'done' && !res.effects.some(eff => eff.type === 'value')){
         res = solve.iterate(res.board)
         res !== null && techniques.push(res.technique)
     }
