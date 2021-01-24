@@ -1,27 +1,19 @@
-import { Board, Point, Technique } from '../types'
+import { SolverBoard, Point, Technique } from '../types'
 import {
-    allResults,
-    difference,
-    first,
-    getAllBoxes,
-    getAllCols,
-    getAllRows,
-    getBox,
-    getBoxNumber,
+    getAllBoxes, getAllCols, getAllRows, getBox, getBoxNumber,
     getColNumber,
     getColumn,
-    getPointsWithCandidates,
-    getRow,
+    getPointsWithCandidates, getRow,
     getRowNumber,
-    pointsEqual,
-    removeCandidateFromPoints,
-    unique
-} from '../utils'
+    pointsEqual
+} from '../utils/sudokuUtils'
+import { allResults, difference, first, unique } from '../utils/misc'
+import { removeCandidateFromPoints } from '../utils/effects'
 
 /**
  * If all of a certain candidate within a box are on the same col or row, the rest of the col or row can be eliminated
  */
-function *pointerGenerator(board: Board){
+function *pointerGenerator(board: SolverBoard){
     for(let points of getAllBoxes()){
         for(let cand = 1; cand <= 9; cand++){
             const pointsWithCand = getPointsWithCandidates(board, points, [cand])
@@ -48,7 +40,7 @@ function *pointerGenerator(board: Board){
 /**
  * If all of a certain candidate within a row or col are in the same box, the rest of the box can be eliminated
  */
-function *inversePointerGenerator(board: Board){
+function *inversePointerGenerator(board: SolverBoard){
     for(let points of [...getAllRows(), ...getAllCols()]){
         for(let cand = 1; cand <= 9; cand++){
             const pointsWithCand = getPointsWithCandidates(board, points, [cand])
@@ -69,8 +61,8 @@ function *inversePointerGenerator(board: Board){
     return null
 }
 
-export const pointer: Technique = (board: Board) => first(pointerGenerator(board))
-export const allPointers: Technique = (board: Board) => allResults(pointerGenerator(board))
+export const pointer: Technique = (board: SolverBoard) => first(pointerGenerator(board))
+export const allPointers: Technique = (board: SolverBoard) => allResults(pointerGenerator(board))
 
-export const inversePointer: Technique = (board: Board) => first(inversePointerGenerator(board))
-export const allInversePointers: Technique = (board: Board) => allResults(inversePointerGenerator(board))
+export const inversePointer: Technique = (board: SolverBoard) => first(inversePointerGenerator(board))
+export const allInversePointers: Technique = (board: SolverBoard) => allResults(inversePointerGenerator(board))

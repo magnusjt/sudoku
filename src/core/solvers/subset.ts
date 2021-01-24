@@ -1,19 +1,15 @@
-import { Board, Technique } from '../types'
+import { SolverBoard, Technique } from '../types'
 import {
-    allCandidates,
-    allResults,
-    candidatesExcept,
-    difference,
-    first,
+    allCandidates, candidatesExcept,
     getAllHousesMinusFilledPoints,
     getBoardCell,
-    getCombinations, getPointsWithCandidates,
-    pointsEqual,
-    removeCandidatesFromPoints,
-    uniqueBy
-} from '../utils'
+    getPointsWithCandidates,
+    pointsEqual
+} from '../utils/sudokuUtils'
+import { allResults, difference, first, getCombinations, uniqueBy } from '../utils/misc'
+import { removeCandidatesFromPoints } from '../utils/effects'
 
-function *nakedSubsetGenerator(board: Board, len: number){
+function *nakedSubsetGenerator(board: SolverBoard, len: number){
     for(let points of getAllHousesMinusFilledPoints(board)){
         for(let candidates of getCombinations(allCandidates, len)){
             const pointsInside = points.filter(p => getBoardCell(board, p).candidates.every(c => candidates.includes(c)))
@@ -32,7 +28,7 @@ function *nakedSubsetGenerator(board: Board, len: number){
     return null
 }
 
-function *subsetGenerator(board: Board, len: number){
+function *subsetGenerator(board: SolverBoard, len: number){
     const minInstanceEachCand = 2 // True for pair, triple, and quad. Just hardcode it.
     for(let points of getAllHousesMinusFilledPoints(board)){
         for(let candidates of getCombinations(allCandidates, len)){
@@ -59,20 +55,20 @@ function *subsetGenerator(board: Board, len: number){
     return null
 }
 
-export const nakedPair: Technique = (board: Board) => first(nakedSubsetGenerator(board, 2))
-export const allNakedPairs: Technique = (board: Board) => allResults(nakedSubsetGenerator(board, 2))
+export const nakedPair: Technique = (board: SolverBoard) => first(nakedSubsetGenerator(board, 2))
+export const allNakedPairs: Technique = (board: SolverBoard) => allResults(nakedSubsetGenerator(board, 2))
 
-export const hiddenPair: Technique = (board: Board) => first(subsetGenerator(board, 2))
-export const allHiddenPairs: Technique = (board: Board) => allResults(subsetGenerator(board, 2))
+export const hiddenPair: Technique = (board: SolverBoard) => first(subsetGenerator(board, 2))
+export const allHiddenPairs: Technique = (board: SolverBoard) => allResults(subsetGenerator(board, 2))
 
-export const nakedTriple: Technique = (board: Board) => first(nakedSubsetGenerator(board, 3))
-export const allNakedTriples: Technique = (board: Board) => allResults(nakedSubsetGenerator(board, 3))
+export const nakedTriple: Technique = (board: SolverBoard) => first(nakedSubsetGenerator(board, 3))
+export const allNakedTriples: Technique = (board: SolverBoard) => allResults(nakedSubsetGenerator(board, 3))
 
-export const hiddenTriple: Technique = (board: Board) => first(subsetGenerator(board, 3))
-export const allHiddenTriples: Technique = (board: Board) => allResults(subsetGenerator(board, 3))
+export const hiddenTriple: Technique = (board: SolverBoard) => first(subsetGenerator(board, 3))
+export const allHiddenTriples: Technique = (board: SolverBoard) => allResults(subsetGenerator(board, 3))
 
-export const nakedQuad: Technique = (board: Board) => first(nakedSubsetGenerator(board, 4))
-export const allNakedQuads: Technique = (board: Board) => allResults(nakedSubsetGenerator(board, 4))
+export const nakedQuad: Technique = (board: SolverBoard) => first(nakedSubsetGenerator(board, 4))
+export const allNakedQuads: Technique = (board: SolverBoard) => allResults(nakedSubsetGenerator(board, 4))
 
-export const hiddenQuad: Technique = (board: Board) => first(subsetGenerator(board, 4))
-export const allHiddenQuads: Technique = (board: Board) => allResults(subsetGenerator(board, 4))
+export const hiddenQuad: Technique = (board: SolverBoard) => first(subsetGenerator(board, 4))
+export const allHiddenQuads: Technique = (board: SolverBoard) => allResults(subsetGenerator(board, 4))

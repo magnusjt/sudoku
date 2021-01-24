@@ -1,4 +1,4 @@
-import { allCandidates, canPutDigit, cloneBoard, getAllPoints } from './utils'
+import { allCandidates, canPutDigit, cloneBoard, getAllPoints } from './utils/sudokuUtils'
 import { Board, Cell, Point } from './types'
 import { hasUniqueSolution } from './utils/hasUniqueSolution'
 
@@ -28,14 +28,25 @@ const getEmptyBoard = () => {
     return board
 }
 
-export function *generateBoards(maxGivens = 40){
-    const cands = randomOrder(allCandidates)
-    const seedBoard = generateSeedBoard(getEmptyBoard(), cands, 0, 0)
+export function *generateRandomBoards(seedBoardRefresh = 100){
+    let seedBoard = generateSeedBoard(getEmptyBoard(), randomOrder(allCandidates), 0, 0)
+    let n = 0
 
     while(true){
         const points = randomOrder(getAllPoints())
-        const {board, givens} = findSmallestUniqueBoard(seedBoard, points)
-        if(givens < maxGivens){
+        yield findSmallestUniqueBoard(seedBoard, points)
+
+        if(n%seedBoardRefresh === 0){
+            seedBoard = generateSeedBoard(getEmptyBoard(), randomOrder(allCandidates), 0, 0)
+        }
+        n++
+
+    }
+}
+
+export function *generateBoardsWithMaxGivens(maxGivens = 40): Generator<Board>{
+    for(let {board, givens} of generateRandomBoards()){
+        if(givens <= maxGivens){
             yield board
         }
     }
@@ -69,13 +80,13 @@ const findSmallestUniqueBoard = (board: Board, pointsToRemove: Point[]): {board:
     board = cloneBoard(board)
     let i = 0
     while(i < pointsToRemove.length){
-        const point = pointsToRemove[i]
-        const value = board[point.y][point.x].value
-        board[point.y][point.x].value = null
-        board[point.y][point.x].given = false
+        const {x, y} = pointsToRemove[i]
+        const value = board[y][x].value
+        board[y][x].value = null
+        board[y][x].given = false
         if(!hasUniqueSolution(board)){
-            board[point.y][point.x].value = value
-            board[point.y][point.x].given = true
+            board[y][x].value = value
+            board[y][x].given = true
             return {board, givens: 9*9-i+1}
         }
         i++

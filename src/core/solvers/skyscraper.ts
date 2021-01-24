@@ -1,25 +1,19 @@
-import { Board, Point, Technique } from '../types'
+import { SolverBoard, Point, Technique } from '../types'
+import { allResults, difference, first, getCombinations, groupBy } from '../utils/misc'
 import {
-    allResults,
-    difference,
-    first,
     getAffectedPointsInCommon,
-    getAllUnfilledPoints,
-    getColNumber,
-    getCombinations,
-    getPointsWithCandidates,
-    getRowNumber,
-    groupBy,
-    pointsEqual,
-    removeCandidateFromPoints
-} from '../utils'
+    getAllUnfilledPoints, getColNumber,
+    getPointsWithCandidates, getRowNumber,
+    pointsEqual
+} from '../utils/sudokuUtils'
+import { removeCandidateFromPoints } from '../utils/effects'
 
 /**
  * Basically an x-wing where one candidate is not aligned.
  * The line (row or col) where the points are aligned force the candidate to be placed in one of the other two points.
  * All other cells that sees these two candidates can be eliminated.
  */
-function *skyscraperGenerator(board: Board){
+function *skyscraperGenerator(board: SolverBoard){
     const getSkyscraperResult = (skyscraperPoints: Point[], getLineNumber, cand: number) => {
         const pointsOnLine = Object.values<Point[]>(groupBy(skyscraperPoints, getLineNumber)).filter(points => points.length === 2)[0]
         if(!pointsOnLine) return null
@@ -59,5 +53,5 @@ function *skyscraperGenerator(board: Board){
     return null
 }
 
-export const skyscraper: Technique = (board: Board) => first(skyscraperGenerator(board))
-export const allSkyscrapers: Technique = (board: Board) => allResults(skyscraperGenerator(board))
+export const skyscraper: Technique = (board: SolverBoard) => first(skyscraperGenerator(board))
+export const allSkyscrapers: Technique = (board: SolverBoard) => allResults(skyscraperGenerator(board))

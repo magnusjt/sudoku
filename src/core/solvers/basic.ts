@@ -1,10 +1,13 @@
-import { Board, Technique } from '../types'
-import { allResults, first, getAllPoints, getBoardCell, removeCandidateFromAffectedPoints } from '../utils'
+import { SolverBoard, Technique } from '../types'
+import { removeCandidateFromAffectedPoints } from '../utils/effects'
+import { allResults, first  } from '../utils/misc'
+import { getAllPoints, getBoardCell } from '../utils/sudokuUtils'
 
 /**
- * Just removes candidates from row, col, and box where the candidate is set as a value
+ * Just removes candidates from row, col, and box where the candidate is set as a value.
+ * I.e. Use only the basic constraints of sudoku.
  */
-function *basicEliminationsGenerator(board: Board){
+function *basicEliminationsGenerator(board: SolverBoard){
     for(let point of getAllPoints()){
         const cell = getBoardCell(board, point)
         if(cell.value === null){
@@ -21,5 +24,5 @@ function *basicEliminationsGenerator(board: Board){
     return null
 }
 
-export const basicElimination: Technique = (board: Board) => first(basicEliminationsGenerator(board))
-export const allBasicEliminations: Technique = (board: Board) => allResults(basicEliminationsGenerator(board))
+export const basicElimination: Technique = (board: SolverBoard) => first(basicEliminationsGenerator(board))
+export const allBasicEliminations: Technique = (board: SolverBoard) => allResults(basicEliminationsGenerator(board))

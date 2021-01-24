@@ -8,6 +8,7 @@ export type Point = {
     y: number
 }
 export type Board = Cell[][]
+export type SolverBoard = Board // The same as board, but we expect all candidates to be filled in.
 
 export type Effect = EliminationEffect | NoneEffect | ValueEffect | AddCandidatesEffect
 
@@ -34,10 +35,10 @@ export type Actor = {
     point: Point
 }
 
-export type Technique = (board: Board) => {effects: Effect[], actors: Actor[]} | null
+export type Technique = (board: SolverBoard) => {effects: Effect[], actors: Actor[]} | null
 
 export type SolveResult = {
-    board: Board
+    board: SolverBoard
     effects: Effect[]
     actors: Actor[]
     technique: string

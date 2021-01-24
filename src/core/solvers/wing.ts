@@ -1,19 +1,15 @@
-import { Board, Technique } from '../types'
+import { SolverBoard, Technique } from '../types'
 import {
     allCandidates,
-    allResults,
-    difference,
-    first,
-    getAffectedPoints,
-    getAffectedPointsInCommon,
+    getAffectedPoints, getAffectedPointsInCommon,
     getAllUnfilledPoints,
-    getBoardCell,
-    getPointsWithCandidates,
-    getPointsWithNCandidates,
-    removeCandidateFromPoints
-} from '../utils'
+    getBoardCell, getPointsWithCandidates,
+    getPointsWithNCandidates
+} from '../utils/sudokuUtils'
+import { allResults, difference, first } from '../utils/misc'
+import { removeCandidateFromPoints } from '../utils/effects'
 
-function *xyWingGenerator(board: Board){
+function *xyWingGenerator(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllUnfilledPoints(board), 2)
 
     for(let pivot of biValuePoints){
@@ -40,7 +36,7 @@ function *xyWingGenerator(board: Board){
     return null
 }
 
-function *xyzWingGenerator(board: Board){
+function *xyzWingGenerator(board: SolverBoard){
     const triValuePoints = getPointsWithNCandidates(board, getAllUnfilledPoints(board), 3)
 
     for(let pivot of triValuePoints){
@@ -68,10 +64,10 @@ function *xyzWingGenerator(board: Board){
     return null
 }
 
-export const xyWing: Technique = (board: Board) => first(xyWingGenerator(board))
-export const allXyWings: Technique = (board: Board) => allResults(xyWingGenerator(board))
+export const xyWing: Technique = (board: SolverBoard) => first(xyWingGenerator(board))
+export const allXyWings: Technique = (board: SolverBoard) => allResults(xyWingGenerator(board))
 
-export const xyzWing: Technique = (board: Board) => first(xyzWingGenerator(board))
-export const allXyzWings: Technique = (board: Board) => allResults(xyzWingGenerator(board))
+export const xyzWing: Technique = (board: SolverBoard) => first(xyzWingGenerator(board))
+export const allXyzWings: Technique = (board: SolverBoard) => allResults(xyzWingGenerator(board))
 
 // TODO: w-wing. Requires chains, which are a bit more complicated

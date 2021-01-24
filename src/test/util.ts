@@ -1,10 +1,6 @@
-import { boardFromInput } from '../core/sudoku'
-import { allBasicEliminations } from '../core/solvers/basic'
-import { applyEffects } from '../core/utils'
+import { boardFromInput, prepareBoardForSolver } from '../core/sudoku'
 
 export const createTestBoard = (input) => {
     const board = boardFromInput(input)
-    const result = allBasicEliminations(board)
-    if(result) return applyEffects(board, result.effects)
-    return board
+    return prepareBoardForSolver(board)
 }

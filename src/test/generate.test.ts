@@ -1,8 +1,8 @@
-import { generateBoards } from '../core/generate'
+import { generateBoardsWithMaxGivens } from '../core/generate'
 import { hasUniqueSolution } from '../core/utils/hasUniqueSolution'
 import { createTestBoard } from './util'
 import { input as knownUniqueInput} from './sudokus/nakedPair'
-import { first } from '../core/utils'
+import { first } from '../core/utils/misc'
 
 test('hasUniqueSolution', () => {
     const board = createTestBoard(knownUniqueInput)
@@ -11,6 +11,6 @@ test('hasUniqueSolution', () => {
 })
 
 test('generate', () => {
-    const board = first(generateBoards(32))
+    const board = first(generateBoardsWithMaxGivens(32))
     let x = 5
 })

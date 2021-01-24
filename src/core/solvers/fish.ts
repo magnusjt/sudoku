@@ -1,20 +1,15 @@
-import { Board, Point, Technique } from '../types'
+import { Point, SolverBoard, Technique } from '../types'
+import { allResults, difference, first, getCombinations, groupBy } from '../utils/misc'
 import {
-    allResults,
-    difference,
-    first,
-    getAllUnfilledPoints,
-    getColNumber,
+    getAllUnfilledPoints, getColNumber,
     getColumn,
-    getCombinations, getPointsWithCandidates,
-    getRow,
+    getPointsWithCandidates, getRow,
     getRowNumber,
-    groupBy,
-    pointsEqual,
-    removeCandidateFromPoints
-} from '../utils'
+    pointsEqual
+} from '../utils/sudokuUtils'
+import { removeCandidateFromPoints } from '../utils/effects'
 
-function *fishGenerator(board: Board, len: number){
+function *fishGenerator(board: SolverBoard, len: number){
     const getFishResult = (fishPoints: Point[], getLineNumber, getLine, cand) => {
         const lines = Object.values<Point[]>(groupBy(fishPoints, getLineNumber))
         if(lines.length !== len) return null
@@ -60,13 +55,13 @@ function *fishGenerator(board: Board, len: number){
  * Two columns has the same candidate in only two rows. The rest of the rows can be eliminated
  * Two rows has the same candidate in only two cols. The rest of the columns can be eliminated.
  */
-export const xWing: Technique = (board: Board) => first(fishGenerator(board, 2))
-export const allXWings: Technique = (board: Board) => allResults(fishGenerator(board, 2))
+export const xWing: Technique = (board: SolverBoard) => first(fishGenerator(board, 2))
+export const allXWings: Technique = (board: SolverBoard) => allResults(fishGenerator(board, 2))
 
-export const swordfish: Technique = (board: Board) => first(fishGenerator(board, 3))
-export const allSwordfish: Technique = (board: Board) => allResults(fishGenerator(board, 3))
+export const swordfish: Technique = (board: SolverBoard) => first(fishGenerator(board, 3))
+export const allSwordfish: Technique = (board: SolverBoard) => allResults(fishGenerator(board, 3))
 
-export const jellyfish: Technique = (board: Board) => first(fishGenerator(board, 4))
-export const allJellyfish: Technique = (board: Board) => allResults(fishGenerator(board, 4))
+export const jellyfish: Technique = (board: SolverBoard) => first(fishGenerator(board, 4))
+export const allJellyfish: Technique = (board: SolverBoard) => allResults(fishGenerator(board, 4))
 
 // NB: Larger fish can always be decomposed into smaller fish, so no point looking

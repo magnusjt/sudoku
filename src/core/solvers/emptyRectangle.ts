@@ -13,20 +13,19 @@
  *
  * NB: There is something called a dual rectangle where you can eliminate two points, but we can just run the algo twice and get the same result.
  */
-import { Board, Point, Technique } from '../types'
+import { SolverBoard, Point, Technique } from '../types'
 import {
-    allCandidates, allResults, first,
+    allCandidates,
     getAllBoxes,
-    getBoxNumber,
-    getColNumber,
-    getColsOutsideBox,
-    getPointsWithCandidates,
-    getRowNumber,
-    getRowsOutsideBox, groupBy, pointsEqual,
-    removeCandidateFromPoints
-} from '../utils'
+    getBoxNumber, getColNumber, getColsOutsideBox,
+    getPointsWithCandidates, getRowNumber,
+    getRowsOutsideBox,
+    pointsEqual
+} from '../utils/sudokuUtils'
+import { removeCandidateFromPoints } from '../utils/effects'
+import { allResults, first, groupBy } from '../utils/misc'
 
-function *emptyRectangleGenerator(board: Board){
+function *emptyRectangleGenerator(board: SolverBoard){
     const getResult = (pairHouse: Point[], erPoints: Point[], pointerX, pointerY, cand) => {
         const pair = getPointsWithCandidates(board, pairHouse, [cand])
         if(pair.length !== 2) return null
@@ -91,5 +90,5 @@ function *emptyRectangleGenerator(board: Board){
     return null
 }
 
-export const emptyRectangle: Technique = (board: Board) => first(emptyRectangleGenerator(board))
-export const allEmptyRectangles: Technique = (board: Board) => allResults(emptyRectangleGenerator(board))
+export const emptyRectangle: Technique = (board: SolverBoard) => first(emptyRectangleGenerator(board))
+export const allEmptyRectangles: Technique = (board: SolverBoard) => allResults(emptyRectangleGenerator(board))

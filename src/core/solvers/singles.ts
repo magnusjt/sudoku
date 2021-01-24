@@ -1,16 +1,9 @@
-import { Board, Technique } from '../types'
-import {
-    allResults,
-    difference,
-    first,
-    getAllHousesMinusFilledPoints,
-    getAllPoints,
-    getBoardCell,
-    pointsEqual,
-    removeCandidateFromAffectedPoints
-} from '../utils'
+import { SolverBoard, Technique } from '../types'
+import { getAllHousesMinusFilledPoints, getAllPoints, getBoardCell, pointsEqual } from '../utils/sudokuUtils'
+import { removeCandidateFromAffectedPoints } from '../utils/effects'
+import { allResults, difference, first } from '../utils/misc'
 
-function *fullHouseGenerator(board: Board){
+function *fullHouseGenerator(board: SolverBoard){
     for(let points of getAllHousesMinusFilledPoints(board)){
         if(points.length === 1){
             const point = points[0]
@@ -32,7 +25,7 @@ function *fullHouseGenerator(board: Board){
 /**
  * There is only one candidate in a cell. Can be filled immediately.
  */
-function *nakedSingleGenerator(board: Board){
+function *nakedSingleGenerator(board: SolverBoard){
     for(let point of getAllPoints()){
         const cell = getBoardCell(board, point)
         if(cell.candidates.length === 1){
@@ -52,7 +45,7 @@ function *nakedSingleGenerator(board: Board){
  * The candidate is only in one position in the box, row, or column, and is hidden among other candidates
  * All naked singles must be eliminated first or else we find them as hidden singles
  */
-function *hiddenSingleGenerator(board: Board){
+function *hiddenSingleGenerator(board: SolverBoard){
     for(let points of getAllHousesMinusFilledPoints(board)){
         for(let cand = 1; cand <= 9; cand++){
             const pointsWithCand = points.filter(p => getBoardCell(board, p).candidates.some(c => c === cand))
@@ -73,11 +66,11 @@ function *hiddenSingleGenerator(board: Board){
     return null
 }
 
-export const fullHouse: Technique = (board: Board) => first(fullHouseGenerator(board))
-export const allFullHouses: Technique = (board: Board) => allResults(fullHouseGenerator(board))
+export const fullHouse: Technique = (board: SolverBoard) => first(fullHouseGenerator(board))
+export const allFullHouses: Technique = (board: SolverBoard) => allResults(fullHouseGenerator(board))
 
-export const nakedSingle: Technique = (board: Board) => first(nakedSingleGenerator(board))
-export const allNakedSingles: Technique = (board: Board) => allResults(nakedSingleGenerator(board))
+export const nakedSingle: Technique = (board: SolverBoard) => first(nakedSingleGenerator(board))
+export const allNakedSingles: Technique = (board: SolverBoard) => allResults(nakedSingleGenerator(board))
 
-export const hiddenSingle: Technique = (board: Board) => first(hiddenSingleGenerator(board))
-export const allHiddenSingles: Technique = (board: Board) => allResults(hiddenSingleGenerator(board))
+export const hiddenSingle: Technique = (board: SolverBoard) => first(hiddenSingleGenerator(board))
+export const allHiddenSingles: Technique = (board: SolverBoard) => allResults(hiddenSingleGenerator(board))

@@ -2,6 +2,7 @@
   "name": "sudoku",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "dependencies": {
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.5.0",
@@ -17,7 +18,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "generate": "node --experimental-specifier-resolution=node --loader ts-node/esm ./generate.ts",
+    "generate-more": "npm run generate & npm run generate"
   },
   "eslintConfig": {
     "extends": "react-app"

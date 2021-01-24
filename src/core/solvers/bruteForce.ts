@@ -1,14 +1,8 @@
-import { Board, Technique, ValueEffect } from '../types'
-import {
-    allResults,
-    canPutDigit,
-    cloneBoard,
-    first,
-    getAllUnfilledPoints,
-    getBoardCell
-} from '../utils'
+import { SolverBoard, Technique, ValueEffect } from '../types'
+import { canPutDigit, cloneBoard, getAllUnfilledPoints, getBoardCell } from '../utils/sudokuUtils'
+import { allResults, first } from '../utils/misc'
 
-function *generateBruteForceDigits(board: Board){
+function *generateBruteForceDigits(board: SolverBoard){
     const clonedBoard = cloneBoard(board)
     solve(clonedBoard)
     const unfilledPoints = getAllUnfilledPoints(board)
@@ -20,7 +14,7 @@ function *generateBruteForceDigits(board: Board){
     }
 }
 
-const solve = (board: Board, x = 0, y = 0) => {
+const solve = (board: SolverBoard, x = 0, y = 0) => {
     if(x === 9){
         x = 0
         y++
@@ -46,5 +40,5 @@ const solve = (board: Board, x = 0, y = 0) => {
     return null
 }
 
-export const bruteForce: Technique = (board: Board) => first(generateBruteForceDigits(board))
-export const allBruteForceDigits: Technique = (board: Board) => allResults(generateBruteForceDigits(board))
+export const bruteForce: Technique = (board: SolverBoard) => first(generateBruteForceDigits(board))
+export const allBruteForceDigits: Technique = (board: SolverBoard) => allResults(generateBruteForceDigits(board))

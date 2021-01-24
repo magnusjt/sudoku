@@ -1,6 +1,6 @@
 import { Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../core/types'
 import React from 'react'
-import { getAffectedPoints, pointHasError, pointsEqual } from '../core/utils'
+import { getAffectedPoints, getBoardCell, pointsEqual } from '../core/utils/sudokuUtils'
 
 const Candidates = (props) => {
     const height = props.height
@@ -33,17 +33,17 @@ type CellDisplayProps = {
     cell: Cell
     point: Point
     highlightedNumber: number | null
+    solutionValue: number
 }
 
 const CellDisplay = (props: CellDisplayProps) => {
     const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
-    const {board, point, selected, affected, cell, highlightedNumber} = props
+    const {board, point, selected, affected, cell, highlightedNumber, solutionValue} = props
 
     const hasElimination = effects.filter((eff: Effect) => eff.type === 'elimination').some((eff) => pointsEqual((eff as ValueEffect).point, point))
     const hasSetValue = effects.filter((eff: Effect) => eff.type === 'value').some((eff) => pointsEqual((eff as ValueEffect).point, point))
     const hasActor = actors.some(actor => pointsEqual(actor.point, point))
-    const hasError = React.useMemo(() => pointHasError(board, point), [board, point])
-
+    const hasError = cell.value !== null && cell.value !== solutionValue
     let bg = 'white'
 
     if(affected) bg = '#efefef'
@@ -89,10 +89,11 @@ export type BoardDisplayProps = {
     board: Board
     solveResult: SolveResult | null
     onSetDigit: (digit: number, points: Point[]) => void
+    solutionBoard: Board
 }
 
 export const BoardDisplay = (props: BoardDisplayProps) => {
-    const {board, onSetDigit} = props
+    const {board, solutionBoard, onSetDigit} = props
 
     const [selectedCells, setSelectedCells] = React.useState<Point[]>([])
     const [isSelecting, setIsSelecting] = React.useState(false)
@@ -137,6 +138,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                     const point = {x, y}
                     const selected = selectedCells.some(p => pointsEqual(p, point))
                     const affected = affectedPoints.some(p => pointsEqual(p, point))
+                    const solutionValue = getBoardCell(solutionBoard, point).value as number
                     return (
                         <div
                             key={x}
@@ -160,6 +162,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                                 point={{x, y}}
                                 solveResult={props.solveResult}
                                 highlightedNumber={highlightedNumber}
+                                solutionValue={solutionValue}
                             />
                         </div>
                     )

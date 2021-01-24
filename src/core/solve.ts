@@ -1,6 +1,6 @@
-import { Board, SolveResult, Technique } from './types'
+import { Board, SolverBoard, SolveResult, Technique } from './types'
 import { allBasicEliminations, basicElimination } from './solvers/basic'
-import { hiddenSingle, nakedSingle } from './solvers/singles'
+import { fullHouse, hiddenSingle, nakedSingle } from './solvers/singles'
 import { inversePointer, pointer } from './solvers/pointer'
 import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair, nakedQuad, nakedTriple } from './solvers/subset'
 import { jellyfish, swordfish, xWing } from './solvers/fish'
@@ -8,37 +8,61 @@ import { uniqueRectangle } from './solvers/uniqueRectangle'
 import { skyscraper } from './solvers/skyscraper'
 import { emptyRectangle } from './solvers/emptyRectangle'
 import { xyWing, xyzWing } from './solvers/wing'
-import { applyEffects, isBoardFinished, unique } from './utils'
+import { isBoardFinished } from './utils/sudokuUtils'
+import { unique } from './utils/misc'
+import { applyEffects } from './utils/effects'
 import { bruteForce } from './solvers/bruteForce'
-import { resetCandidates } from './sudoku'
 
-export const techniques: {type: string, fn: Technique}[] = [
-    {type: 'basic', fn: basicElimination},
-    {type: 'nakedSingle', fn: nakedSingle},
-    {type: 'hiddenSingle', fn: hiddenSingle},
-    {type: 'pointer', fn: pointer},
-    {type: 'inversePointer', fn: inversePointer},
-    {type: 'nakedPair', fn: nakedPair},
-    {type: 'nakedTriple', fn: nakedTriple},
-    {type: 'nakedQuad', fn: nakedQuad},
-    {type: 'hiddenPair', fn: hiddenPair},
-    {type: 'hiddenTriple', fn: hiddenTriple},
-    {type: 'hiddenQuad', fn: hiddenQuad},
-    {type: 'xwing', fn: xWing},
-    {type: 'uniqueRectangle', fn: uniqueRectangle},
-    {type: 'skyscraper', fn: skyscraper},
-    {type: 'emptyRectangle', fn: emptyRectangle},
-    {type: 'xywing', fn: xyWing},
-    {type: 'xyzwing', fn: xyzWing},
-    {type: 'swordfish', fn: swordfish},
-    {type: 'jellyfish', fn: jellyfish},
-    {type: 'bruteForce', fn: bruteForce}
+export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
+    {type: 'basic', fn: basicElimination, difficulty: 'easy'},
+    {type: 'fullHouse', fn: fullHouse, difficulty: 'easy'},
+    {type: 'hiddenSingle', fn: hiddenSingle, difficulty: 'easy'},
+    {type: 'pointer', fn: pointer, difficulty: 'medium'},
+    {type: 'inversePointer', fn: inversePointer, difficulty: 'medium'},
+    {type: 'nakedSingle', fn: nakedSingle, difficulty: 'medium'},
+    {type: 'nakedPair', fn: nakedPair, difficulty: 'medium'},
+    {type: 'nakedTriple', fn: nakedTriple, difficulty: 'hard'},
+    {type: 'nakedQuad', fn: nakedQuad, difficulty: 'hard'},
+    {type: 'hiddenPair', fn: hiddenPair, difficulty: 'hard'},
+    {type: 'hiddenTriple', fn: hiddenTriple, difficulty: 'hard'},
+    {type: 'hiddenQuad', fn: hiddenQuad, difficulty: 'hard'},
+    {type: 'xwing', fn: xWing, difficulty: 'hard'},
+    {type: 'uniqueRectangle', fn: uniqueRectangle, difficulty: 'expert'},
+    {type: 'skyscraper', fn: skyscraper, difficulty: 'expert'},
+    {type: 'emptyRectangle', fn: emptyRectangle, difficulty: 'expert'},
+    {type: 'xywing', fn: xyWing, difficulty: 'expert'},
+    {type: 'xyzwing', fn: xyzWing, difficulty: 'expert'},
+    {type: 'swordfish', fn: swordfish, difficulty: 'expert'},
+    {type: 'jellyfish', fn: jellyfish, difficulty: 'expert'},
+    {type: 'bruteForce', fn: bruteForce, difficulty: 'diabolical'}
 ]
+
+export const difficultyLevels = {
+    easy: 0,
+    medium: 1,
+    hard: 2,
+    expert: 3,
+    diabolical: 4
+}
+export const getDifficultyLevel = (difficulty: string) => difficultyLevels[difficulty]
+
+export const getDifficulty = (techniqueType: string) => {
+    const difficulty = techniques.find(t => t.type === techniqueType)!.difficulty
+    return {difficulty, level: difficultyLevels[difficulty]}
+}
+export const getOverallDifficulty = (techniqueTypes: string[]) => {
+    const difficulty = [...techniques].reverse().find(t => techniqueTypes.includes(t.type))!.difficulty
+    return {difficulty, level: difficultyLevels[difficulty]}
+}
+
+export const getSolution = (board: SolverBoard) => {
+    return applyTechniques(board, ['bruteForce'])
+}
 
 /**
  * Runs techniques in order until one that works is found
  */
-export const runTechnique = (board) => {
+export const runTechnique = (board: SolverBoard) => {
     for(let technique of techniques){
         const result = technique.fn(board)
         if(result){
@@ -53,9 +77,9 @@ export const runTechnique = (board) => {
 }
 
 /**
- * Apply given techniques until the board is solved, or the techniques don't work anymore.
+ * Apply given techniques until the board is solved, or the techniques don't work anymore
  */
-export const applyTechniques = (board: Board, techniqueTypes: string[]): Board => {
+export const applyTechniques = (board: SolverBoard, techniqueTypes: string[]): Board => {
     while(true){
         if(isBoardFinished(board)){
             return board
@@ -76,7 +100,10 @@ export const applyTechniques = (board: Board, techniqueTypes: string[]): Board =
     }
 }
 
-export const applyBasicEliminations = (board): Board => {
+/**
+ * Basic elimination is just using the constraints of sudoku alone
+ */
+export const applyBasicEliminations = (board: SolverBoard): SolverBoard => {
     const res = allBasicEliminations(board)
     if(res){
         board = applyEffects(board, res.effects)
@@ -84,7 +111,10 @@ export const applyBasicEliminations = (board): Board => {
     return board
 }
 
-export const iterate = (board: Board): SolveResult | null => {
+/**
+ * Board needs to be prepared with all candidates before running iterate
+ */
+export const iterate = (board: SolverBoard): SolveResult | null => {
     const result = runTechnique(board)
     if(result){
         board = applyEffects(board, result.effects)
@@ -98,8 +128,7 @@ export const iterate = (board: Board): SolveResult | null => {
     return null
 }
 
-export const getTechniquesRequiredForSolvingBoard = (board: Board) => {
-    board = resetCandidates(board)
+export const getTechniquesRequiredForSolvingBoard = (board: SolverBoard) => {
     const techniques: string[] = []
     while(true){
         const res = iterate(board)
