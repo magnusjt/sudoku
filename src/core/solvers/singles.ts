@@ -10,6 +10,25 @@ import {
     removeCandidateFromAffectedPoints
 } from '../utils'
 
+function *fullHouseGenerator(board: Board){
+    for(let points of getAllHousesMinusFilledPoints(board)){
+        if(points.length === 1){
+            const point = points[0]
+            const cell = getBoardCell(board, point)
+            const candidates = cell.candidates
+            if(candidates.length === 1){ // Should always be true, but whatever...
+                yield {
+                    actors: [{point}],
+                    effects: [
+                        {type: 'value', point, number: cell.candidates[0]} as const,
+                        ...removeCandidateFromAffectedPoints(board, point, cell.candidates[0])
+                    ]
+                }
+            }
+        }
+    }
+}
+
 /**
  * There is only one candidate in a cell. Can be filled immediately.
  */
@@ -53,6 +72,9 @@ function *hiddenSingleGenerator(board: Board){
     }
     return null
 }
+
+export const fullHouse: Technique = (board: Board) => first(fullHouseGenerator(board))
+export const allFullHouses: Technique = (board: Board) => allResults(fullHouseGenerator(board))
 
 export const nakedSingle: Technique = (board: Board) => first(nakedSingleGenerator(board))
 export const allNakedSingles: Technique = (board: Board) => allResults(nakedSingleGenerator(board))
