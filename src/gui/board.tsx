@@ -1,6 +1,7 @@
 import { Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../core/types'
 import React from 'react'
 import { getAffectedPoints, getBoardCell, pointsEqual } from '../core/utils/sudokuUtils'
+import useEventListener from '@use-it/event-listener'
 
 const Candidates = (props) => {
     const height = props.height
@@ -13,10 +14,21 @@ const Candidates = (props) => {
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', fontSize: fontSize, fontFamily: 'monospace', color: '#666' }}>
             {props.candidates.map(number => {
-                const top = Math.round(Math.floor((number - 1) / 3) * boxSize + spacing)
-                const left = Math.round(Math.floor((number - 1) % 3) * boxSize + spacing)
+                const top = Math.round(Math.floor((number - 1) / 3) * boxSize)
+                const left = Math.round(Math.floor((number - 1) % 3) * boxSize)
                 return (
-                    <div style={{ position: 'absolute', top, left }} key={number}>
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top,
+                            left,
+                            width: Math.round(boxSize),
+                            padding: Math.round(spacing),
+                            display: 'flex',
+                            justifyContent: 'center'
+                        }}
+                        key={number}
+                    >
                         {number}
                     </div>
                 )
@@ -64,8 +76,9 @@ const CellDisplay = (props: CellDisplayProps) => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        width: 60,
-        height: 60
+        width: 80,
+        height: 80,
+        lineHeight: 1
     }
     const {x, y} = point
     if(x % 3 === 0 && x > 0){
@@ -78,7 +91,7 @@ const CellDisplay = (props: CellDisplayProps) => {
     return (
         <div style={style}>
             {cell.value === null
-                ? <Candidates candidates={cell.candidates} width={style.width} height={style.height} />
+                ? <Candidates candidates={cell.candidates} width={style.width-2} height={style.height-2} />
                 : <span style={{ fontSize: Math.floor(style.height/2) }}>{cell.value}</span>
             }
         </div>
@@ -103,17 +116,6 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
         ? getAffectedPoints(selectedCells[0])
         : []
 
-    const onKeyDown = (e: React.KeyboardEvent) => {
-        if(/\d/.test(e.key)){
-            const number = parseInt(e.key, 10)
-            if(number >= 1 && number <= 9){
-                onSetDigit(number, selectedCells)
-            }
-        }
-    }
-    const selectDigit = (digit: number) => {
-        onSetDigit(digit, selectedCells)
-    }
     const startSelect = (point, e: React.MouseEvent) => {
         if(e.ctrlKey){
             setSelectedCells(points => [...points, point])
@@ -131,8 +133,18 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
         setIsSelecting(false)
     }
 
+    useEventListener('mouseup', endSelect)
+    useEventListener('keydown', (e: KeyboardEvent) => {
+        if(/\d/.test(e.key)){
+            const number = parseInt(e.key, 10)
+            if(number >= 1 && number <= 9){
+                onSetDigit(number, selectedCells)
+            }
+        }
+    })
+
     return (
-        <div onKeyDown={onKeyDown} tabIndex={-1}>
+        <div style={{ height: '100%' }}>
             {board.map((row, y) => {
                 const cells = row.map((cell, x) => {
                     const point = {x, y}

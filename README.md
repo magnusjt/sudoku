@@ -9,7 +9,8 @@ GUI:
     - Ability to display which techniques are possible for the current board (but not show the solution)
     - Ability to skip past easy techniques
 - Auto removes affected digits
-- Checks for errors (does a simple check for stupid mistakes, doesn't check against solution)
+- Checks for errors (against actual solution)
+- Undo
 
 Supported solvers:
 - Basic sudoku eliminations
@@ -24,36 +25,34 @@ Supported solvers:
 
 Generate sudokus:
 - Find out if the sudoku has a unique solution
+- Require a certain technique
+- Choose difficulty (adds techniques into different difficulty buckets, and requires them for solutions randomly based on difficulty)
+
+Optimize solvers:
+- Don't generate rows/cols each time. Can be precalculated. (didn't actually do much)
 
 Bugs:
-- Selecting multiple cells bugs out if dragging outside the board
+- None (just kidding, or do I? yes, or maybe)
 
 # TODO
 
 GUI/Solver:
 - Solver actors/effects can display the candidates as well, not just the cell. But maybe it's nice to have to work for it a bit?
 - Take into account the entered candidates?
-- Calc correct solution and show errors according to that, to prevent annoying mistakes
 
 GUI:
 - Digit selection outside of the grid (also important for mobile)
 - Choose a sudoku from pre generated
 - Save progress and/or total points etc. Server side or just local?
 - Input custom board
-- Undo
 - Eraser tool
 - Color tool
 
 Generate sudokus:
-- Require a certain technique (probably need to optimize the hell out of the solvers)
-- Choose difficulty (maybe add techniques into different difficulty buckets, and require them for solutions randomly based on difficulty)
-- Maybe consider generating a bunch of solutions offline. Don't know if it can be fast enough for real time.
 
 Optimize solvers:
-- NB: Not if readability is sacrificed
 - Use actual sets for difference, intersection, etc. There are often few points though, so might not be faster in all cases.
 - Candidates can probably be sets, idk.
-- Don't generate rows/cols each time. Can be precalculated.
 
 Add support for solvers (maybe skip the most advanced stuff?):
 - 2-string kite
