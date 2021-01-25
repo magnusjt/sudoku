@@ -2,9 +2,10 @@ import React from 'react'
 import { BoardDisplay } from './board'
 import { Solver } from './solver'
 import { Board, InputMode, Point, SolveResult } from '../core/types'
-import { applyInputValue, boardFromStr, prepareBoardForSolver } from '../core/sudoku'
+import { applyInputValue, boardFromStr, getTechniquesUntilNextValue, prepareBoardForSolver } from '../core/sudoku'
 import { getSolution, getTechniquesRequiredForSolvingBoard } from '../core/solve'
 import useEventListener from '@use-it/event-listener'
+import Paper from '@material-ui/core/Paper'
 
 let initialBoard = boardFromStr('500000930720900006001000000050002309000010800300057602005000090400103005000260000')
 console.log(getTechniquesRequiredForSolvingBoard(initialBoard))
@@ -16,6 +17,7 @@ export function App(){
     const [solveResult, setSolveResult] = React.useState<SolveResult | null>(null)
     const [solverEnabled, setSolverEnabled] = React.useState(false)
     const [inputMode, setInputMode] = React.useState<InputMode>('value')
+    const [hintsEnabled, setHintsEnabled] = React.useState(false)
     const solverBoard = React.useMemo(() => {
         if(solveResult === null){
             return prepareBoardForSolver(board)
@@ -23,6 +25,8 @@ export function App(){
             return solveResult.board
         }
     }, [board, solveResult])
+
+    const hints = React.useMemo(() => getTechniquesUntilNextValue(prepareBoardForSolver(board)), [board])
 
     const onSetSolveResult = (solveResult: SolveResult | null, boardBeforeSolve: Board) => {
         setBoard(boardBeforeSolve)
@@ -35,6 +39,9 @@ export function App(){
         }else{
             setSolverEnabled(true)
         }
+    }
+    const toggleHints = () => {
+        setHintsEnabled(x => !x)
     }
     const onSetDigit = (digit: number, points: Point[]) => {
         const nextBoard = applyInputValue(board, points, digit, inputMode)
@@ -55,12 +62,13 @@ export function App(){
         if(e.key.toLowerCase() === 's') setInputMode('candidates')
         if(e.key.toLowerCase() === 'n') onUndo()
         if(e.key.toLowerCase() === 'c') toggleSolver()
+        if(e.key.toLowerCase() === 'h') toggleHints()
     })
 
     return (
-        <div style={{ height: '100%' }}>
-            <div style={{ height: '100%', minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <div style={{ height: '100%' }}>
+        <div style={{ height: '100%', minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <div style={{ height: '100%', minHeight: 0, display: 'flex', padding: 16 }}>
+                <Paper style={{ height: '100%', padding: 16 }}>
                     <BoardDisplay
                         board={board}
                         solveResult={solveResult}
@@ -71,15 +79,25 @@ export function App(){
                     <button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</button>
                     <button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</button>
                     <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver (c)' : 'Show solver (c)'}</button>
-                </div>
+                    <button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</button>
+                    {hintsEnabled &&
+                        <div>
+                            <h4>Hints</h4>
+                            <p>Techniques that are required in order to place the next digit</p>
+                            <ul>
+                                {hints.map(t => <li>{t}</li>)}
+                            </ul>
+                        </div>
+                    }
+                </Paper>
                 {solverEnabled &&
-                    <div style={{ height: '100%' }}>
+                    <Paper style={{ height: '100%', padding: 16, marginLeft: 16 }}>
                         <Solver
                             board={solverBoard}
                             solveResult={solveResult}
                             onSolveResult={onSetSolveResult}
                         />
-                    </div>
+                    </Paper>
                 }
             </div>
         </div>

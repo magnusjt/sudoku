@@ -48,6 +48,10 @@ type CellDisplayProps = {
     solutionValue: number
 }
 
+export const actorColor = '#c5f6b0'
+export const setValueColor = '#85ffff'
+export const eliminationColor = '#b0c9f6'
+
 const CellDisplay = (props: CellDisplayProps) => {
     const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
     const {board, point, selected, affected, cell, highlightedNumber, solutionValue} = props
@@ -59,9 +63,9 @@ const CellDisplay = (props: CellDisplayProps) => {
     let bg = 'white'
 
     if(affected) bg = '#efefef'
-    if(hasElimination) bg = '#b0c9f6'
-    if(hasActor) bg = '#c5f6b0'
-    if(hasSetValue) bg = '#85ffff'
+    if(hasElimination) bg = eliminationColor
+    if(hasActor) bg = actorColor
+    if(hasSetValue) bg = setValueColor
     if(selected) bg = '#ffc0b0'
 
     if((cell.value && cell.value === highlightedNumber) || cell.candidates.some(c => c === highlightedNumber)){

@@ -66,7 +66,7 @@ export const prepareBoardForSolver = (board: Board): SolverBoard => {
 /**
  * Iterates solver until the next digit can be placed.
  */
-export const getTechniquesUntilNextValue = (board: Board) => {
+export const getTechniquesUntilNextValue = (board: SolverBoard) => {
     const techniques: string[] = []
 
     let res = solve.iterate(board)

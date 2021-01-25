@@ -37,6 +37,7 @@ Bugs:
 # TODO
 
 GUI/Solver:
+- 
 - Solver actors/effects can display the candidates as well, not just the cell. But maybe it's nice to have to work for it a bit?
 - Take into account the entered candidates?
 
