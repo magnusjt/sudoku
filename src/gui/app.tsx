@@ -3,21 +3,26 @@ import { BoardDisplay } from './board'
 import { Solver } from './solver'
 import { Board, InputMode, Point, SolveResult } from '../core/types'
 import { applyInputValue, boardFromStr, getTechniquesUntilNextValue, prepareBoardForSolver } from '../core/sudoku'
-import { getSolution, getTechniquesRequiredForSolvingBoard } from '../core/solve'
+import { getSolution } from '../core/solve'
 import useEventListener from '@use-it/event-listener'
 import Paper from '@material-ui/core/Paper'
+import Button from '@material-ui/core/Button'
+import { PuzzleSelect } from './puzzle-select'
+import { Dialog } from '@material-ui/core'
+import { BoardMetaData } from '../core/utils/getBoardMetaData'
 
-let initialBoard = boardFromStr('500000930720900006001000000050002309000010800300057602005000090400103005000260000')
-console.log(getTechniquesRequiredForSolvingBoard(initialBoard))
-const solutionBoard = getSolution(initialBoard)
+const dummyBoard = boardFromStr('000000000000000000000000000000000000000000000000000000000000000000000000000000000')
 
 export function App(){
+    const [initialBoard, setInitialBoard] = React.useState(dummyBoard)
     const [board, setBoard] = React.useState(initialBoard)
+    const solutionBoard = React.useMemo(() => getSolution(initialBoard), [initialBoard])
     const [boardStack, setBoardStack] = React.useState<Board[]>([])
     const [solveResult, setSolveResult] = React.useState<SolveResult | null>(null)
     const [solverEnabled, setSolverEnabled] = React.useState(false)
     const [inputMode, setInputMode] = React.useState<InputMode>('value')
     const [hintsEnabled, setHintsEnabled] = React.useState(false)
+    const [puzzleSelectOpen, setPuzzleSelectOpen] = React.useState(false)
     const solverBoard = React.useMemo(() => {
         if(solveResult === null){
             return prepareBoardForSolver(board)
@@ -56,6 +61,13 @@ export function App(){
         setBoard(boardStack[0])
         setBoardStack(stack => stack.slice(1))
     }
+    const onPuzzleSelect = (puzzle: BoardMetaData) => {
+        const nextBoard = boardFromStr(puzzle.boardData)
+        setInitialBoard(nextBoard)
+        setBoard(nextBoard)
+        setSolveResult(null)
+        setPuzzleSelectOpen(false)
+    }
 
     useEventListener('keydown', (e: KeyboardEvent) => {
         if(e.key.toLowerCase() === 'a') setInputMode('value')
@@ -68,30 +80,48 @@ export function App(){
     return (
         <div style={{ height: '100%', minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
             <div style={{ height: '100%', minHeight: 0, display: 'flex', padding: 16 }}>
-                <Paper style={{ height: '100%', padding: 16 }}>
-                    <BoardDisplay
-                        board={board}
-                        solveResult={solveResult}
-                        onSetDigit={onSetDigit}
-                        solutionBoard={solutionBoard}
-                    />
-                    <button onClick={() => setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</button>
-                    <button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</button>
-                    <button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</button>
-                    <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver (c)' : 'Show solver (c)'}</button>
-                    <button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</button>
-                    {hintsEnabled &&
-                        <div>
-                            <h4>Hints</h4>
-                            <p>Techniques that are required in order to place the next digit</p>
-                            <ul>
-                                {hints.map(t => <li>{t}</li>)}
-                            </ul>
+                <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                    <Paper style={{ padding: 16, marginBottom: 16 }}>
+                        <div style={{ display: 'flex' }}>
+                            <div style={{ marginRight: 16 }}>
+                                <Button color='primary' variant='contained' onClick={() => setPuzzleSelectOpen(true)}>
+                                    Select puzzle
+                                </Button>
+                            </div>
+                            <div>
+                                <Button color='secondary' variant='contained'>
+                                    Save
+                                </Button>
+                            </div>
                         </div>
-                    }
+                    </Paper>
+                    <Paper style={{ padding: 16 }}>
+                        <BoardDisplay
+                            board={board}
+                            solveResult={solveResult}
+                            onSetDigit={onSetDigit}
+                            solutionBoard={solutionBoard}
+                        />
+                        <button onClick={() => setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</button>
+                        <button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</button>
+                        <button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</button>
+                        <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver (c)' : 'Show solver (c)'}</button>
+                        <button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</button>
+                    </Paper>
+                </div>
+                {hintsEnabled &&
+                <Paper style={{ height: '100%', width: 300, padding: 16, marginLeft: 16, overflowY: 'auto' }}>
+                    <div>
+                        <h3>Hints</h3>
+                        <p>If all candidates are placed in the current board, the following techniques are required to get the next digit</p>
+                        <ul>
+                            {hints.map(t => <li>{t}</li>)}
+                        </ul>
+                    </div>
                 </Paper>
+                }
                 {solverEnabled &&
-                    <Paper style={{ height: '100%', padding: 16, marginLeft: 16 }}>
+                    <Paper style={{ height: '100%', width: 300, padding: 16, marginLeft: 16, overflowY: 'auto' }}>
                         <Solver
                             board={solverBoard}
                             solveResult={solveResult}
@@ -100,6 +130,18 @@ export function App(){
                     </Paper>
                 }
             </div>
+            <Dialog
+                fullWidth
+                maxWidth={'lg'}
+                open={puzzleSelectOpen}
+                onClose={() => setPuzzleSelectOpen(false)}
+            >
+                <Paper style={{ padding: 16 }}>
+                    <PuzzleSelect
+                        onPuzzleSelect={onPuzzleSelect}
+                    />
+                </Paper>
+            </Dialog>
         </div>
     )
 }

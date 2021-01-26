@@ -148,7 +148,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
     })
 
     return (
-        <div style={{ height: '100%' }}>
+        <div>
             {board.map((row, y) => {
                 const cells = row.map((cell, x) => {
                     const point = {x, y}

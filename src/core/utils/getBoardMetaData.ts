@@ -2,7 +2,17 @@ import { Board } from '../types'
 import { getOverallDifficulty, getTechniquesRequiredForSolvingBoard } from '../solve'
 import { prepareBoardForSolver } from '../sudoku'
 
-export const getBoardMetaData = (board: Board) => {
+export type BoardMetaData = {
+    techniques: string[]
+    difficulty: {
+        level: number
+        difficulty: string
+    }
+    givens: number
+    boardData: string
+}
+
+export const getBoardMetaData = (board: Board): BoardMetaData => {
     board = prepareBoardForSolver(board)
     const techniques = getTechniquesRequiredForSolvingBoard(board)
     const difficulty = getOverallDifficulty(techniques)

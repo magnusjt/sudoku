@@ -38,7 +38,7 @@ export const Solver = (props: SolverProps) => {
     }, [board, skippedTechniques, onSolveResult])
 
     return (
-        <div style={{ height: '100%', minWidth: 250 }}>
+        <div>
             <h3>Solver</h3>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
                 <Button color='primary' variant='outlined' fullWidth onClick={iterate}>Iterate</Button>
