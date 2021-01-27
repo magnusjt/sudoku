@@ -77,7 +77,7 @@ const getChains = (graph: Graph) => {
  * 4  5  4  5
  * 5  4  5  4
  *
- * So if any cells length 4+2n apart has cells they see in common, we can eliminate the pair candidates from that cell.
+ * So if any cells in the chain length 3+2n apart has cells they see in common, we can eliminate the pair candidates from the cells in common.
  * Just like a normal naked pair actually, but with more steps.
  */
 function *remotePairGenerator(board: SolverBoard){
