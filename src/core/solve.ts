@@ -4,7 +4,7 @@ import { fullHouse, hiddenSingle, nakedSingle } from './solvers/singles'
 import { inversePointer, pointer } from './solvers/pointer'
 import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair, nakedQuad, nakedTriple } from './solvers/subset'
 import { jellyfish, swordfish, xWing } from './solvers/fish'
-import { uniqueRectangle } from './solvers/uniqueRectangle'
+import { uniqueRectangle1 } from './solvers/uniqueRectangle'
 import { skyscraper } from './solvers/skyscraper'
 import { emptyRectangle } from './solvers/emptyRectangle'
 import { xyWing, xyzWing } from './solvers/wing'
@@ -12,7 +12,7 @@ import { isBoardFinished } from './utils/sudokuUtils'
 import { unique } from './utils/misc'
 import { applyEffects } from './utils/effects'
 import { bruteForce } from './solvers/bruteForce'
-import { remotePairChain } from './solvers/chains'
+import { remotePairChain, xyChain } from './solvers/chains'
 
 export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'basic', fn: basicElimination, difficulty: 'easy'},
@@ -28,15 +28,16 @@ export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'hiddenTriple', fn: hiddenTriple, difficulty: 'hard'},
     {type: 'hiddenQuad', fn: hiddenQuad, difficulty: 'hard'},
     {type: 'xwing', fn: xWing, difficulty: 'hard'},
-    {type: 'uniqueRectangle', fn: uniqueRectangle, difficulty: 'expert'},
     {type: 'skyscraper', fn: skyscraper, difficulty: 'expert'},
+    {type: 'uniqueRectangle1', fn: uniqueRectangle1, difficulty: 'expert'},
     {type: 'emptyRectangle', fn: emptyRectangle, difficulty: 'expert'},
     {type: 'xywing', fn: xyWing, difficulty: 'expert'},
     {type: 'xyzwing', fn: xyzWing, difficulty: 'expert'},
     {type: 'swordfish', fn: swordfish, difficulty: 'expert'},
-    {type: 'jellyfish', fn: jellyfish, difficulty: 'expert'},
-    {type: 'remotePairChain', fn: remotePairChain, difficulty: 'diabolical'},
-    {type: 'bruteForce', fn: bruteForce, difficulty: 'diabolical'}
+    {type: 'jellyfish', fn: jellyfish, difficulty: 'master'},
+    {type: 'remotePairChain', fn: remotePairChain, difficulty: 'master'},
+    {type: 'xyChain', fn: xyChain, difficulty: 'master'},
+    {type: 'bruteForce', fn: bruteForce, difficulty: 'yoda'}
 ]
 
 export const difficultyLevels = {
@@ -44,7 +45,8 @@ export const difficultyLevels = {
     medium: 1,
     hard: 2,
     expert: 3,
-    diabolical: 4
+    master: 4,
+    yoda: 5
 }
 export const getDifficultyLevel = (difficulty: string) => difficultyLevels[difficulty]
 

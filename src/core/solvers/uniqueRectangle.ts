@@ -1,11 +1,18 @@
 import { SolverBoard, Point, Technique } from '../types'
-import { getAllRows, getBoardCell, getBoxNumber, getColumn, pointsEqual } from '../utils/sudokuUtils'
+import {
+    getAllRows,
+    getBoardCell,
+    getBoxNumber,
+    getColumn,
+    getPointsWithNCandidates,
+    pointsEqual
+} from '../utils/sudokuUtils'
 import { difference, groupBy, unique, uniqueBy } from '../utils/misc'
 import { removeCandidatesFromPoints } from '../utils/effects'
 
 const findNakedPairs = (board: SolverBoard, points: Point[]) => {
     const pairs: {points: Point[], candidates: number[]}[] = []
-    const pointsWith2Cands = points.filter(p => getBoardCell(board, p).candidates.length === 2)
+    const pointsWith2Cands = getPointsWithNCandidates(board, points, 2)
 
     for(let i = 0; i < pointsWith2Cands.length; i++){
         for(let j = i+1; j < pointsWith2Cands.length; j++){
@@ -20,6 +27,8 @@ const findNakedPairs = (board: SolverBoard, points: Point[]) => {
 }
 
 /**
+ * TODO: This can be written better. No need to look for all those pairs
+ *
  * pairs of numbers in a rectangle shape cannot only contain those pairs.
  * Otherwise the sudoku can't be unique.
  * Only applies if there's only two boxes in play.
@@ -33,7 +42,7 @@ const findNakedPairs = (board: SolverBoard, points: Point[]) => {
  * TODO: Type 6: See if one of the rectangle candidates form an x-wing. If so, it must be placed on two points diagonally. If this removes all other candidates from the rectangle, it is invalid, and so can be eliminated.
  * TODO: Hidden, avoidable 1/2, BUG, missing candidates. These seem a bit too exotic tbh.
  */
-export const uniqueRectangle: Technique = (board: SolverBoard) => {
+export const uniqueRectangle1: Technique = (board: SolverBoard) => {
     for(let points of getAllRows()){
         const pairs = findNakedPairs(board, points)
         for(let pair of pairs){
