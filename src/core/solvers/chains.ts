@@ -131,7 +131,7 @@ const getAllLinks = (table: Table, point: Point) => {
 }
 
 const getLinkKey = (point, cand) => {
-    return `${getPointKey(point)}${cand}`
+    return `${getPointKey(point)}${cand}` // Avoids visiting the same point with same cand twice
 }
 
 /**

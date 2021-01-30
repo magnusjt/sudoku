@@ -18,10 +18,15 @@ Supported solvers:
 - Pointers / inverse pointers (also called locked candidates either pointing or claiming)
 - Subsets (naked/hidden pair, triple, quad)
 - Fish (x-wing, swordfish, jellyfish)
-- xy-wing
-- xyz-wing
+- xy wing
+- xyz wing
 - Unique rectangle type 1
 - Empty rectangle, also with 2 candidates
+- Skyscraper
+- remote pair chain
+- x chain
+- xy chain
+- Brute force
 
 Generate sudokus:
 - Find out if the sudoku has a unique solution
@@ -64,10 +69,9 @@ Add support for solvers (maybe skip the most advanced stuff?):
 - Unique rectangle with missing candidates (requires checking what digits are given)
 - Avoidable rectangle 1-2
 - BUG+1
-- w-wing
+- w-wing (a chain?)
 - sue de coq (two-sector disjoint subsets)
 - Coloring (basically chains)
-- Chains
+- More Chains
 - ALS (almost locked set. Find the one thing missing for a different technique, and use that in a chain)
 - Various crazy shiz that no human would do that is just about the same as brute force
-- Brute force

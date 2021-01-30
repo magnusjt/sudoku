@@ -6,7 +6,7 @@
  * As usual, the weird naming in sudoku makes it harder to understand, so forget about the empty rectangle, and focus on the row and column instead.
  *
  * It comes down to this: If either the column or the row is eliminated, what remains is a pointer.
- * We can abuse this by looking for naked pairs where one cell of the pair sees the row or column in the box.
+ * We can abuse this by looking for conjugate pairs (2 candidates in a house) where one cell of the pair sees the row or column in the box.
  * If the pair candidate is in this cell, we have a pointer
  * If the pair candidate is in the other cell, we can do basic eliminations
  * If the pointer and the basic elimination sees the same cell, the candidate can be removed from that cell
