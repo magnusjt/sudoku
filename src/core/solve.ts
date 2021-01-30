@@ -15,39 +15,41 @@ import { bruteForce } from './solvers/bruteForce'
 import { remotePairChain, xChain, xyChain } from './solvers/chains'
 
 export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
-    {type: 'basic', fn: basicElimination, difficulty: 'easy'},
-    {type: 'fullHouse', fn: fullHouse, difficulty: 'easy'},
-    {type: 'hiddenSingle', fn: hiddenSingle, difficulty: 'easy'},
+    {type: 'basic', fn: basicElimination, difficulty: 'beginner'},
+    {type: 'fullHouse', fn: fullHouse, difficulty: 'beginner'}, // Easy newspaper style
+    {type: 'hiddenSingle', fn: hiddenSingle, difficulty: 'easy'}, // Can be easy or hard tbh, but with highlighting it's often easy
     {type: 'pointer', fn: pointer, difficulty: 'medium'},
     {type: 'inversePointer', fn: inversePointer, difficulty: 'medium'},
-    {type: 'nakedSingle', fn: nakedSingle, difficulty: 'medium'},
+    {type: 'nakedSingle', fn: nakedSingle, difficulty: 'medium'}, // Note: Fullhouse is included earlier, so this naked single might actually be very hard to find sometimes
     {type: 'nakedPair', fn: nakedPair, difficulty: 'medium'},
-    {type: 'nakedTriple', fn: nakedTriple, difficulty: 'hard'},
-    {type: 'nakedQuad', fn: nakedQuad, difficulty: 'hard'},
     {type: 'hiddenPair', fn: hiddenPair, difficulty: 'hard'},
+    {type: 'xwing', fn: xWing, difficulty: 'hard'}, // When you know about it, easier than triples
+    {type: 'nakedTriple', fn: nakedTriple, difficulty: 'hard'},
     {type: 'hiddenTriple', fn: hiddenTriple, difficulty: 'hard'},
-    {type: 'hiddenQuad', fn: hiddenQuad, difficulty: 'hard'},
-    {type: 'xwing', fn: xWing, difficulty: 'hard'},
-    {type: 'skyscraper', fn: skyscraper, difficulty: 'expert'},
-    {type: 'uniqueRectangle1', fn: uniqueRectangle1, difficulty: 'expert'},
-    {type: 'emptyRectangle', fn: emptyRectangle, difficulty: 'expert'},
-    {type: 'xywing', fn: xyWing, difficulty: 'expert'},
-    {type: 'xyzwing', fn: xyzWing, difficulty: 'expert'},
-    {type: 'swordfish', fn: swordfish, difficulty: 'expert'},
-    {type: 'jellyfish', fn: jellyfish, difficulty: 'master'},
-    {type: 'remotePairChain', fn: remotePairChain, difficulty: 'master'},
-    {type: 'xChain', fn: xChain, difficulty: 'master'},
-    {type: 'xyChain', fn: xyChain, difficulty: 'master'},
-    {type: 'bruteForce', fn: bruteForce, difficulty: 'yoda'}
+    {type: 'skyscraper', fn: skyscraper, difficulty: 'expert'}, // A bit harder than x-wing. A bit more chainy
+    {type: 'uniqueRectangle1', fn: uniqueRectangle1, difficulty: 'expert'}, // Type 1 is quite easy to spot when you know about it. The others, not so much.
+    {type: 'nakedQuad', fn: nakedQuad, difficulty: 'expert'}, // At least it's naked, but 4 is a lot :P
+    {type: 'emptyRectangle', fn: emptyRectangle, difficulty: 'expert'}, // Not too hard to spot when you know about it. A bit chainy
+    {type: 'swordfish', fn: swordfish, difficulty: 'expert'}, // Quite hard to spot, but easier with highlighting
+    {type: 'hiddenQuad', fn: hiddenQuad, difficulty: 'expert'}, // Quite hard to spot imo, but not chainy
+    {type: 'xywing', fn: xyWing, difficulty: 'artisan'}, // Chainy. Quite hard to spot
+    {type: 'xyzwing', fn: xyzWing, difficulty: 'artisan'}, // Same as xywing, but even more digits, so a bit harder.
+    {type: 'jellyfish', fn: jellyfish, difficulty: 'artisan'}, // Highlights is a must for jellyfish
+    {type: 'remotePairChain', fn: remotePairChain, difficulty: 'master'}, // Easy chain to spot if you have all candidates
+    {type: 'xChain', fn: xChain, difficulty: 'master'}, // Let's have a stare shall we?
+    {type: 'xyChain', fn: xyChain, difficulty: 'master'}, // Stare even harder...
+    {type: 'bruteForce', fn: bruteForce, difficulty: 'yoda'} // Stare for days
 ]
 
 export const difficultyLevels = {
-    easy: 0,
-    medium: 1,
-    hard: 2,
-    expert: 3,
-    master: 4,
-    yoda: 5
+    beginner: 0,
+    easy: 1,
+    medium: 2,
+    hard: 3,
+    expert: 4,
+    artisan: 5,
+    master: 6,
+    jedi: 7
 }
 export const getDifficultyLevel = (difficulty: string) => difficultyLevels[difficulty]
 
