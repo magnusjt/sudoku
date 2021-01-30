@@ -1,19 +1,16 @@
-import { Board, EliminationEffect, Point, SolverBoard, Technique, ValueEffect } from '../types'
+import { EliminationEffect, Point, SolverBoard, Technique, ValueEffect } from '../types'
 import {
     removeCandidateFromAffectedPoints,
-    removeCandidateFromPoints,
     removeCandidatesFromPoints
 } from '../utils/effects'
-import { allResults, first, getCombinations, intersection } from '../utils/misc'
+import { first, unique } from '../utils/misc'
 import {
     allCandidates, cloneBoard,
-    getAffectedPoints, getAffectedPointsInCommon,
+    getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
     getAllPoints, getAllUnfilledPoints,
-    getBoardCell, getBox, getBoxNumber, getColumn, getPointsWithCandidates,
-    getPointsWithNCandidates, getRow,
-    pointsEqual
+    getBoardCell,
+    getPointsWithNCandidates,
 } from '../utils/sudokuUtils'
-import { allHiddenSingles } from './singles'
 
 const getPointKey = (point: Point) => `${point.y}-${point.x}`
 
@@ -58,7 +55,49 @@ const getLinks = (effectsIfTrue: EliminationEffect[], effectsIfFalse: ValueEffec
     ]
 }
 
-const createTable = (board: Board, points: Point[], cands: number[]) => {
+/**
+ * Find all naked and hidden singles that result from a strong link (e.g. where a candidate is NOT set).
+ * Hinges on all actual singles being found before doing this.
+ * Also: I guess one could do a lot more here, but singles are kind of the "direct" effect.
+ * TODO: We should really check that the singles we find are part of the affected cells of the strong link, but it probably won't matter (?)
+ *
+ * NB: We need to find naked singles because eliminating a candidate for a strong link may mean the strong link
+ * is between the candidate and another candidate in the cell (which is now a naked single)
+ */
+const getSingleEffects = (board: SolverBoard) => {
+    const effects: ValueEffect[] = []
+
+    // Hidden singles
+    for(let points of getAllHousesMinusFilledPoints(board)){
+        for(let cand = 1; cand <= 9; cand++){
+            const pointsWithCand = points.filter(p => getBoardCell(board, p).candidates.some(c => c === cand))
+            if(pointsWithCand.length === 1){
+                const point = pointsWithCand[0]
+                effects.push({type: 'value', point, number: cand} as const)
+            }
+        }
+    }
+
+    // Naked singles
+    getPointsWithNCandidates(board, getAllPoints(), 1)
+        .forEach(point => {
+            const cand = getBoardCell(board, point).candidates[0]
+            effects.push({type: 'value', point, number: cand} as const)
+        })
+
+    // Should really dedup results here
+
+    return effects
+}
+
+/**
+ * The table concept I glanced from hodoku. Called trebors tables or something like that.
+ * The idea is to record what effects occur when a candidate is either set or not set. Only direct effects are considered.
+ * Direct in this case is hidden/naked singles and just basic eliminations.
+ * When a candidate is set, we can use it to make weak links towards all its effected cells. Effects are basic eliminations.
+ * When a candidate is not set, we can use it to make strong links towards all its effected cells. Effects are naked/hidden singles here.
+ */
+const createTable = (board: SolverBoard, points: Point[], cands: number[]) => {
     board = cloneBoard(board)
     const table: Table = {}
     for(let point of points){
@@ -67,15 +106,13 @@ const createTable = (board: Board, points: Point[], cands: number[]) => {
             if(!cell.candidates.includes(cand)){
                 continue
             }
+
             const effectsIfTrue = removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
 
-            cell.candidates = cell.candidates.filter(c => c !== cand)
-
+            // Temporarily remove candidate to find effectsIfFalse
             // NB: Will find effects on totally unrelated hidden singles as well, so don't run this until all hidden singles are found
-            const result = allHiddenSingles(board)
-            const effectsIfFalse: ValueEffect[] = result !== null
-                ? result.effects.filter(eff => eff.type === 'value') as ValueEffect[] // Only set values are direct effects
-                : []
+            cell.candidates = cell.candidates.filter(c => c !== cand)
+            const effectsIfFalse = getSingleEffects(board)
             cell.candidates.push(cand)
 
             if(effectsIfTrue.length > 0 || effectsIfFalse.length > 0){
@@ -93,43 +130,53 @@ const getAllLinks = (table: Table, point: Point) => {
     return item ? item.links : []
 }
 
+const getLinkKey = (point, cand) => {
+    return `${getPointKey(point)}${cand}`
+}
+
+/**
+ * A chain alternates between weak and strong links. This ensures the next step follows the one before it.
+ * (Set value -> (weak) -> dont't set value -> (strong) -> set value -> etc).
+ *
+ * TODO: Check shortest chains first
+ */
 const iterateChainsInTable = (table: Table, keepLink, check) => {
     const followLink = (link, requiredType = 'weak', prevChain, seen) => {
-        const key = getPointKey(link.next.point)
+        const key = getLinkKey(link.next.point, link.next.cand)
         if(seen.has(key)){
             return false
         }
-        seen = new Set([...seen]).add(getPointKey(link.prev.point))
-
-        // Only check if link is weak. Strong is valid in all cases.
-        if(link.type === 'weak'){
-            if(requiredType === 'strong'){
-                return false
-            }
-            requiredType = 'strong'
-        } else {
-            requiredType = 'weak'
-        }
+        // The cand is now set/removed when starting from prev point. Prevent it from being set/removed again
+        // If we're to implement forcing chains, this won't work as we need to look for contradictions.
+        // Can probably implement that around here.
+        seen = new Set([...seen]).add(getLinkKey(link.prev.point, link.prev.cand))
 
         if(!keepLink(link)){
             return false
         }
 
         const chain = [...prevChain, link]
-        if(chain.length >= 8){
-            return false // Longer chains are too hard
+        if(chain.length >= 12){  // Need a better limit. Links between candidates in cells are not too taxing on the brain, but links between cells are.
+            return false
         }
         if(check(chain)){
             return true
         }
 
+        // Although a strong link can be followed by a strong or weak link (as a strong link can be used as a weak link),
+        // we have to choose the weak link. This is because link types must be alternating (the candidate is not set -> leads to set -> not set -> etc).
+        // Afterall, we record both strong and weak links in the table,
+        // so if a link is strong, we have the weak counterpart recorded anyways.
+        const nextLinkType = link.type === 'strong' ? 'weak' : 'strong'
         const cand = link.next.cand
-        const nextLinks = getAllLinks(table, link.next.point).filter(link => link.prev.cand === cand)
+
+        const nextLinks = getAllLinks(table, link.next.point)
+            .filter(link => link.prev.cand === cand && link.type === nextLinkType)
+
         for(let nextLink of nextLinks){
             const done = followLink(nextLink, requiredType, chain, seen)
             if(done) return true
         }
-
     }
 
     for(let { links } of Object.values(table)){
@@ -138,62 +185,6 @@ const iterateChainsInTable = (table: Table, keepLink, check) => {
             if(done) return true
         }
     }
-}
-
-type Graph = {
-    [key: string]: {
-        point: Point
-        connected: Point[]
-    }
-}
-
-/**
- * Create a graph with all connected points.
- * Only include the given points in the graph.
- */
-const buildGraph = (allowedPoints: Point[], isLinked: (a: Point, b: Point) => boolean) => {
-    const graph = {}
-
-    const build = (point) => {
-        const key = getPointKey(point)
-        if(graph[key]) return
-
-        const connected = intersection(getAffectedPoints(point), allowedPoints, pointsEqual)
-            .filter(p => isLinked(point, p))
-        graph[key] = {point, connected}
-
-        connected.forEach(build)
-    }
-
-    allowedPoints.forEach(build)
-    return graph
-}
-
-/**
- * Creates all possible chains from a graph. This might explode, but let's see...
- */
-const getChains = (graph: Graph) => {
-    const getChainsStartingFromPoint = (point: Point, seen) => {
-        const key = getPointKey(point)
-        if(seen.has(key)) return [[]] // Return one empty chain. This makes it easier to handle the case where we are at the last point in a chain.
-        seen.add(key)
-
-        const connected = graph[key].connected
-        const chains: Point[][] = []
-        for(let point2 of connected){
-            for(let chain of getChainsStartingFromPoint(point2, seen)){
-                chains.push([point, ...chain])
-            }
-        }
-        return chains
-    }
-
-    const chains: Point[][] = []
-    for(let {point} of Object.values(graph)){
-        const subChains = getChainsStartingFromPoint(point, new Set())
-        chains.push(...subChains)
-    }
-    return chains
 }
 
 /**
@@ -207,51 +198,74 @@ const getChains = (graph: Graph) => {
  *
  * So if any cells in the chain length 3+2n apart has cells they see in common, we can eliminate the pair candidates from the cells in common.
  * Just like a normal naked pair actually, but with more steps.
+ *
+ * This implementation is basically the same as for xy chains, but with the restriction that all cells in
+ * the chain must have the same candidates. This ensures that the result is actually a remote pair instead of an xy chain.
+ * See comments below for more details.
  */
-function *remotePairChainGenerator(board: SolverBoard){
+function *remotePairChainGenerator2(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
+    const table = createTable(board, biValuePoints, allCandidates)
 
-    for(let cands of getCombinations(allCandidates, 2)){
-        const points = getPointsWithCandidates(board, biValuePoints, cands)
-        if(points.length < 4) continue
-
-        const graph = buildGraph(points, () => true)
-        const chains = getChains(graph)
-            .filter(x => x.length >= 4)
-            .sort((a, b) => a.length - b.length)
-
-        for(let chain of chains){
-            for(let i = 0; i < chain.length; i++){
-                for(let j = i + 3; j < chain.length; j += 2){
-                    const point1 = chain[i]
-                    const point2 = chain[j]
-                    const affected = getAffectedPointsInCommon([point1, point2])
-                    const cands = getBoardCell(board, point1).candidates
-                    const effects = removeCandidatesFromPoints(board, affected, cands)
-                    const actors = chain.slice(i, j + 1).map(point => ({point}))
-                    if(effects.length > 0){
-                        yield {effects, actors}
-                    }
-                }
-            }
-        }
+    let result: any = null
+    const keepLink = (link) => {
+        // Every link is between pairs
+        return unique([
+            ...getBoardCell(board, link.prev.point).candidates,
+            ...getBoardCell(board, link.next.point).candidates,
+        ]).length === 2
     }
+    iterateChainsInTable(table, keepLink, (chain: Link[]) => {
+        if(chain.length <= 2) return false;
+        const firstLink = chain[0]
+        const lastLink = chain[chain.length - 1]
+        // Starts and ends with strong link. Read this as:
+        // If we DON'T start with the candidate in the first cell of the chain
+        // then the last cell will definitely contain the candidate
+        // So the candidate is in either the first or the last cell
+        if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
+            return false
+        }
+        // Make sure that the ending candidate is actually the same as the starting candidate
+        if(firstLink.prev.cand !== lastLink.next.cand){
+            return false
+        }
+        const start = firstLink.prev.point
+        const end = lastLink.next.point
+        // Yes, we can eliminate both candidates.
+        // Why? Because we already check that all cells in the chain have the same two candidates.
+        // We can then start with the other candidate and arrive at the exact same conclusion.
+        const cands = getBoardCell(board, start).candidates
+        const affected = getAffectedPointsInCommon([start, end])
+        const effects = removeCandidatesFromPoints(board, affected, cands)
+        const points = [
+            chain[0].prev.point,
+            ...chain.map(link => link.next.point),
+        ]
+        const actors = points.map(point => ({point}))
+        if(effects.length > 0){
+            result = {effects, actors}
+            return true
+        }
+    })
 
-    return null
+    return result
 }
 
-// Something wrong here still...
+/**
+ * x chains consider only one candidate in a chain.
+ * It should start and end with a strong link.
+ * An initial strong link means we start by NOT choosing the candidate, then follow the chain.
+ * An ending strong link means that the final value will definitely be the candidate given the initial strong link.
+ */
 function *xChainGenerator(board: SolverBoard){
     const unfilledPoints = getAllUnfilledPoints(board)
     const table = createTable(board, unfilledPoints, allCandidates)
 
     let result: any = null
-    const keepLink = (link: Link) => {
-        return link.prev.cand === link.next.cand
-    }
+    const keepLink = (link: Link) => link.prev.cand === link.next.cand
     iterateChainsInTable(table, keepLink, (chain: Link[]) => {
         if(chain.length <= 2) return false;
-        if(chain.length%2 === 0) return false; // Need to be alternating
         const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
         if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
@@ -272,88 +286,56 @@ function *xChainGenerator(board: SolverBoard){
             return true
         }
     })
+
     return result
 }
 
-const candidatesEqual = (a, b) => a === b
-
 /**
- * xy chain are cells with only two candidates in them, weakly linked.
- * The two ends of the chain share a candidate
- * The other two candidates, if set, must lead to the other end of the chain being the shared candidate
- * Any cells that see both ends of the chain can eliminate the shared candidate
+ * xy chains consider only bi value points
+ * Like x chains and remote pairs, they must start and end with strong links
+ * Also, the initial and final links must be on the same candidate.
+ * This ensures that the candidate is in one of those cells.
  */
 function *xyChainGenerator(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
+    const table = createTable(board, biValuePoints, allCandidates)
 
-    // Assumes that there are only two candidates in each cell in the chain
-    const chainEndsWithDigit = (chain: Point[], cand: number, endingCand: number) => {
-        for(let i = 0; i < chain.length - 1; i++){
-            const cell1 = getBoardCell(board, chain[i])
-            const cell2 = getBoardCell(board, chain[i + 1])
-            const isInBoth = cell1.candidates.includes(cand) && cell2.candidates.includes(cand)
-            if(!isInBoth) return false
-
-            // eslint-disable-next-line no-loop-func
-            cand = cell2.candidates.filter(c => c !== cand)[0]
+    let result: any = null
+    const keepLink = () => true
+    iterateChainsInTable(table, keepLink, (chain: Link[]) => {
+        if(chain.length <= 2) return false;
+        const firstLink = chain[0]
+        const lastLink = chain[chain.length - 1]
+        if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
+            return false
         }
-        return cand === endingCand
-    }
-
-    // Build graph where cells are linked if they have at least one cand in common.
-    // This doesn't ensure the xy chain, but limits the number of chains a bit
-    const graph = buildGraph(biValuePoints, (point1, point2) => {
-        const cell1 = getBoardCell(board, point1)
-        const cell2 = getBoardCell(board, point2)
-
-        const commonCands = intersection(cell1.candidates, cell2.candidates, candidatesEqual)
-        return commonCands.length > 0
+        if(firstLink.prev.cand !== lastLink.next.cand){
+            return false
+        }
+        const start = firstLink.prev.point
+        const end = lastLink.next.point
+        const cand = firstLink.prev.cand
+        const affected = getAffectedPointsInCommon([start, end])
+        const effects = removeCandidatesFromPoints(board, affected, [cand])
+        const points = [
+            chain[0].prev.point,
+            ...chain.map(link => link.next.point),
+        ]
+        const actors = points.map(point => ({point}))
+        if(effects.length > 0){
+            result = {effects, actors}
+            return true
+        }
     })
 
-    const chains = getChains(graph)
-        .filter(chain => chain.length >= 3)
-        .sort((a, b) => a.length - b.length)
-
-    for(let chain of chains){
-        for(let i = 0; i < chain.length; i++){
-            for(let j = i + 2; j < chain.length; j += 1){
-                const possibleXYChain = chain.slice(i, j + 1)
-                const start = chain[i]
-                const end = chain[j]
-                const cands1 = getBoardCell(board, start).candidates
-                const cands2 = getBoardCell(board, end).candidates
-
-                const sharedCandidates = intersection(cands1, cands2, candidatesEqual)
-                if(sharedCandidates.length > 0){
-                    const sharedCandidate = sharedCandidates[0]
-                    const otherCandStart = getBoardCell(board, start).candidates.filter(c => c !== sharedCandidate)[0]
-                    const otherCandEnd = getBoardCell(board, end).candidates.filter(c => c !== sharedCandidate)[0]
-
-                    const isWeakForward = chainEndsWithDigit(possibleXYChain, otherCandStart, sharedCandidate)
-                    const isWeakBackward = chainEndsWithDigit([...possibleXYChain].reverse(), otherCandEnd, sharedCandidate)
-
-                    if(isWeakForward && isWeakBackward){
-                        const affected = getAffectedPointsInCommon([start, end])
-
-                        const effects = removeCandidateFromPoints(board, affected, sharedCandidate)
-                        const actors = possibleXYChain.map(point => ({point}))
-                        if(effects.length > 0){
-                            yield {effects, actors}
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    return null
+    return result
 }
 
-export const remotePairChain: Technique = (board: SolverBoard) => first(remotePairChainGenerator(board))
-export const allRemotePairChains: Technique = (board: SolverBoard) => allResults(remotePairChainGenerator(board))
+export const remotePairChain: Technique = (board: SolverBoard) => first(remotePairChainGenerator2(board))
+//export const allRemotePairChains: Technique = (board: SolverBoard) => allResults(remotePairChainGenerator(board))
 
 export const xChain: Technique = (board: SolverBoard) => first(xChainGenerator(board))
-export const allXChains: Technique = (board: SolverBoard) => allResults(xChainGenerator(board))
+//export const allXChains: Technique = (board: SolverBoard) => allResults(xChainGenerator(board))
 
 export const xyChain: Technique = (board: SolverBoard) => first(xyChainGenerator(board))
-export const allXyChains: Technique = (board: SolverBoard) => allResults(xyChainGenerator(board))
+//export const allXyChains: Technique = (board: SolverBoard) => allResults(xyChainGenerator(board))

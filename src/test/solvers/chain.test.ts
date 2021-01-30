@@ -44,15 +44,19 @@ test('xy chain 1', () => {
 
     expect(result).toMatchObject({
         effects: [
-            {type: 'elimination', point: {y: 6, x: 5}, numbers: [3]},
             {type: 'elimination', point: {y: 1, x: 3}, numbers: [3]},
             {type: 'elimination', point: {y: 2, x: 3}, numbers: [3]},
+            {type: 'elimination', point: {y: 6, x: 5}, numbers: [3]},
         ],
         actors: [
-            {point: {y: 1, x: 5}},
-            {point: {y: 4, x: 5}},
-            {point: {y: 4, x: 3}},
             {point: {y: 6, x: 3}},
+            {point: {y: 6, x: 3}},
+            {point: {y: 4, x: 3}},
+            {point: {y: 4, x: 3}},
+            {point: {y: 4, x: 5}},
+            {point: {y: 4, x: 5}},
+            {point: {y: 1, x: 5}},
+            {point: {y: 1, x: 5}},
         ]
     })
 })
