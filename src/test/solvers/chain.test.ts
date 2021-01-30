@@ -1,7 +1,8 @@
 import {input as remotePairChainInput1} from '../sudokus/remotePairChain'
+import {input as xChainInput1} from '../sudokus/xChain'
 import {input as xyChainInput1} from '../sudokus/xyChain'
 import { createTestBoard } from '../util'
-import { remotePairChain, xyChain } from '../../core/solvers/chains'
+import { remotePairChain, xChain, xyChain } from '../../core/solvers/chains'
 
 test('remote pair chain 1', () => {
     const board = createTestBoard(remotePairChainInput1)
@@ -14,6 +15,25 @@ test('remote pair chain 1', () => {
             {point: {y: 2, x: 0}},
             {point: {y: 2, x: 8}},
             {point: {y: 1, x: 6}},
+        ]
+    })
+})
+
+test('x chain 1', () => {
+    const board = createTestBoard(xChainInput1)
+    const result = xChain(board)
+
+    expect(result).toMatchObject({
+        effects: [
+            {type: 'elimination', point: {y: 3, x: 1}, numbers: [7]},
+        ],
+        actors: [
+            {point: {y: 0, x: 1}},
+            {point: {y: 0, x: 8}},
+            {point: {y: 1, x: 7}},
+            {point: {y: 6, x: 7}},
+            {point: {y: 6, x: 2}},
+            {point: {y: 3, x: 2}},
         ]
     })
 })

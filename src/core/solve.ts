@@ -12,7 +12,7 @@ import { isBoardFinished } from './utils/sudokuUtils'
 import { unique } from './utils/misc'
 import { applyEffects } from './utils/effects'
 import { bruteForce } from './solvers/bruteForce'
-import { remotePairChain, xyChain } from './solvers/chains'
+import { remotePairChain, xChain, xyChain } from './solvers/chains'
 
 export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'basic', fn: basicElimination, difficulty: 'easy'},
@@ -36,6 +36,7 @@ export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'swordfish', fn: swordfish, difficulty: 'expert'},
     {type: 'jellyfish', fn: jellyfish, difficulty: 'master'},
     {type: 'remotePairChain', fn: remotePairChain, difficulty: 'master'},
+    {type: 'xChain', fn: xChain, difficulty: 'master'},
     {type: 'xyChain', fn: xyChain, difficulty: 'master'},
     {type: 'bruteForce', fn: bruteForce, difficulty: 'yoda'}
 ]
