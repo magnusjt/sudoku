@@ -23,6 +23,7 @@ export function App(){
     const [inputMode, setInputMode] = React.useState<InputMode>('value')
     const [hintsEnabled, setHintsEnabled] = React.useState(false)
     const [puzzleSelectOpen, setPuzzleSelectOpen] = React.useState(false)
+    const [boardMetaData, setBoardMetaData] = React.useState<BoardMetaData | null>(null)
     const solverBoard = React.useMemo(() => {
         if(solveResult === null){
             return prepareBoardForSolver(board)
@@ -67,6 +68,7 @@ export function App(){
         setBoard(nextBoard)
         setSolveResult(null)
         setPuzzleSelectOpen(false)
+        setBoardMetaData(puzzle)
     }
 
     useEventListener('keydown', (e: KeyboardEvent) => {
@@ -96,6 +98,9 @@ export function App(){
                         </div>
                     </Paper>
                     <Paper style={{ padding: 16 }}>
+                        {boardMetaData &&
+                        <h4 style={{ margin: 0, paddingBottom: 16 }}>Puzzle: {boardMetaData.name} - Difficulty: {boardMetaData.difficulty.difficulty}</h4>
+                        }
                         <BoardDisplay
                             board={board}
                             solveResult={solveResult}

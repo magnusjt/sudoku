@@ -2,6 +2,7 @@ import React from 'react'
 import { BoardMetaData } from '../core/utils/getBoardMetaData'
 import Button from '@material-ui/core/Button'
 import { difficulties } from '../core/solve'
+import { LinearProgress } from '@material-ui/core'
 
 // yea I don't give a fuck about this for now.. :P
 let globalPuzzleData: BoardMetaData[] = [];
@@ -33,6 +34,12 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
         }
     }, [])
 
+    const puzzles = puzzleData
+        .filter(puzzle => puzzle.difficulty.difficulty === selectedDifficulty)
+        .sort((a, b) => a.techniques.length - b.techniques.length)
+
+    const maxNumberOfTechniques = Math.max(...puzzles.map(t => t.techniques.length))
+
     return (
         <div style={{ height: '600px', display: 'flex', flexDirection: 'column' }}>
             <div>
@@ -60,15 +67,34 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
             <div style={{ flex: '1 1 auto', minHeight: 0}}>
                 <div style={{ height: '100%', overflowY: 'auto'}}>
                     <table>
-                    {puzzleData.filter(puzzle => puzzle.difficulty.difficulty === selectedDifficulty).map(puzzle => {
+                        <thead>
+                            <th>#</th>
+                            <th>Name</th>
+                            <th>Intensity</th>
+                            {showTechniques &&
+                            <th>Techniques</th>
+                            }
+                        </thead>
+                    {puzzles.map((puzzle, i) => {
                         return (
                             <tr>
+                                <td>
+                                    {i+1}.
+                                </td>
                                 <td>
                                     <Button onClick={() => props.onPuzzleSelect(puzzle)}>{puzzle.name}</Button>
                                 </td>
                                 <td>
-                                    {showTechniques && puzzle.techniques.join(', ')}
+                                    <LinearProgress
+                                        variant={'determinate'}
+                                        value={Math.round(100 * puzzle.techniques.length / maxNumberOfTechniques)}
+                                    />
                                 </td>
+                                {showTechniques &&
+                                <td>
+                                    {puzzle.techniques.join(', ')}
+                                </td>
+                                }
                             </tr>
                         )
                     })}
