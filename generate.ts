@@ -1,19 +1,39 @@
 import { generateBoardsWithMaxGivens } from './src/core/generate'
-import { difficultyLevels } from './src/core/solve'
+import { techniques } from './src/core/solve'
 import { getBoardMetaData } from './src/core/utils/getBoardMetaData'
 import fs from 'fs'
+import { unique } from './src/core/utils/misc'
 
-let max = 10
-let n = 0
+const countPerDifficulty = unique(techniques.map(t => t.difficulty))
+    .reduce((x, d) => {
+        x[d] = 0
+        return x
+    }, {})
 
-for(let board of generateBoardsWithMaxGivens(40)){
+const countPerTechnique = techniques.map(t => t.type)
+    .reduce((x, t) => {
+        x[t] = 0
+        return x
+    }, {})
+
+for(let board of generateBoardsWithMaxGivens(50, true)){
     const meta = getBoardMetaData(board)
-    if(meta.difficulty.level >= difficultyLevels.hard){
-        fs.appendFileSync('./boards/boards.txt', JSON.stringify(meta) + '\n')
-        n++
-        console.log(meta)
+
+    if(countPerDifficulty[meta.difficulty.difficulty] >= 100){
+        const hasNeededTechnique = meta.techniques.some(t => {
+            return countPerTechnique[t] === 0
+        })
+        if(!hasNeededTechnique){
+            continue
+        }
     }
-    if(n >= max){
-        break
-    }
+    countPerDifficulty[meta.difficulty.difficulty]++
+    meta.techniques.forEach(t => {
+        countPerTechnique[t]++
+    })
+
+    console.log(countPerTechnique)
+    console.log(countPerDifficulty)
+
+    fs.appendFileSync('./boards/boards.txt', JSON.stringify(meta) + '\n')
 }

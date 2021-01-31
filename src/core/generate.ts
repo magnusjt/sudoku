@@ -28,7 +28,7 @@ const getEmptyBoard = () => {
     return board
 }
 
-export function *generateRandomBoards(seedBoardRefresh = 100){
+export function *generateRandomBoards(seedBoardRefresh = 10){
     let seedBoard = generateSeedBoard(getEmptyBoard(), randomOrder(allCandidates), 0, 0)
     let n = 0
 
@@ -44,8 +44,11 @@ export function *generateRandomBoards(seedBoardRefresh = 100){
     }
 }
 
-export function *generateBoardsWithMaxGivens(maxGivens = 40): Generator<Board>{
+export function *generateBoardsWithMaxGivens(maxGivens = 50, randomGivens: boolean = false): Generator<Board>{
     for(let {board, givens} of generateRandomBoards()){
+        if(randomGivens){
+            maxGivens = 30 + rand(20)
+        }
         if(givens <= maxGivens){
             yield board
         }

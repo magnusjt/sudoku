@@ -1,6 +1,7 @@
 import React from 'react'
 import { BoardMetaData } from '../core/utils/getBoardMetaData'
 import Button from '@material-ui/core/Button'
+import { difficulties } from '../core/solve'
 
 // yea I don't give a fuck about this for now.. :P
 let globalPuzzleData: BoardMetaData[] = [];
@@ -21,6 +22,9 @@ export type PuzzleSelectProps = {
 export const PuzzleSelect = (props: PuzzleSelectProps) => {
     const [puzzleData, setPuzzleData] = React.useState<BoardMetaData[]>(globalPuzzleData)
 
+    const [selectedDifficulty, setSelectedDifficulty] = React.useState('easy')
+    const [showTechniques, setShowTechniques] = React.useState(false)
+
     React.useEffect(() => {
         if(globalPuzzleData.length === 0) {
             loadPuzzleData().then(() => {
@@ -30,17 +34,47 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
     }, [])
 
     return (
-        <div>
-            {puzzleData.map(puzzle => {
-                return (
-                    <div>
-                        <Button onClick={() => props.onPuzzleSelect(puzzle)}>{puzzle.boardData}</Button>
+        <div style={{ height: '600px', display: 'flex', flexDirection: 'column' }}>
+            <div>
+                <div style={{ display: 'flex'}}>
+                {difficulties.map((difficulty) => {
+                    return (
                         <div>
-                            {puzzle.difficulty.difficulty}
+                            <Button
+                                onClick={() => setSelectedDifficulty(difficulty)}
+                                disabled={selectedDifficulty === difficulty}
+                            >
+                                {difficulty}
+                            </Button>
                         </div>
-                    </div>
-                )
-            })}
+                    )
+                })}
+                </div>
+                <hr />
+            </div>
+            <div>
+                <Button onClick={() => setShowTechniques(!showTechniques)}>
+                    Show/Hide techniques required
+                </Button>
+            </div>
+            <div style={{ flex: '1 1 auto', minHeight: 0}}>
+                <div style={{ height: '100%', overflowY: 'auto'}}>
+                    <table>
+                    {puzzleData.filter(puzzle => puzzle.difficulty.difficulty === selectedDifficulty).map(puzzle => {
+                        return (
+                            <tr>
+                                <td>
+                                    <Button onClick={() => props.onPuzzleSelect(puzzle)}>{puzzle.name}</Button>
+                                </td>
+                                <td>
+                                    {showTechniques && puzzle.techniques.join(', ')}
+                                </td>
+                            </tr>
+                        )
+                    })}
+                    </table>
+                </div>
+            </div>
         </div>
     )
 }

@@ -38,8 +38,10 @@ export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'remotePairChain', fn: remotePairChain, difficulty: 'master'}, // Easy chain to spot if you have all candidates
     {type: 'xChain', fn: xChain, difficulty: 'master'}, // Let's have a stare shall we?
     {type: 'xyChain', fn: xyChain, difficulty: 'master'}, // Stare even harder...
-    {type: 'bruteForce', fn: bruteForce, difficulty: 'yoda'} // Stare for days
+    {type: 'bruteForce', fn: bruteForce, difficulty: 'jedi'} // Stare for days
 ]
+
+export const difficulties = unique(techniques.map(t => t.difficulty))
 
 export const difficultyLevels = {
     beginner: 0,
