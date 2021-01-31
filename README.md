@@ -1,5 +1,7 @@
 # Sudoku
 
+Done:
+
 GUI:
 - Ability to enter digits and candidates manually while still using solver (solver keeps a separate board with all candidates)
 - Multi input/removal of candidates and add to selection using keyboard shortcut
@@ -11,6 +13,7 @@ GUI:
 - Auto removes affected digits
 - Checks for errors (against actual solution)
 - Undo
+- Choose a sudoku from pre generated
 
 Supported solvers:
 - Basic sudoku eliminations
@@ -42,23 +45,23 @@ Bugs:
 # TODO
 
 GUI/Solver:
-- 
 - Solver actors/effects can display the candidates as well, not just the cell. But maybe it's nice to have to work for it a bit?
-- Take into account the entered candidates?
 
 GUI:
+- Need to clean up the gui code in general. The state management is just shit. The theme is ugly. Also, performance can be better.
+- Mobile
 - Digit selection outside of the grid (also important for mobile)
-- Choose a sudoku from pre generated
 - Save progress and/or total points etc. Server side or just local?
 - Input custom board
 - Eraser tool
 - Color tool
 
 Generate sudokus:
-
-Optimize solvers:
-- Use actual sets for difference, intersection, etc. There are often few points though, so might not be faster in all cases.
-- Candidates can probably be sets, idk.
+- Better name generation
+- Check for duplicate boards
+- Check for symmetrically identical boards? (rotation, mirroring, digit shift)
+- Re-analyze boards when added more solvers etc.
+- Find rare techniques like jellyfish
 
 Add support for solvers (maybe skip the most advanced stuff?):
 - 2-string kite
