@@ -10,6 +10,7 @@ import Button from '@material-ui/core/Button'
 import { PuzzleSelect } from './puzzle-select'
 import { Dialog } from '@material-ui/core'
 import { BoardMetaData } from '../core/utils/getBoardMetaData'
+import { DigitSelector } from './digit-selector'
 
 const dummyBoard = boardFromStr('000000000000000000000000000000000000000000000000000000000000000000000000000000000')
 
@@ -24,6 +25,9 @@ export function App(){
     const [hintsEnabled, setHintsEnabled] = React.useState(false)
     const [puzzleSelectOpen, setPuzzleSelectOpen] = React.useState(false)
     const [boardMetaData, setBoardMetaData] = React.useState<BoardMetaData | null>(null)
+    const [selectedCells, setSelectedCells] = React.useState<Point[]>([])
+    const [selectedDigit, setSelectedDigit] = React.useState<number | null>(null)
+
     const solverBoard = React.useMemo(() => {
         if(solveResult === null){
             return prepareBoardForSolver(board)
@@ -34,50 +38,76 @@ export function App(){
 
     const hints = React.useMemo(() => getTechniquesUntilNextValue(prepareBoardForSolver(board)), [board])
 
-    const onSetSolveResult = (solveResult: SolveResult | null, boardBeforeSolve: Board) => {
+    const onSetSolveResult = React.useCallback((solveResult: SolveResult | null, boardBeforeSolve: Board) => {
         setBoard(boardBeforeSolve)
         setSolveResult(solveResult)
-    }
-    const toggleSolver = () => {
+    }, [])
+
+    const toggleSolver = React.useCallback(() => {
         if(solverEnabled){
             setSolverEnabled(false)
             setSolveResult(null)
         }else{
             setSolverEnabled(true)
         }
-    }
-    const toggleHints = () => {
+    }, [solverEnabled])
+
+    const toggleHints = React.useCallback(() => {
         setHintsEnabled(x => !x)
-    }
-    const onSetDigit = (digit: number, points: Point[]) => {
+    }, [])
+
+    const onSetDigit = React.useCallback((digit: number, points: Point[]) => {
         const nextBoard = applyInputValue(board, points, digit, inputMode)
         setBoard(nextBoard)
         setBoardStack(stack => [board, ...stack])
         setSolveResult(null) // Remove solve result whenever input is applied. The solve may not be valid anymore.
-    }
-    const onUndo = () => {
+    }, [board, inputMode])
+
+    const onUndo = React.useCallback(() => {
         if(boardStack.length === 0){
             return
         }
         setBoard(boardStack[0])
         setBoardStack(stack => stack.slice(1))
-    }
-    const onPuzzleSelect = (puzzle: BoardMetaData) => {
+    }, [boardStack])
+
+    const onPuzzleSelect = React.useCallback((puzzle: BoardMetaData) => {
         const nextBoard = boardFromStr(puzzle.boardData)
         setInitialBoard(nextBoard)
         setBoard(nextBoard)
         setSolveResult(null)
         setPuzzleSelectOpen(false)
         setBoardMetaData(puzzle)
-    }
+    }, [])
 
-    useEventListener('keydown', (e: KeyboardEvent) => {
+    const onSelectDigit = React.useCallback((digit: number) => {
+        setSelectedDigit(selectedDigit => digit === selectedDigit ? null : digit)
+    }, [])
+
+    const clearSelected = React.useCallback(() => {
+        setSelectedCells([])
+    }, [])
+
+    const onGlobalKeyDown = React.useCallback((e: KeyboardEvent) => {
         if(e.key.toLowerCase() === 'a') setInputMode('value')
         if(e.key.toLowerCase() === 's') setInputMode('candidates')
         if(e.key.toLowerCase() === 'n') onUndo()
         if(e.key.toLowerCase() === 'c') toggleSolver()
         if(e.key.toLowerCase() === 'h') toggleHints()
-    })
+        if(e.key.toLowerCase() === 'd') clearSelected()
+        if(/\d/.test(e.key)){
+            const number = parseInt(e.key, 10)
+            if(number >= 1 && number <= 9){
+                if(selectedCells.length > 0){
+                    onSetDigit(number, selectedCells)
+                }else{
+                    onSelectDigit(number)
+                }
+            }
+        }
+    }, [onUndo, toggleSolver, toggleHints, onSetDigit, selectedCells, clearSelected, onSelectDigit])
+
+    useEventListener('keydown', onGlobalKeyDown)
 
     return (
         <div style={{ height: '100%', minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -104,14 +134,28 @@ export function App(){
                         <BoardDisplay
                             board={board}
                             solveResult={solveResult}
-                            onSetDigit={onSetDigit}
                             solutionBoard={solutionBoard}
+                            selectedCells={selectedCells}
+                            setSelectedCells={setSelectedCells}
+                            selectedDigit={selectedDigit}
                         />
-                        <button onClick={() => setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</button>
-                        <button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</button>
-                        <button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</button>
-                        <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver (c)' : 'Show solver (c)'}</button>
-                        <button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</button>
+                        <div>
+                            <button onClick={() => setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</button>
+                            <button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</button>
+                            <button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</button>
+                            <button onClick={clearSelected} disabled={selectedCells.length === 0}>Deselect all (d)</button>
+                            <button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</button>
+                            <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver (c)' : 'Show solver (c)'}</button>
+                        </div>
+                        <br />
+                        <div>
+                            <DigitSelector
+                                board={board}
+                                direction={'row'}
+                                onClickDigit={onSelectDigit}
+                                selectedDigit={selectedDigit}
+                            />
+                        </div>
                     </Paper>
                 </div>
                 {hintsEnabled &&

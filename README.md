@@ -14,6 +14,7 @@ GUI:
 - Checks for errors (against actual solution)
 - Undo
 - Choose a sudoku from pre generated
+- Digit selection outside the grid
 
 Supported solvers:
 - Basic sudoku eliminations
@@ -48,9 +49,7 @@ GUI/Solver:
 - Solver actors/effects can display the candidates as well, not just the cell. But maybe it's nice to have to work for it a bit?
 
 GUI:
-- Need to clean up the gui code in general. The state management is just shit. The theme is ugly. Also, performance can be better.
 - Mobile
-- Digit selection outside of the grid (also important for mobile)
 - Save progress and/or total points etc. Server side or just local?
 - Input custom board
 - Eraser tool

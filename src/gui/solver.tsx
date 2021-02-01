@@ -1,7 +1,6 @@
 import React from 'react'
 import { Board, Point, SolveResult } from '../core/types'
 import * as solve from '../core/solve'
-import Paper from '@material-ui/core/Paper'
 import { Button } from '@material-ui/core'
 import { actorColor, eliminationColor, setValueColor } from './board'
 

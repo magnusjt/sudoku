@@ -1,18 +1,17 @@
-import { Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../core/types'
+import { Actor, Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../core/types'
 import React from 'react'
 import { getAffectedPoints, getBoardCell, pointsEqual } from '../core/utils/sudokuUtils'
 import useEventListener from '@use-it/event-listener'
 
 const Candidates = (props) => {
     const height = props.height
-    const width = props.width
 
     const fontSize = height / 4
     const boxSize = height / 3
     const spacing = (boxSize - fontSize)/2
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'relative', fontSize: fontSize, fontFamily: 'monospace', color: '#666' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative', fontSize: fontSize, fontFamily: 'monospace', color: '#333' }}>
             {props.candidates.map(number => {
                 const top = Math.round(Math.floor((number - 1) / 3) * boxSize)
                 const left = Math.round(Math.floor((number - 1) % 3) * boxSize)
@@ -41,38 +40,62 @@ type CellDisplayProps = {
     solveResult: SolveResult | null
     selected: boolean
     affected: boolean
-    board: Board
     cell: Cell
     point: Point
     highlightedNumber: number | null
+    selectedDigit: number | null
     solutionValue: number
 }
 
 export const actorColor = '#c5f6b0'
 export const setValueColor = '#85ffff'
 export const eliminationColor = '#b0c9f6'
+export const selectedColor = '#ffc0b0'
+export const affectedColor = '#efefef'
+export const highlightedColor = '#ffc0b0'
+export const selectedDigitHighlightColor = '#ffd0b0'
+export const errorColor = '#fc4444'
+
+const cellHasElimination = (effects: Effect[], point: Point) => effects
+    .filter((eff: Effect) => eff.type === 'elimination')
+    .some((eff) => pointsEqual((eff as ValueEffect).point, point))
+
+const cellHasSetValue = (effects: Effect[], point: Point) => effects
+    .filter((eff: Effect) => eff.type === 'value')
+    .some((eff) => pointsEqual((eff as ValueEffect).point, point))
+
+const cellHasActor = (actors: Actor[], point: Point) => actors
+    .some(actor => pointsEqual(actor.point, point))
 
 const CellDisplay = (props: CellDisplayProps) => {
     const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
-    const {board, point, selected, affected, cell, highlightedNumber, solutionValue} = props
+    const {point, selected, affected, cell, highlightedNumber, solutionValue, selectedDigit} = props
 
-    const hasElimination = effects.filter((eff: Effect) => eff.type === 'elimination').some((eff) => pointsEqual((eff as ValueEffect).point, point))
-    const hasSetValue = effects.filter((eff: Effect) => eff.type === 'value').some((eff) => pointsEqual((eff as ValueEffect).point, point))
-    const hasActor = actors.some(actor => pointsEqual(actor.point, point))
+    const hasElimination = React.useMemo(() => cellHasElimination(effects, point), [effects, point])
+    const hasSetValue = React.useMemo(() => cellHasSetValue(effects, point), [effects, point])
+    const hasActor = React.useMemo(() => cellHasActor(actors, point), [actors, point])
     const hasError = cell.value !== null && cell.value !== solutionValue
-    let bg = 'white'
 
-    if(affected) bg = '#efefef'
+    let bg = 'white'
+    if(affected) bg = affectedColor
     if(hasElimination) bg = eliminationColor
     if(hasActor) bg = actorColor
     if(hasSetValue) bg = setValueColor
-    if(selected) bg = '#ffc0b0'
 
     if((cell.value && cell.value === highlightedNumber) || cell.candidates.some(c => c === highlightedNumber)){
-        bg = '#ffc0b0'
+        bg = highlightedColor
     }
 
-    if(hasError) bg = '#fc4444'
+    // Highlighted number takes precedence over selected digit highlighting
+    // Don't highlight selected digit if cell has highlighting already
+    if(!highlightedNumber){
+        if((cell.value && cell.value === selectedDigit) || cell.candidates.some(c => c === selectedDigit)){
+            bg = selectedDigitHighlightColor
+        }
+    }
+
+    if(selected) bg = selectedColor
+    if(hasError) bg = errorColor
 
     let style: any = {
         backgroundColor: bg,
@@ -102,25 +125,26 @@ const CellDisplay = (props: CellDisplayProps) => {
     )
 }
 
+type SetPoints = (points: Point[]) => Point[]
+
 export type BoardDisplayProps = {
     board: Board
     solveResult: SolveResult | null
-    onSetDigit: (digit: number, points: Point[]) => void
     solutionBoard: Board
+    selectedCells: Point[],
+    setSelectedCells: (points: Point[] | SetPoints) => void
+    selectedDigit: number | null
 }
 
 export const BoardDisplay = (props: BoardDisplayProps) => {
-    const {board, solutionBoard, onSetDigit} = props
-
-    const [selectedCells, setSelectedCells] = React.useState<Point[]>([])
+    const {board, solutionBoard, selectedCells, setSelectedCells, selectedDigit} = props
     const [isSelecting, setIsSelecting] = React.useState(false)
 
     const highlightedNumber = selectedCells.length === 1 ? board[selectedCells[0].y][selectedCells[0].x].value : null
-    const affectedPoints = selectedCells.length === 1
-        ? getAffectedPoints(selectedCells[0])
-        : []
+    const affectedPoints = React.useMemo(() => selectedCells.length === 1 ? getAffectedPoints(selectedCells[0]) : [], [selectedCells])
 
     const startSelect = (point, e: React.MouseEvent) => {
+        e.stopPropagation() // Prevents the mousedown clear select handler from being fired
         if(e.ctrlKey){
             setSelectedCells(points => [...points, point])
         }else{
@@ -133,19 +157,11 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
             setSelectedCells(points => [...points, point])
         }
     }
-    const endSelect = () => {
+    const endSelect = React.useCallback(() => {
         setIsSelecting(false)
-    }
+    }, [])
 
     useEventListener('mouseup', endSelect)
-    useEventListener('keydown', (e: KeyboardEvent) => {
-        if(/\d/.test(e.key)){
-            const number = parseInt(e.key, 10)
-            if(number >= 1 && number <= 9){
-                onSetDigit(number, selectedCells)
-            }
-        }
-    })
 
     return (
         <div>
@@ -160,7 +176,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                             key={x}
                             onMouseDown={(e) => startSelect({x, y}, e)}
                             onMouseOver={() => addSelect({x, y})}
-                            onMouseUp={() => endSelect()}
+                            onMouseUp={endSelect}
                             style={{
                                 'WebkitTouchCallout': 'none',
                                 'WebkitUserSelect': 'none',
@@ -171,13 +187,13 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                             }}
                         >
                             <CellDisplay
-                                board={board}
                                 cell={cell}
                                 selected={selected}
                                 affected={affected}
                                 point={{x, y}}
                                 solveResult={props.solveResult}
                                 highlightedNumber={highlightedNumber}
+                                selectedDigit={selectedDigit}
                                 solutionValue={solutionValue}
                             />
                         </div>
