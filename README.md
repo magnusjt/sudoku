@@ -54,6 +54,8 @@ GUI:
 - Input custom board
 - Eraser tool
 - Color tool
+- Filter on technique instead of difficulty
+- Display technique descriptions
 
 Generate sudokus:
 - Better name generation

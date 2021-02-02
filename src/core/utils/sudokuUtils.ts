@@ -143,3 +143,14 @@ export const canPutDigit = (board: Board, point: Point, digit: number) => {
     const affected = getAffectedPoints(point)
     return !affected.some(p => getBoardCell(board, p).value === digit)
 }
+
+export const boardHasError = (board: Board, solution: Board) => {
+    return !getAllPoints().every(point => {
+        const value = getBoardCell(board, point).value
+        return value === null || getBoardCell(solution, point).value === value
+    })
+}
+
+export const boardIsComplete = (board: Board) => {
+    return getAllPoints().every(point => getBoardCell(board, point).value !== null)
+}

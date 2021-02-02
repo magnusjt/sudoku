@@ -8,6 +8,7 @@ export type SolverProps = {
     board: Board
     solveResult: SolveResult | null
     onSolveResult: (solveResult: SolveResult | null, prevBoard: Board) => void
+    onPlayFromHere: () => void
 }
 
 const pointToStr = (point: Point) => `r${point.y+1}c${point.x+1}`
@@ -40,7 +41,11 @@ export const Solver = (props: SolverProps) => {
         <div>
             <h3>Solver</h3>
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-                <Button color='primary' variant='outlined' fullWidth onClick={iterate}>Iterate</Button>
+                <Button color='primary' variant='outlined' fullWidth onClick={props.onPlayFromHere}>Play from here</Button>
+            </div>
+            <br />
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <Button color='primary' variant='contained' fullWidth onClick={iterate}>Iterate</Button>
             </div>
             {solveResult && solveResult.technique !== 'done' &&
             <div>
@@ -51,16 +56,16 @@ export const Solver = (props: SolverProps) => {
                 <i>Actors:</i>
                 <br />
                 <span style={{ background: actorColor }}>&nbsp;&nbsp;</span>
-                {solveResult.actors.map(actor => {
+                {solveResult.actors.map((actor, i) => {
                     return (
-                        <span> {pointToStr(actor.point)} </span>
+                        <span key={i}> {pointToStr(actor.point)} </span>
                     )
                 })}
                 <br />
                 <i>Effects:</i>
-                {solveResult.effects.map(effect => {
+                {solveResult.effects.map((effect, i) => {
                     return (
-                        <div>
+                        <div key={i}>
                             {effect.type === 'elimination' &&
                             <div>
                                 <span style={{ background: eliminationColor }}>&nbsp;&nbsp;</span>
@@ -85,6 +90,7 @@ export const Solver = (props: SolverProps) => {
                     const skipped = skippedTechniques.some(t => t === tech.type)
                     return (
                         <Button
+                            key={tech.type}
                             size='small'
                             color='default'
                             fullWidth={true}

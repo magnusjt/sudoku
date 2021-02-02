@@ -2,7 +2,13 @@ import React from 'react'
 import { BoardDisplay } from './board'
 import { Solver } from './solver'
 import { Board, InputMode, Point, SolveResult } from '../core/types'
-import { applyInputValue, boardFromStr, getTechniquesUntilNextValue, prepareBoardForSolver } from '../core/sudoku'
+import {
+    applyInputValue,
+    boardFromStr,
+    boardToStr,
+    getTechniquesUntilNextValue,
+    prepareBoardForSolver
+} from '../core/sudoku'
 import { getSolution } from '../core/solve'
 import useEventListener from '@use-it/event-listener'
 import Paper from '@material-ui/core/Paper'
@@ -11,16 +17,25 @@ import { PuzzleSelect } from './puzzle-select'
 import { Dialog } from '@material-ui/core'
 import { BoardMetaData } from '../core/utils/getBoardMetaData'
 import { DigitSelector } from './digit-selector'
+import { boardHasError, boardIsComplete } from '../core/utils/sudokuUtils'
+import { loadUserData, storeUserData, UserData } from './storage'
+
+type SolverState = {
+    boardBeforeSolve: Board
+    solveResult: SolveResult | null
+}
+
+const initalUserData = loadUserData()
 
 const dummyBoard = boardFromStr('000000000000000000000000000000000000000000000000000000000000000000000000000000000')
 
 export function App(){
+    const [userData, _setUserData] = React.useState(initalUserData)
     const [initialBoard, setInitialBoard] = React.useState(dummyBoard)
     const [board, setBoard] = React.useState(initialBoard)
     const solutionBoard = React.useMemo(() => getSolution(initialBoard), [initialBoard])
     const [boardStack, setBoardStack] = React.useState<Board[]>([])
-    const [solveResult, setSolveResult] = React.useState<SolveResult | null>(null)
-    const [solverEnabled, setSolverEnabled] = React.useState(false)
+    const [solverState, setSolverState] = React.useState<SolverState | null>(null)
     const [inputMode, setInputMode] = React.useState<InputMode>('value')
     const [hintsEnabled, setHintsEnabled] = React.useState(false)
     const [puzzleSelectOpen, setPuzzleSelectOpen] = React.useState(false)
@@ -28,54 +43,96 @@ export function App(){
     const [selectedCells, setSelectedCells] = React.useState<Point[]>([])
     const [selectedDigit, setSelectedDigit] = React.useState<number | null>(null)
 
-    const solverBoard = React.useMemo(() => {
-        if(solveResult === null){
-            return prepareBoardForSolver(board)
-        }else{
-            return solveResult.board
-        }
-    }, [board, solveResult])
+    const isComplete = React.useMemo(() => boardIsComplete(board), [board])
+    const hasError = React.useMemo(() => boardHasError(board, solutionBoard), [board, solutionBoard])
 
-    const hints = React.useMemo(() => getTechniquesUntilNextValue(prepareBoardForSolver(board)), [board])
+    const inputEnabled = !solverState && board !== dummyBoard && !isComplete
+
+    const setUserData = React.useCallback((userData: UserData) => {
+        storeUserData(userData)
+        _setUserData(userData)
+    }, [])
+
+    const updateSolvedBoards = React.useCallback((boardStr: string) => {
+        const nextUserData = {
+            ...userData,
+            solved: [...userData.solved, boardStr],
+        }
+        delete nextUserData.progress[boardStr]
+        setUserData(nextUserData)
+    }, [userData, setUserData])
+
+    const updateBoardInProgress = React.useCallback((boardStr: string, board: Board) => {
+        setUserData({...userData, progress: {
+            ...userData.progress,
+            [boardStr]: board
+        }})
+    }, [userData, setUserData])
+
+    const hints = React.useMemo(() => {
+        if(hasError) return []
+        return getTechniquesUntilNextValue(prepareBoardForSolver(board))
+    }, [board, hasError])
 
     const onSetSolveResult = React.useCallback((solveResult: SolveResult | null, boardBeforeSolve: Board) => {
-        setBoard(boardBeforeSolve)
-        setSolveResult(solveResult)
+        setSolverState({
+            solveResult,
+            boardBeforeSolve
+        })
     }, [])
 
     const toggleSolver = React.useCallback(() => {
-        if(solverEnabled){
-            setSolverEnabled(false)
-            setSolveResult(null)
+        if(solverState){
+            setSolverState(null)
         }else{
-            setSolverEnabled(true)
+            if(!hasError){
+                setSolverState({
+                    boardBeforeSolve: prepareBoardForSolver(board),
+                    solveResult: null
+                })
+            }
         }
-    }, [solverEnabled])
+    }, [solverState, board, hasError])
+
+    const onCopyFromSolver = React.useCallback(() => {
+        if(solverState){
+            setBoardStack(stack => [board, ...stack])
+            setBoard(solverState.boardBeforeSolve)
+            setSolverState(null)
+        }
+    }, [solverState, board])
 
     const toggleHints = React.useCallback(() => {
         setHintsEnabled(x => !x)
     }, [])
 
     const onSetDigit = React.useCallback((digit: number, points: Point[]) => {
+        if(!inputEnabled) return
         const nextBoard = applyInputValue(board, points, digit, inputMode)
-        setBoard(nextBoard)
+        if(boardIsComplete(nextBoard) && !boardHasError(nextBoard, solutionBoard)){
+            updateSolvedBoards(boardToStr(initialBoard))
+        }else{
+            updateBoardInProgress(boardToStr(initialBoard), nextBoard)
+        }
         setBoardStack(stack => [board, ...stack])
-        setSolveResult(null) // Remove solve result whenever input is applied. The solve may not be valid anymore.
-    }, [board, inputMode])
+        setBoard(nextBoard)
+        setSolverState(null) // Remove solve result whenever input is applied. The solve may not be valid anymore.
+    }, [board, inputMode, inputEnabled, initialBoard, updateSolvedBoards, updateBoardInProgress, solutionBoard])
 
     const onUndo = React.useCallback(() => {
+        if(!inputEnabled) return
         if(boardStack.length === 0){
             return
         }
         setBoard(boardStack[0])
         setBoardStack(stack => stack.slice(1))
-    }, [boardStack])
+    }, [boardStack, inputEnabled])
 
-    const onPuzzleSelect = React.useCallback((puzzle: BoardMetaData) => {
+    const onPuzzleSelect = React.useCallback((puzzle: BoardMetaData, progress?: Board) => {
         const nextBoard = boardFromStr(puzzle.boardData)
         setInitialBoard(nextBoard)
-        setBoard(nextBoard)
-        setSolveResult(null)
+        setBoard(progress ?? nextBoard)
+        setSolverState(null)
         setPuzzleSelectOpen(false)
         setBoardMetaData(puzzle)
     }, [])
@@ -132,8 +189,8 @@ export function App(){
                         <h4 style={{ margin: 0, paddingBottom: 16 }}>Puzzle: {boardMetaData.name} - Difficulty: {boardMetaData.difficulty.difficulty}</h4>
                         }
                         <BoardDisplay
-                            board={board}
-                            solveResult={solveResult}
+                            board={solverState ? solverState.boardBeforeSolve : board}
+                            solveResult={solverState?.solveResult ?? null}
                             solutionBoard={solutionBoard}
                             selectedCells={selectedCells}
                             setSelectedCells={setSelectedCells}
@@ -145,7 +202,7 @@ export function App(){
                             <button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</button>
                             <button onClick={clearSelected} disabled={selectedCells.length === 0}>Deselect all (d)</button>
                             <button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</button>
-                            <button onClick={toggleSolver}>{solverEnabled ? 'Hide solver (c)' : 'Show solver (c)'}</button>
+                            <button onClick={toggleSolver} disabled={hasError}>{!!solverState ? 'Hide solver (c)' : 'Show solver (c)'}</button>
                         </div>
                         <br />
                         <div>
@@ -169,12 +226,13 @@ export function App(){
                     </div>
                 </Paper>
                 }
-                {solverEnabled &&
+                {!!solverState &&
                     <Paper style={{ height: '100%', width: 300, padding: 16, marginLeft: 16, overflowY: 'auto' }}>
                         <Solver
-                            board={solverBoard}
-                            solveResult={solveResult}
+                            board={solverState.solveResult?.board ?? solverState.boardBeforeSolve}
+                            solveResult={solverState.solveResult}
                             onSolveResult={onSetSolveResult}
+                            onPlayFromHere={onCopyFromSolver}
                         />
                     </Paper>
                 }
@@ -188,6 +246,7 @@ export function App(){
                 <Paper style={{ padding: 16 }}>
                     <PuzzleSelect
                         onPuzzleSelect={onPuzzleSelect}
+                        userData={userData}
                     />
                 </Paper>
             </Dialog>

@@ -34,6 +34,17 @@ export const boardFromStr = (input: string) => {
     )
 }
 
+export const boardToStr = (board: Board) => {
+    let boardStr = ''
+    for(let y = 0; y < 9; y++){
+        for(let x = 0; x < 9; x++){
+            const cell = board[y][x]
+            boardStr += cell.value === null ? '0' : String(cell.value)
+        }
+    }
+    return boardStr
+}
+
 export const resetCandidates = (board: Board): SolverBoard => {
     board = cloneBoard(board)
     for(let point of getAllPoints()){

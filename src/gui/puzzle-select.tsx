@@ -2,7 +2,15 @@ import React from 'react'
 import { BoardMetaData } from '../core/utils/getBoardMetaData'
 import Button from '@material-ui/core/Button'
 import { difficulties } from '../core/solve'
-import { LinearProgress } from '@material-ui/core'
+import LinearProgress from '@material-ui/core/LinearProgress'
+import Table from '@material-ui/core/Table'
+import TableHead from '@material-ui/core/TableHead'
+import TableBody from '@material-ui/core/TableBody'
+import TableRow from '@material-ui/core/TableRow'
+import TableCell from '@material-ui/core/TableCell'
+import { UserData } from './storage'
+import { Board } from '../core/types'
+
 
 // yea I don't give a fuck about this for now.. :P
 let globalPuzzleData: BoardMetaData[] = [];
@@ -17,10 +25,12 @@ const loadPuzzleData = async () => {
 }
 
 export type PuzzleSelectProps = {
-    onPuzzleSelect: (puzzle: BoardMetaData) => void
+    onPuzzleSelect: (puzzle: BoardMetaData, progress?: Board) => void
+    userData: UserData
 }
 
 export const PuzzleSelect = (props: PuzzleSelectProps) => {
+    const {userData} = props
     const [puzzleData, setPuzzleData] = React.useState<BoardMetaData[]>(globalPuzzleData)
 
     const [selectedDifficulty, setSelectedDifficulty] = React.useState('easy')
@@ -46,7 +56,7 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
                 <div style={{ display: 'flex'}}>
                 {difficulties.map((difficulty) => {
                     return (
-                        <div>
+                        <div key={difficulty}>
                             <Button
                                 onClick={() => setSelectedDifficulty(difficulty)}
                                 disabled={selectedDifficulty === difficulty}
@@ -66,39 +76,57 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
             </div>
             <div style={{ flex: '1 1 auto', minHeight: 0}}>
                 <div style={{ height: '100%', overflowY: 'auto'}}>
-                    <table>
-                        <thead>
-                            <th>#</th>
-                            <th>Name</th>
-                            <th>Intensity</th>
-                            {showTechniques &&
-                            <th>Techniques</th>
-                            }
-                        </thead>
+                    <Table size={'small'}>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell width={10}>#</TableCell>
+                                <TableCell width={250}>Name</TableCell>
+                                <TableCell width={40} align={'left'} />
+                                <TableCell width={40}>Intensity</TableCell>
+                                <TableCell width={200} />
+                                <TableCell>{showTechniques && 'Techniques'}</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
                     {puzzles.map((puzzle, i) => {
+                        const solved = userData.solved.includes(puzzle.boardData)
+                        const progress = userData.progress[puzzle.boardData]
                         return (
-                            <tr>
-                                <td>
+                            <TableRow key={i} hover>
+                                <TableCell>
                                     {i+1}.
-                                </td>
-                                <td>
-                                    <Button onClick={() => props.onPuzzleSelect(puzzle)}>{puzzle.name}</Button>
-                                </td>
-                                <td>
+                                </TableCell>
+                                <TableCell>
+                                    {puzzle.name}
+                                </TableCell>
+                                <TableCell>
+                                    {solved &&
+                                    <span style={{ color: 'green' }}>Solved!</span>
+                                    }
+                                </TableCell>
+                                <TableCell>
                                     <LinearProgress
                                         variant={'determinate'}
                                         value={Math.round(100 * puzzle.techniques.length / maxNumberOfTechniques)}
                                     />
-                                </td>
-                                {showTechniques &&
-                                <td>
-                                    {puzzle.techniques.join(', ')}
-                                </td>
-                                }
-                            </tr>
+                                </TableCell>
+                                <TableCell>
+                                    <Button color={'primary'} size={'small'} onClick={() => props.onPuzzleSelect(puzzle)} variant={'contained'}>Play</Button>
+                                    <span> </span>
+                                    {progress &&
+                                        <Button size={'small'} onClick={() => props.onPuzzleSelect(puzzle, progress)} variant={'outlined'}>Continue</Button>
+                                    }
+                                </TableCell>
+                                <TableCell>
+                                    {showTechniques &&
+                                        puzzle.techniques.join(', ')
+                                    }
+                                </TableCell>
+                            </TableRow>
                         )
                     })}
-                    </table>
+                        </TableBody>
+                    </Table>
                 </div>
             </div>
         </div>
