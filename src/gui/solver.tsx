@@ -2,7 +2,7 @@ import React from 'react'
 import { Board, Point, SolveResult } from '../core/types'
 import * as solve from '../core/solve'
 import { Button } from '@material-ui/core'
-import { actorColor, eliminationColor, setValueColor } from './board'
+import { actorColor, eliminationColor, setValueColor } from '../theme'
 
 export type SolverProps = {
     board: Board

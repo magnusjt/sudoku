@@ -2,6 +2,12 @@ import React from 'react'
 import { Board } from '../core/types'
 import { allCandidates, getAllPoints, getBoardCell } from '../core/utils/sudokuUtils'
 import { groupBy } from '../core/utils/misc'
+import {
+    backgroundColor, backgroundDisabledColor,
+    borderHardColor,
+    getContrastText,
+    selectedDigitHighlightColor
+} from '../theme'
 
 type DigitProps = {
     digit: number
@@ -11,16 +17,17 @@ type DigitProps = {
 }
 
 const DigitCircle = (props: DigitProps) => {
-    let bgColor = 'white'
-    if(props.finished) bgColor = '#aaa'
-    if(props.selected) bgColor = '#c5f6b0'
+    let bgColor = backgroundColor
+    if(props.finished) bgColor = backgroundDisabledColor
+    if(props.selected) bgColor = selectedDigitHighlightColor
     return (
         <button
             onClick={props.onClick}
             style={{
                 backgroundColor: bgColor,
-                color: 'inherit',
-                border: '1px #333 solid',
+                color: getContrastText(bgColor),
+                border: '1px solid',
+                borderColor: borderHardColor,
                 padding: 4,
                 font: 'inherit',
                 cursor: 'pointer',

@@ -10,6 +10,7 @@ import TableRow from '@material-ui/core/TableRow'
 import TableCell from '@material-ui/core/TableCell'
 import { UserData } from './storage'
 import { Board } from '../core/types'
+import { Typography } from '@material-ui/core'
 
 
 // yea I don't give a fuck about this for now.. :P
@@ -101,12 +102,13 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
                                 </TableCell>
                                 <TableCell>
                                     {solved &&
-                                    <span style={{ color: 'green' }}>Solved!</span>
+                                    <Typography color={'primary'}>Solved!</Typography>
                                     }
                                 </TableCell>
                                 <TableCell>
                                     <LinearProgress
                                         variant={'determinate'}
+                                        color={'secondary'}
                                         value={Math.round(100 * puzzle.techniques.length / maxNumberOfTechniques)}
                                     />
                                 </TableCell>

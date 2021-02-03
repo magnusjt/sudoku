@@ -43,10 +43,11 @@ export function App(){
     const [selectedCells, setSelectedCells] = React.useState<Point[]>([])
     const [selectedDigit, setSelectedDigit] = React.useState<number | null>(null)
 
-    const isComplete = React.useMemo(() => boardIsComplete(board), [board])
-    const hasError = React.useMemo(() => boardHasError(board, solutionBoard), [board, solutionBoard])
+    const isValid = board !== dummyBoard
+    const isComplete = React.useMemo(() => isValid && boardIsComplete(board), [board, isValid])
+    const hasError = React.useMemo(() => isValid && boardHasError(board, solutionBoard), [board, solutionBoard, isValid])
 
-    const inputEnabled = !solverState && board !== dummyBoard && !isComplete
+    const inputEnabled = !solverState && isValid && !isComplete
 
     const setUserData = React.useCallback((userData: UserData) => {
         storeUserData(userData)
@@ -85,14 +86,15 @@ export function App(){
         if(solverState){
             setSolverState(null)
         }else{
-            if(!hasError){
+            if(!hasError && isValid){
                 setSolverState({
                     boardBeforeSolve: prepareBoardForSolver(board),
                     solveResult: null
                 })
+                setSelectedCells([]) // A bit annoying since the highlight colors overlap with the solver
             }
         }
-    }, [solverState, board, hasError])
+    }, [solverState, board, hasError, isValid])
 
     const onCopyFromSolver = React.useCallback(() => {
         if(solverState){
@@ -195,14 +197,15 @@ export function App(){
                             selectedCells={selectedCells}
                             setSelectedCells={setSelectedCells}
                             selectedDigit={selectedDigit}
+                            celebration={isComplete && !hasError}
                         />
                         <div>
-                            <button onClick={() => setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</button>
-                            <button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</button>
-                            <button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</button>
-                            <button onClick={clearSelected} disabled={selectedCells.length === 0}>Deselect all (d)</button>
-                            <button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</button>
-                            <button onClick={toggleSolver} disabled={hasError}>{!!solverState ? 'Hide solver (c)' : 'Show solver (c)'}</button>
+                            <Button onClick={() => setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</Button>
+                            <Button onClick={() => setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</Button>
+                            <Button onClick={onUndo} disabled={boardStack.length === 0}>Undo (n)</Button>
+                            <Button onClick={clearSelected} disabled={selectedCells.length === 0}>Deselect all (d)</Button>
+                            <Button onClick={toggleHints}>{hintsEnabled ? 'Hide hints (h)' : 'Show hints (h)'}</Button>
+                            <Button onClick={toggleSolver} disabled={hasError}>{!!solverState ? 'Hide solver (c)' : 'Show solver (c)'}</Button>
                         </div>
                         <br />
                         <div>

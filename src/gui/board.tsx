@@ -2,6 +2,15 @@ import { Actor, Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../
 import React from 'react'
 import { getAffectedPoints, getBoardCell, pointsEqual } from '../core/utils/sudokuUtils'
 import useEventListener from '@use-it/event-listener'
+import {
+    actorColor,
+    affectedColor, backgroundColor, borderColor, borderHardColor,
+    eliminationColor, errorColor, getContrastText,
+    highlightedColor, selectedColor,
+    selectedDigitHighlightColor,
+    setValueColor
+} from '../theme'
+import { darken } from '@material-ui/core/styles'
 
 const Candidates = (props) => {
     const height = props.height
@@ -11,7 +20,7 @@ const Candidates = (props) => {
     const spacing = (boxSize - fontSize)/2
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'relative', fontSize: fontSize, fontFamily: 'monospace', color: '#333' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative', fontSize: fontSize, fontFamily: 'monospace', color: 'inherit' }}>
             {props.candidates.map(number => {
                 const top = Math.round(Math.floor((number - 1) / 3) * boxSize)
                 const left = Math.round(Math.floor((number - 1) % 3) * boxSize)
@@ -45,16 +54,8 @@ type CellDisplayProps = {
     highlightedNumber: number | null
     selectedDigit: number | null
     solutionValue: number
+    celebration: boolean
 }
-
-export const actorColor = '#c5f6b0'
-export const setValueColor = '#85ffff'
-export const eliminationColor = '#b0c9f6'
-export const selectedColor = '#ffc0b0'
-export const affectedColor = '#efefef'
-export const highlightedColor = '#ffc0b0'
-export const selectedDigitHighlightColor = '#ffd0b0'
-export const errorColor = '#fc4444'
 
 const cellHasElimination = (effects: Effect[], point: Point) => effects
     .filter((eff: Effect) => eff.type === 'elimination')
@@ -69,14 +70,29 @@ const cellHasActor = (actors: Actor[], point: Point) => actors
 
 const CellDisplay = (props: CellDisplayProps) => {
     const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
-    const {point, selected, affected, cell, highlightedNumber, solutionValue, selectedDigit} = props
+    const {point, selected, affected, cell, highlightedNumber, solutionValue, selectedDigit, celebration} = props
+    const [celebrationCounter, setCelebrationCount] = React.useState(0)
+
+    React.useEffect(() => {
+        setCelebrationCount(0)
+    }, [celebration])
+
+    React.useEffect(() => {
+        if(celebration){
+            if(celebrationCounter < 100) {
+                setTimeout(() => {
+                    setCelebrationCount(celebrationCounter + 1)
+                }, 50)
+            }
+        }
+    })
 
     const hasElimination = React.useMemo(() => cellHasElimination(effects, point), [effects, point])
     const hasSetValue = React.useMemo(() => cellHasSetValue(effects, point), [effects, point])
     const hasActor = React.useMemo(() => cellHasActor(actors, point), [actors, point])
     const hasError = cell.value !== null && cell.value !== solutionValue
 
-    let bg = 'white'
+    let bg = backgroundColor
     if(affected) bg = affectedColor
     if(hasElimination) bg = eliminationColor
     if(hasActor) bg = actorColor
@@ -97,9 +113,18 @@ const CellDisplay = (props: CellDisplayProps) => {
     if(selected) bg = selectedColor
     if(hasError) bg = errorColor
 
+    if(props.celebration){
+        const pointNumber = (point.y * 9 + point.x)
+        const pointOfHundred = Math.round((pointNumber/81)*100)
+        const seed = ((pointOfHundred + celebrationCounter)%100)/100
+        bg = darken(selectedColor, seed)
+    }
+
     let style: any = {
         backgroundColor: bg,
-        border: '1px #aaa solid',
+        color: getContrastText(bg),
+        border: '1px solid',
+        borderColor: borderColor,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -109,10 +134,10 @@ const CellDisplay = (props: CellDisplayProps) => {
     }
     const {x, y} = point
     if(x % 3 === 0 && x > 0){
-        style = {...style, borderLeft: '2px #000 solid'}
+        style = {...style, borderLeft: '2px solid ' + borderHardColor}
     }
     if(y % 3 === 0 && y > 0){
-        style = {...style, borderTop: '2px #000 solid'}
+        style = {...style, borderTop: '2px solid ' + borderHardColor}
     }
 
     return (
@@ -134,10 +159,11 @@ export type BoardDisplayProps = {
     selectedCells: Point[],
     setSelectedCells: (points: Point[] | SetPoints) => void
     selectedDigit: number | null
+    celebration: boolean
 }
 
 export const BoardDisplay = (props: BoardDisplayProps) => {
-    const {board, solutionBoard, selectedCells, setSelectedCells, selectedDigit} = props
+    const {board, solutionBoard, selectedCells, setSelectedCells, selectedDigit, celebration} = props
     const [isSelecting, setIsSelecting] = React.useState(false)
 
     const highlightedNumber = selectedCells.length === 1 ? board[selectedCells[0].y][selectedCells[0].x].value : null
@@ -195,6 +221,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                                 highlightedNumber={highlightedNumber}
                                 selectedDigit={selectedDigit}
                                 solutionValue={solutionValue}
+                                celebration={celebration}
                             />
                         </div>
                     )
