@@ -11,6 +11,6 @@ test('hasUniqueSolution', () => {
 })
 
 test('generate', () => {
-    const board = first(generateBoardsWithMaxGivens(32))
+    const board = first(generateBoardsWithMaxGivens(40))
     let x = 5
 })

@@ -3,13 +3,13 @@ import {
     removeCandidateFromAffectedPoints,
     removeCandidatesFromPoints
 } from '../utils/effects'
-import { first, unique } from '../utils/misc'
+import { first, unique, uniqueBy } from '../utils/misc'
 import {
     allCandidates, cloneBoard,
     getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
     getAllPoints, getAllUnfilledPoints,
     getBoardCell,
-    getPointsWithNCandidates,
+    getPointsWithNCandidates, pointsEqual,
 } from '../utils/sudokuUtils'
 
 const getPointKey = (point: Point) => `${point.y}-${point.x}`
@@ -85,9 +85,7 @@ const getSingleEffects = (board: SolverBoard) => {
             effects.push({type: 'value', point, number: cand} as const)
         })
 
-    // Should really dedup results here
-
-    return effects
+    return uniqueBy(effects, (eff1, eff2) => pointsEqual(eff1.point, eff2.point) && eff1.cand === eff2.cand)
 }
 
 /**
@@ -137,10 +135,8 @@ const getLinkKey = (point, cand) => {
 /**
  * A chain alternates between weak and strong links. This ensures the next step follows the one before it.
  * (Set value -> (weak) -> dont't set value -> (strong) -> set value -> etc).
- *
- * TODO: Check shortest chains first
  */
-const iterateChainsInTable = (table: Table, keepLink, check) => {
+const _iterateChainsInTable = (table: Table, keepLink, check, depth: number) => {
     const followLink = (link, requiredType = 'weak', prevChain, seen) => {
         const key = getLinkKey(link.next.point, link.next.cand)
         if(seen.has(key)){
@@ -156,11 +152,14 @@ const iterateChainsInTable = (table: Table, keepLink, check) => {
         }
 
         const chain = [...prevChain, link]
-        if(chain.length >= 12){  // Need a better limit. Links between candidates in cells are not too taxing on the brain, but links between cells are.
+        let currDepth = chain.length
+        if(currDepth > depth){
             return false
         }
-        if(check(chain)){
-            return true
+        if(depth === currDepth){
+            if(check(chain)){
+                return true
+            }
         }
 
         // Although a strong link can be followed by a strong or weak link (as a strong link can be used as a weak link),
@@ -185,6 +184,15 @@ const iterateChainsInTable = (table: Table, keepLink, check) => {
             if(done) return true
         }
     }
+    return false
+}
+
+const iterateChainsInTable = (table: Table, keepLink, check) => {
+    for(let depth = 2; depth <= 12; depth++){
+        const result = _iterateChainsInTable(table, keepLink, check, depth)
+        if(result) return true
+    }
+    return false
 }
 
 /**
