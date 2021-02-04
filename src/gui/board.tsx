@@ -4,9 +4,15 @@ import { getAffectedPoints, getBoardCell, pointsEqual } from '../core/utils/sudo
 import useEventListener from '@use-it/event-listener'
 import {
     actorColor,
-    affectedColor, backgroundColor, borderColor, borderHardColor,
-    eliminationColor, errorColor, getContrastText,
-    highlightedColor, selectedColor,
+    affectedColor,
+    boardBackgroundColor,
+    boardBorderColor,
+    boardBorderHardColor,
+    eliminationColor,
+    errorColor,
+    getContrastText,
+    highlightedColor,
+    selectedColor,
     selectedDigitHighlightColor,
     setValueColor
 } from '../theme'
@@ -92,7 +98,7 @@ const CellDisplay = (props: CellDisplayProps) => {
     const hasActor = React.useMemo(() => cellHasActor(actors, point), [actors, point])
     const hasError = cell.value !== null && cell.value !== solutionValue
 
-    let bg = backgroundColor
+    let bg = boardBackgroundColor
     if(affected) bg = affectedColor
     if(hasElimination) bg = eliminationColor
     if(hasActor) bg = actorColor
@@ -124,7 +130,7 @@ const CellDisplay = (props: CellDisplayProps) => {
         backgroundColor: bg,
         color: getContrastText(bg),
         border: '1px solid',
-        borderColor: borderColor,
+        borderColor: boardBorderColor,
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
@@ -133,12 +139,15 @@ const CellDisplay = (props: CellDisplayProps) => {
         lineHeight: 1
     }
     const {x, y} = point
-    if(x % 3 === 0 && x > 0){
-        style = {...style, borderLeft: '2px solid ' + borderHardColor}
+    const addHardBorder = (side) => {
+        style = {...style, ['border' + side]: '2px solid ' + boardBorderHardColor}
     }
-    if(y % 3 === 0 && y > 0){
-        style = {...style, borderTop: '2px solid ' + borderHardColor}
-    }
+    if(x % 3 === 0 && x > 0) addHardBorder('Left')
+    if(y % 3 === 0 && y > 0) addHardBorder('Top')
+    if(x === 0) addHardBorder('Left')
+    if(x === 8) addHardBorder('Right')
+    if(y === 0) addHardBorder('Top')
+    if(y === 8) addHardBorder('Bottom')
 
     return (
         <div style={style}>

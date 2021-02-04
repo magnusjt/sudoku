@@ -21,12 +21,13 @@ export const theme = createMuiTheme({
 })
 
 export const textColor = theme.palette.text.primary
-export const textLightColor = darken(theme.palette.text.secondary, 0.0)
 export const backgroundColor = theme.palette.background.paper
-export const backgroundSecondaryColor = lighten(theme.palette.background.paper, 0.05)
 export const backgroundDisabledColor = lighten(theme.palette.background.paper, 0.2)
-export const borderColor = theme.palette.divider
 export const borderHardColor = darken(textColor, 0.5)
+
+export const boardBackgroundColor = lighten(theme.palette.background.paper, 0.1)
+export const boardBorderColor = '#444'
+export const boardBorderHardColor = '#333'
 
 /*
 Light
@@ -40,13 +41,13 @@ export const selectedDigitHighlightColor = '#ffd0b0'
 export const errorColor = '#fc4444'
  */
 
-export const actorColor = '#cdb0f6'
-export const setValueColor = '#85ff87'
-export const eliminationColor = '#ff5442'
-export const selectedColor = '#72d282'
-export const affectedColor = backgroundSecondaryColor
-export const highlightedColor = '#72d282'
-export const selectedDigitHighlightColor = '#87f6af'
+export const actorColor = '#d3bef8'
+export const setValueColor = '#94fa96'
+export const eliminationColor = '#f67467'
+export const selectedColor = darken(theme.palette.primary.main, 0.3)
+export const affectedColor = darken(selectedColor, 0.3)
+export const highlightedColor = selectedColor
+export const selectedDigitHighlightColor = '#66c187'
 export const errorColor = '#fc4444'
 
 export const getContrastText = theme.palette.getContrastText
