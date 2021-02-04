@@ -19,6 +19,7 @@ import { BoardMetaData } from '../core/utils/getBoardMetaData'
 import { DigitSelector } from './digit-selector'
 import { boardHasError, boardIsComplete } from '../core/utils/sudokuUtils'
 import { loadUserData, storeUserData, UserData } from './storage'
+import { Help } from './help'
 
 type SolverState = {
     boardBeforeSolve: Board
@@ -39,6 +40,7 @@ export function App(){
     const [inputMode, setInputMode] = React.useState<InputMode>('value')
     const [hintsEnabled, setHintsEnabled] = React.useState(false)
     const [puzzleSelectOpen, setPuzzleSelectOpen] = React.useState(false)
+    const [helpOpen, setHelpOpen] = React.useState(false)
     const [boardMetaData, setBoardMetaData] = React.useState<BoardMetaData | null>(null)
     const [selectedCells, setSelectedCells] = React.useState<Point[]>([])
     const [selectedDigit, setSelectedDigit] = React.useState<number | null>(null)
@@ -181,7 +183,12 @@ export function App(){
                             </div>
                             <div>
                                 <Button color='secondary' variant='contained'>
-                                    Save
+                                    Export
+                                </Button>
+                            </div>
+                            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
+                                <Button variant={'outlined'} onClick={() => setHelpOpen(true)}>
+                                    Help
                                 </Button>
                             </div>
                         </div>
@@ -251,6 +258,16 @@ export function App(){
                         onPuzzleSelect={onPuzzleSelect}
                         userData={userData}
                     />
+                </Paper>
+            </Dialog>
+            <Dialog
+                fullWidth
+                maxWidth={'lg'}
+                open={helpOpen}
+                onClose={() => setHelpOpen(false)}
+            >
+                <Paper style={{ padding: 16 }}>
+                    <Help />
                 </Paper>
             </Dialog>
         </div>
