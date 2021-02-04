@@ -15,6 +15,7 @@ GUI:
 - Undo
 - Choose a sudoku from pre generated
 - Digit selection outside the grid
+- Display technique descriptions
 
 Supported solvers:
 - Basic sudoku eliminations
@@ -55,7 +56,6 @@ GUI:
 - Eraser tool
 - Color tool
 - Filter on technique instead of difficulty
-- Display technique descriptions
 
 Generate sudokus:
 - Better name generation
