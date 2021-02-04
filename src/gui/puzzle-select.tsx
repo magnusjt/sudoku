@@ -10,7 +10,8 @@ import TableRow from '@material-ui/core/TableRow'
 import TableCell from '@material-ui/core/TableCell'
 import { UserData } from './storage'
 import { Board } from '../core/types'
-import { Typography } from '@material-ui/core'
+import Typography from '@material-ui/core/Typography'
+import Divider from '@material-ui/core/Divider'
 
 
 // yea I don't give a fuck about this for now.. :P
@@ -68,7 +69,7 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
                     )
                 })}
                 </div>
-                <hr />
+                <Divider />
             </div>
             <div>
                 <Button onClick={() => setShowTechniques(!showTechniques)}>

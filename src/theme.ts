@@ -47,6 +47,7 @@ export const eliminationColor = '#f67467'
 export const selectedColor = darken(theme.palette.primary.main, 0.3)
 export const affectedColor = darken(selectedColor, 0.3)
 export const highlightedColor = selectedColor
+export const highlightedCandidateColor = lighten(selectedColor, 0.15)
 export const selectedDigitHighlightColor = '#66c187'
 export const errorColor = '#fc4444'
 

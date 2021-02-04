@@ -10,7 +10,7 @@ import {
     boardBorderHardColor,
     eliminationColor,
     errorColor,
-    getContrastText,
+    getContrastText, highlightedCandidateColor,
     highlightedColor,
     selectedColor,
     selectedDigitHighlightColor,
@@ -104,8 +104,11 @@ const CellDisplay = (props: CellDisplayProps) => {
     if(hasActor) bg = actorColor
     if(hasSetValue) bg = setValueColor
 
-    if((cell.value && cell.value === highlightedNumber) || cell.candidates.some(c => c === highlightedNumber)){
+    if((cell.value && cell.value === highlightedNumber)){
         bg = highlightedColor
+    }
+    if(cell.candidates.some(c => c === highlightedNumber)){
+        bg = highlightedCandidateColor
     }
 
     // Highlighted number takes precedence over selected digit highlighting
