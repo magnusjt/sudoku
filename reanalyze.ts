@@ -3,7 +3,7 @@ import fs from 'fs'
 import { arraysEqual } from './src/core/utils/misc'
 import { boardFromStr } from './src/core/sudoku'
 
-const lines = fs.readFileSync('./boards/boardsV1.txt', 'utf8').split('\n').filter(line => line.trim() !== '')
+const lines = fs.readFileSync('./boards/boardsV2.txt', 'utf8').split('\n').filter(line => line.trim() !== '')
 
 const rename = false
 
@@ -25,5 +25,5 @@ for(let line of lines){
         console.log(JSON.stringify(metaData))
     }
 
-    fs.appendFileSync('./boards/boardsV2.txt', JSON.stringify(metaData) + '\n')
+    fs.appendFileSync('./boards/boards.new.txt', JSON.stringify(metaData) + '\n')
 }
