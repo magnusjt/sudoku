@@ -23,6 +23,7 @@ Supported solvers:
 - Pointers / inverse pointers (also called locked candidates either pointing or claiming)
 - Subsets (naked/hidden pair, triple, quad)
 - Fish (x-wing, swordfish, jellyfish)
+- w-wing
 - xy wing
 - xyz wing
 - Unique rectangle type 1
@@ -37,6 +38,7 @@ Generate sudokus:
 - Find out if the sudoku has a unique solution
 - Require a certain technique
 - Choose difficulty (adds techniques into different difficulty buckets, and requires them for solutions randomly based on difficulty)
+- Re-analyze boards when added more solvers etc.
 
 Optimize solvers:
 - Don't generate rows/cols each time. Can be precalculated. (didn't actually do much)
@@ -61,7 +63,6 @@ Generate sudokus:
 - Better name generation
 - Check for duplicate boards
 - Check for symmetrically identical boards? (rotation, mirroring, digit shift)
-- Re-analyze boards when added more solvers etc.
 - Find rare techniques like jellyfish
 
 Add support for solvers (maybe skip the most advanced stuff?):
@@ -73,7 +74,6 @@ Add support for solvers (maybe skip the most advanced stuff?):
 - Unique rectangle with missing candidates (requires checking what digits are given)
 - Avoidable rectangle 1-2
 - BUG+1
-- w-wing (a chain?)
 - sue de coq (two-sector disjoint subsets)
 - Coloring (basically chains)
 - More Chains

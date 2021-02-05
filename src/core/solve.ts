@@ -7,7 +7,7 @@ import { jellyfish, swordfish, xWing } from './solvers/fish'
 import { uniqueRectangle1 } from './solvers/uniqueRectangle'
 import { skyscraper } from './solvers/skyscraper'
 import { emptyRectangle } from './solvers/emptyRectangle'
-import { xyWing, xyzWing } from './solvers/wing'
+import { wWing, xyWing, xyzWing } from './solvers/wing'
 import { isBoardFinished } from './utils/sudokuUtils'
 import { unique } from './utils/misc'
 import { applyEffects } from './utils/effects'
@@ -32,6 +32,7 @@ export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'emptyRectangle', fn: emptyRectangle, difficulty: 'expert'}, // Not too hard to spot when you know about it. A bit chainy
     {type: 'swordfish', fn: swordfish, difficulty: 'expert'}, // Quite hard to spot, but easier with highlighting
     {type: 'hiddenQuad', fn: hiddenQuad, difficulty: 'expert'}, // Quite hard to spot imo, but not chainy
+    {type: 'wwing', fn: wWing, difficulty: 'artisan'}, // More of a pattern than xyWing imo
     {type: 'xywing', fn: xyWing, difficulty: 'artisan'}, // Chainy. Quite hard to spot
     {type: 'xyzwing', fn: xyzWing, difficulty: 'artisan'}, // Same as xywing, but even more digits, so a bit harder.
     {type: 'jellyfish', fn: jellyfish, difficulty: 'artisan'}, // Highlights is a must for jellyfish

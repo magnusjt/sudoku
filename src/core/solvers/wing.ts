@@ -1,12 +1,12 @@
 import { SolverBoard, Technique } from '../types'
 import {
     allCandidates,
-    getAffectedPoints, getAffectedPointsInCommon,
+    getAffectedPoints, getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
     getAllUnfilledPoints,
     getBoardCell, getPointsWithCandidates,
-    getPointsWithNCandidates
+    getPointsWithNCandidates, pointsWhere
 } from '../utils/sudokuUtils'
-import { allResults, difference, first } from '../utils/misc'
+import { allResults, arraysEqual, difference, first } from '../utils/misc'
 import { removeCandidateFromPoints } from '../utils/effects'
 
 function *xyWingGenerator(board: SolverBoard){
@@ -64,10 +64,45 @@ function *xyzWingGenerator(board: SolverBoard){
     return null
 }
 
+const candidatesEqual = (cands1, cands2) => arraysEqual(cands1, cands2, (a, b) => a === b)
+
+function *wWingGenerator(board: SolverBoard){
+    for(let x of allCandidates){
+        for(let house of getAllHousesMinusFilledPoints(board)){
+            const pointsWithX = getPointsWithCandidates(board, house, [x])
+            if(pointsWithX.length === 2){
+                const affected1 = getAffectedPoints(pointsWithX[0])
+                const affected2 = getAffectedPoints(pointsWithX[1])
+                for(let w of allCandidates){
+                    const wx = [w, x]
+                    const wxPoints1 = pointsWhere(board, affected1, cell => candidatesEqual(cell.candidates, wx))
+                    const wxPoints2 = pointsWhere(board, affected2, cell => candidatesEqual(cell.candidates, wx))
+                    for(let i = 0; i < wxPoints1.length; i++){
+                        for(let j = 0; j < wxPoints2.length; j++){
+                            const common = getAffectedPointsInCommon([wxPoints1[i], wxPoints2[j]])
+                            const effects = removeCandidateFromPoints(board, common, w)
+                            const actors = [
+                                ...pointsWithX.map(point => ({ point })),
+                                { point: wxPoints1[i] },
+                                { point: wxPoints2[j] }
+                            ]
+                            if(effects.length > 0){
+                                yield {effects, actors}
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return null
+}
+
 export const xyWing: Technique = (board: SolverBoard) => first(xyWingGenerator(board))
 export const allXyWings: Technique = (board: SolverBoard) => allResults(xyWingGenerator(board))
 
 export const xyzWing: Technique = (board: SolverBoard) => first(xyzWingGenerator(board))
 export const allXyzWings: Technique = (board: SolverBoard) => allResults(xyzWingGenerator(board))
 
-// TODO: w-wing. Requires chains, which are a bit more complicated
+export const wWing: Technique = (board: SolverBoard) => first(wWingGenerator(board))
+export const allWWings: Technique = (board: SolverBoard) => allResults(wWingGenerator(board))

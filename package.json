@@ -22,7 +22,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "generate": "node --experimental-specifier-resolution=node --loader ts-node/esm ./generate.ts",
-    "generate-more": "npm run generate & npm run generate"
+    "reanalyze": "node --experimental-specifier-resolution=node --loader ts-node/esm ./reanalyze.ts"
   },
   "eslintConfig": {
     "extends": "react-app"
