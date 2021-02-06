@@ -14,6 +14,7 @@ GUI:
 - Checks for errors (against actual solution)
 - Undo
 - Choose a sudoku from pre generated
+- Save progress
 - Digit selection outside the grid
 - Display technique descriptions
 
@@ -55,11 +56,10 @@ GUI/Solver:
 
 GUI:
 - Mobile
-- Save progress and/or total points etc. Server side or just local?
 - Input custom board
-- Eraser tool
 - Color tool
 - Filter on technique instead of difficulty
+- Import/export save data
 
 Generate sudokus:
 - Better name generation
@@ -67,12 +67,13 @@ Generate sudokus:
 - Check for symmetrically identical boards? (rotation, mirroring, digit shift)
 - Find rare techniques like jellyfish
 
-Add support for solvers: 
+Add support for solvers (still can't solve everything without brute force): 
 - 2-string kite (This is just an x chain with 4 cells, but quite a bit easier to spot)
 - Finned fish
 - Sashimi fish
 - More Chains
 - ALS (almost locked set. Find the one thing missing for a different technique, and use that in a chain)
+
 
 Probably won't implement these:
 - Various more complicated fish (kraken fish, frankenfish)
