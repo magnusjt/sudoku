@@ -26,10 +26,12 @@ Supported solvers:
 - w-wing
 - xy wing
 - xyz wing
+- BUG+1
 - Unique rectangle type 1
 - Empty rectangle, also with 2 candidates
 - Skyscraper
 - remote pair chain
+- Simple Coloring (special case of x chains where only conjugate pairs are considered. Can be solved with one or more x chains as well)
 - x chain
 - xy chain
 - Brute force
@@ -65,17 +67,19 @@ Generate sudokus:
 - Check for symmetrically identical boards? (rotation, mirroring, digit shift)
 - Find rare techniques like jellyfish
 
-Add support for solvers (maybe skip the most advanced stuff?):
-- 2-string kite
+Add support for solvers: 
+- 2-string kite (This is just an x chain with 4 cells, but quite a bit easier to spot)
 - Finned fish
 - Sashimi fish
-- Various more complicated fish
-- Unique rectangle type 2-6
-- Unique rectangle with missing candidates (requires checking what digits are given)
-- Avoidable rectangle 1-2
-- BUG+1
-- sue de coq (two-sector disjoint subsets)
-- Coloring (basically chains)
 - More Chains
 - ALS (almost locked set. Find the one thing missing for a different technique, and use that in a chain)
+
+Probably won't implement these:
+- Various more complicated fish (kraken fish, frankenfish)
+- Uniqueness:
+  - Unique rectangle type 2-6 (very rare it seems)
+  - Unique rectangle with missing candidates (requires checking what digits are given)
+  - Avoidable rectangle 1-2
+- Multi coloring (x-chains is probably about as easy?)
+- sue de coq (two-sector disjoint subsets. Extremely rare apparently)
 - Various crazy shiz that no human would do that is just about the same as brute force

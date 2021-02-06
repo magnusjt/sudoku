@@ -1,6 +1,6 @@
 import { AddCandidatesEffect, Board, Effect, EliminationEffect, NoneEffect, Point } from '../types'
-import { cloneBoard, getAffectedPoints, getBoardCell } from './sudokuUtils'
-import { unique } from './misc'
+import { cloneBoard, getAffectedPoints, getBoardCell, pointsEqual } from './sudokuUtils'
+import { arraysEqual, unique, uniqueBy } from './misc'
 
 export const removeCandidates = (board: Board, point: Point, numbers: number[]): Effect => {
     const cell = getBoardCell(board, point)
@@ -20,10 +20,21 @@ export const addCandidates = (board: Board, point: Point, numbers: number[]): Ef
     return {type: 'addCandidates', point, numbers: candidatesToAdd} as AddCandidatesEffect
 }
 
+const effectsEqual = (eff1: Effect, eff2: Effect) => {
+    if(eff1.type === 'value' && eff2.type === 'value'){
+        return pointsEqual(eff1.point, eff2.point) && eff1.number === eff2.number
+    }else if(eff1.type === 'elimination' && eff2.type === 'elimination'){
+        return pointsEqual(eff1.point, eff2.point) && arraysEqual(eff1.numbers, eff2.numbers, (a, b) => a === b)
+    }
+    return false
+}
+
 export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
-    return points
+    const effects = points
         .map(point => removeCandidates(board, point, numbers))
         .filter(eff => eff.type !== 'none')
+
+    return uniqueBy(effects, effectsEqual)
 }
 
 export const addCandidatesToPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {

@@ -1,8 +1,10 @@
 import {input as remotePairChainInput1} from '../sudokus/remotePairChain'
 import {input as xChainInput1} from '../sudokus/xChain'
 import {input as xyChainInput1} from '../sudokus/xyChain'
+import {input as simpleColoringInput1} from '../sudokus/simpleColoring'
 import { createTestBoard } from '../util'
-import { remotePairChain, xChain, xyChain } from '../../core/solvers/chains'
+import { remotePairChain, simpleColoring, xChain, xyChain } from '../../core/solvers/chains'
+import { applyTechniques } from '../../core/solve'
 
 test('remote pair chain 1', () => {
     const board = createTestBoard(remotePairChainInput1)
@@ -59,4 +61,29 @@ test('xy chain 1', () => {
             {point: {y: 1, x: 5}},
         ]
     })
+})
+
+test('simple coloring 1', () => {
+    let board = createTestBoard(simpleColoringInput1)
+    board = applyTechniques(board, [
+        'nakedSingle',
+        'hiddenSingle',
+        'pointer',
+        'inversePointer',
+        'nakedPair',
+        'hiddenPair',
+        'nakedTriple',
+        'hiddenTriple',
+        'nakedQuad',
+        'hiddenQuad',
+    ])
+    const result = simpleColoring(board)
+
+    expect(result).not.toBe(null)
+    // Just check effects. There's too many actors in coloring..
+    expect(result!.effects).toMatchObject( [
+        {"type": "elimination", "point": {"x": 0, "y": 7}, "numbers": [3]},
+        {"type": "elimination", "point": {"x": 8, "y": 0}, "numbers": [3]},
+        {"type": "elimination", "point": {"x": 8, "y": 2}, "numbers": [3]}
+    ])
 })

@@ -12,7 +12,8 @@ import { isBoardFinished } from './utils/sudokuUtils'
 import { unique } from './utils/misc'
 import { applyEffects } from './utils/effects'
 import { bruteForce } from './solvers/bruteForce'
-import { remotePairChain, xChain, xyChain } from './solvers/chains'
+import { remotePairChain, simpleColoring, xChain, xyChain } from './solvers/chains'
+import { bugPlus1 } from './solvers/bug'
 
 export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'basic', fn: basicElimination, difficulty: 'beginner'},
@@ -26,17 +27,19 @@ export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'xwing', fn: xWing, difficulty: 'hard'}, // When you know about it, easier than triples
     {type: 'nakedTriple', fn: nakedTriple, difficulty: 'hard'},
     {type: 'hiddenTriple', fn: hiddenTriple, difficulty: 'hard'},
-    {type: 'skyscraper', fn: skyscraper, difficulty: 'expert'}, // A bit harder than x-wing. A bit more chainy
+    {type: 'nakedQuad', fn: nakedQuad, difficulty: 'hard'}, // At least it's naked, but 4 is a lot :P
     {type: 'uniqueRectangle1', fn: uniqueRectangle1, difficulty: 'expert'}, // Type 1 is quite easy to spot when you know about it. The others, not so much.
-    {type: 'nakedQuad', fn: nakedQuad, difficulty: 'expert'}, // At least it's naked, but 4 is a lot :P
-    {type: 'emptyRectangle', fn: emptyRectangle, difficulty: 'expert'}, // Not too hard to spot when you know about it. A bit chainy
+    {type: 'bugPlus1', fn: bugPlus1, difficulty: 'expert'}, // BUG+1 is a quick way to finish a puzzle
+    {type: 'skyscraper', fn: skyscraper, difficulty: 'expert'}, // A bit harder than x-wing. A bit more chainy
     {type: 'swordfish', fn: swordfish, difficulty: 'expert'}, // Quite hard to spot, but easier with highlighting
+    {type: 'emptyRectangle', fn: emptyRectangle, difficulty: 'expert'}, // Not too hard to spot when you know about it. A bit chainy
     {type: 'hiddenQuad', fn: hiddenQuad, difficulty: 'expert'}, // Quite hard to spot imo, but not chainy
+    {type: 'remotePairChain', fn: remotePairChain, difficulty: 'artisan'}, // Easy chain to spot if you have all candidates
     {type: 'wwing', fn: wWing, difficulty: 'artisan'}, // More of a pattern than xyWing imo
+    {type: 'jellyfish', fn: jellyfish, difficulty: 'artisan'}, // Highlights is a must for jellyfish
     {type: 'xywing', fn: xyWing, difficulty: 'artisan'}, // Chainy. Quite hard to spot
     {type: 'xyzwing', fn: xyzWing, difficulty: 'artisan'}, // Same as xywing, but even more digits, so a bit harder.
-    {type: 'jellyfish', fn: jellyfish, difficulty: 'artisan'}, // Highlights is a must for jellyfish
-    {type: 'remotePairChain', fn: remotePairChain, difficulty: 'master'}, // Easy chain to spot if you have all candidates
+    {type: 'simpleColoring', fn: simpleColoring, difficulty: 'master'}, // Quite time consuming, but not actually that hard
     {type: 'xChain', fn: xChain, difficulty: 'master'}, // Let's have a stare shall we?
     {type: 'xyChain', fn: xyChain, difficulty: 'master'}, // Stare even harder...
     {type: 'bruteForce', fn: bruteForce, difficulty: 'jedi'} // Stare for days

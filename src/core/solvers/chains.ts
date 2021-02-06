@@ -1,14 +1,14 @@
-import { EliminationEffect, Point, SolverBoard, Technique, ValueEffect } from '../types'
+import { Effect, EliminationEffect, Point, SolverBoard, Technique, ValueEffect } from '../types'
 import {
-    removeCandidateFromAffectedPoints,
+    removeCandidateFromAffectedPoints, removeCandidateFromPoints,
     removeCandidatesFromPoints
 } from '../utils/effects'
-import { first, unique, uniqueBy } from '../utils/misc'
+import { allResults, first, unique, uniqueBy } from '../utils/misc'
 import {
-    allCandidates, cloneBoard,
+    allCandidates, cloneBoard, getAffectedPoints,
     getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
     getAllPoints, getAllUnfilledPoints,
-    getBoardCell,
+    getBoardCell, getPointsWithCandidates,
     getPointsWithNCandidates, pointsEqual,
 } from '../utils/sudokuUtils'
 
@@ -59,7 +59,6 @@ const getLinks = (effectsIfTrue: EliminationEffect[], effectsIfFalse: ValueEffec
  * Find all naked and hidden singles that result from a strong link (e.g. where a candidate is NOT set).
  * Hinges on all actual singles being found before doing this.
  * Also: I guess one could do a lot more here, but singles are kind of the "direct" effect.
- * TODO: We should really check that the singles we find are part of the affected cells of the strong link, but it probably won't matter (?)
  *
  * NB: We need to find naked singles because eliminating a candidate for a strong link may mean the strong link
  * is between the candidate and another candidate in the cell (which is now a naked single)
@@ -135,6 +134,11 @@ const getLinkKey = (point, cand) => {
 /**
  * A chain alternates between weak and strong links. This ensures the next step follows the one before it.
  * (Set value -> (weak) -> dont't set value -> (strong) -> set value -> etc).
+ *
+ * This method finds all chains, but:
+ * 1. Stops before they become loops/circular. It's therefore not possible to check for contradictions
+ * 2. No branching. Just one link for each cell. So it cannot be used for coloring.
+ *
  */
 const _iterateChainsInTable = (table: Table, keepLink, check, depth: number) => {
     const followLink = (link, requiredType = 'weak', prevChain, seen) => {
@@ -164,8 +168,8 @@ const _iterateChainsInTable = (table: Table, keepLink, check, depth: number) => 
 
         // Although a strong link can be followed by a strong or weak link (as a strong link can be used as a weak link),
         // we have to choose the weak link. This is because link types must be alternating (the candidate is not set -> leads to set -> not set -> etc).
-        // Afterall, we record both strong and weak links in the table,
-        // so if a link is strong, we have the weak counterpart recorded anyways.
+        // We record both strong and weak links in the table,
+        // so if a link is strong, we always have the weak counterpart recorded as well.
         const nextLinkType = link.type === 'strong' ? 'weak' : 'strong'
         const cand = link.next.cand
 
@@ -211,7 +215,7 @@ const iterateChainsInTable = (table: Table, keepLink, check) => {
  * the chain must have the same candidates. This ensures that the result is actually a remote pair instead of an xy chain.
  * See comments below for more details.
  */
-function *remotePairChainGenerator2(board: SolverBoard){
+export function remotePairChain(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
     const table = createTable(board, biValuePoints, allCandidates)
 
@@ -266,7 +270,7 @@ function *remotePairChainGenerator2(board: SolverBoard){
  * An initial strong link means we start by NOT choosing the candidate, then follow the chain.
  * An ending strong link means that the final value will definitely be the candidate given the initial strong link.
  */
-function *xChainGenerator(board: SolverBoard){
+export function xChain(board: SolverBoard){
     const unfilledPoints = getAllUnfilledPoints(board)
     const table = createTable(board, unfilledPoints, allCandidates)
 
@@ -304,7 +308,7 @@ function *xChainGenerator(board: SolverBoard){
  * Also, the initial and final links must be on the same candidate.
  * This ensures that the candidate is in one of those cells.
  */
-function *xyChainGenerator(board: SolverBoard){
+export function xyChain(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
     const table = createTable(board, biValuePoints, allCandidates)
 
@@ -339,11 +343,99 @@ function *xyChainGenerator(board: SolverBoard){
     return result
 }
 
-export const remotePairChain: Technique = (board: SolverBoard) => first(remotePairChainGenerator2(board))
-//export const allRemotePairChains: Technique = (board: SolverBoard) => allResults(remotePairChainGenerator(board))
+function *simpleColoringGenerator(board: SolverBoard){
+    const unfilledPoints = getAllUnfilledPoints(board)
+    const table = createTable(board, unfilledPoints, allCandidates)
+    const oppositeColor = (color) => color === 'yes' ? 'no' : 'yes'
 
-export const xChain: Technique = (board: SolverBoard) => first(xChainGenerator(board))
-//export const allXChains: Technique = (board: SolverBoard) => allResults(xChainGenerator(board))
+    const getNextQueueItems = (pointKey: string, cand: number, color: string) => {
+        return table[pointKey].links
+            .filter(link => link.prev.cand === cand && link.next.cand === cand && link.type === 'strong')
+            .map(link => ({ point: link.next.point, color }))
+    }
 
-export const xyChain: Technique = (board: SolverBoard) => first(xyChainGenerator(board))
-//export const allXyChains: Technique = (board: SolverBoard) => allResults(xyChainGenerator(board))
+    const colorFromPoint = (startingPoint: Point, cand: number) => {
+        const startingKey = getPointKey(startingPoint)
+        const colors = {[startingKey]: { color: 'yes', point: startingPoint }}
+        const queue = getNextQueueItems(startingKey, cand, 'no')
+
+        while(queue.length > 0){
+            const { point, color } = queue.shift()!
+
+            const key = getPointKey(point)
+            if(colors[key]) continue
+            colors[key] = {color, point}
+
+            queue.push(...getNextQueueItems(key, cand, oppositeColor(color)))
+        }
+
+        return colors
+    }
+
+    // Sort so we get easier results first
+    const candsWithPoints = allCandidates
+        .map(cand => {
+            return {
+                cand,
+                points: getPointsWithCandidates(board, unfilledPoints, [cand])
+            }
+        })
+        .sort((a, b) => a.points.length - b.points.length)
+
+    for(let { cand, points } of candsWithPoints){
+        // Avoid checking points within the same coloring multiple times
+        const checked = new Set()
+        for(let startingPoint of points){
+            if(checked.has(getPointKey(startingPoint))) continue
+
+            const colors = colorFromPoint(startingPoint, cand)
+
+            Object.values(colors).forEach(({point}) => {
+                checked.add(getPointKey(point))
+            })
+
+            if(Object.values(colors).length > 18) continue // 9*2=18, that is each e.g. row has a conjugate pair. Doesn't make sense to color in more than that?
+
+            const uncoloredPoints = getPointsWithCandidates(board, points, [cand])
+                .filter(point => !colors[getPointKey(point)])
+
+            const effects: Effect[] = []
+
+            // Check color traps:
+            // All points seeing two different colors must be eliminated, since one of those colors must mean that the cand is set
+            for(let uncoloredPoint of uncoloredPoints){
+                const seenColors = unique(
+                    getAffectedPoints(uncoloredPoint)
+                        .map(affected => colors[getPointKey(affected)]?.color ?? '')
+                        .filter(color => color !== '')
+                )
+
+                if(seenColors.length === 2){
+                    effects.push(...removeCandidateFromPoints(board, [uncoloredPoint], cand))
+                }
+            }
+
+            // Check color wraps:
+            // Points with the same color seeing each other must all be false
+            for(let {point, color} of Object.values(colors)){
+                const seesSameColor = getAffectedPoints(point)
+                    .some(affected => colors[getPointKey(affected)]?.color === color)
+
+                if(seesSameColor){
+                    effects.push(...removeCandidateFromPoints(board, [point], cand))
+                }
+            }
+
+            const actors = Object.values(colors).map(x => ({point: x.point}))
+
+            if(effects.length > 0){
+                yield {effects, actors}
+            }
+        }
+    }
+
+    return null
+}
+
+export const simpleColoring: Technique = (board: SolverBoard) => first(simpleColoringGenerator(board))
+export const allSimpleColorings: Technique = (board: SolverBoard) => allResults(simpleColoringGenerator(board))
