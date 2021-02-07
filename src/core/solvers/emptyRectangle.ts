@@ -17,13 +17,13 @@ import { SolverBoard, Point, Technique } from '../types'
 import {
     allCandidates,
     getAllBoxes,
-    getBoxNumber, getColNumber, getColsOutsideBox,
+    getBoxNumber, getColNumber, getColsOutsideBox, getColumn,
     getPointsWithCandidates, getRowNumber,
     getRowsOutsideBox,
     pointsEqual
 } from '../utils/sudokuUtils'
 import { removeCandidateFromPoints } from '../utils/effects'
-import { allResults, first, groupBy } from '../utils/misc'
+import { allResults, difference, first, groupBy, unique } from '../utils/misc'
 
 function *emptyRectangleGenerator(board: SolverBoard){
     const getResult = (pairHouse: Point[], erPoints: Point[], pointerX, pointerY, cand) => {
@@ -71,18 +71,23 @@ function *emptyRectangleGenerator(board: SolverBoard){
                     if(result) yield result
                 }
             }else{
-                const erCols = Object.values(groupBy(erPoints, getColNumber)).filter(points => points.length >= 2)
-                if(erCols.length !== 1) continue
-
-                const erRows = Object.values(groupBy(erPoints, getRowNumber)).filter(points => points.length >= 2)
-                if(erRows.length !== 1) continue
-
-                const pointerX = erCols[0][0].x
-                const pointerY = erRows[0][0].y
-
-                for(let pairHouse of pairHouses){
-                    const result = getResult(pairHouse, erPoints, pointerX, pointerY, cand)
-                    if(result) yield result
+                const colNumbers = unique(erPoints.map(p => p.x))
+                let pointerLines: any = null
+                for(let colNumber of colNumbers){
+                    const wholeColumn = getColumn(colNumber)
+                    const restPoints = difference(erPoints, wholeColumn, pointsEqual)
+                    if(restPoints.length > 0 && restPoints.every(p => p.y === restPoints[0].y)){
+                        pointerLines = {
+                            x: colNumber,
+                            y: restPoints[0].y
+                        }
+                    }
+                }
+                if(pointerLines !== null){
+                    for(let pairHouse of pairHouses){
+                        const result = getResult(pairHouse, erPoints, pointerLines.x, pointerLines.y, cand)
+                        if(result) yield result
+                    }
                 }
             }
         }
