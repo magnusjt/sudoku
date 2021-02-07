@@ -2,8 +2,9 @@ import {input as remotePairChainInput1} from '../sudokus/remotePairChain'
 import {input as xChainInput1} from '../sudokus/xChain'
 import {input as xyChainInput1} from '../sudokus/xyChain'
 import {input as simpleColoringInput1} from '../sudokus/simpleColoring'
+import {input as aicType12Input1} from '../sudokus/aicType12'
 import { createTestBoard } from '../util'
-import { remotePairChain, simpleColoring, xChain, xyChain } from '../../core/solvers/chains'
+import { aicType12, remotePairChain, simpleColoring, xChain, xyChain } from '../../core/solvers/chains'
 import { applyTechniques } from '../../core/solve'
 
 test('remote pair chain 1', () => {
@@ -14,8 +15,12 @@ test('remote pair chain 1', () => {
         effects: [{type: 'elimination', point: {y: 5, x: 6}, numbers: [5]}],
         actors: [
             {point: {y: 5, x: 0}},
+            {point: {y: 5, x: 0}},
+            {point: {y: 2, x: 0}},
             {point: {y: 2, x: 0}},
             {point: {y: 2, x: 8}},
+            {point: {y: 2, x: 8}},
+            {point: {y: 1, x: 6}},
             {point: {y: 1, x: 6}},
         ]
     })
@@ -83,7 +88,28 @@ test('simple coloring 1', () => {
     // Just check effects. There's too many actors in coloring..
     expect(result!.effects).toMatchObject( [
         {"type": "elimination", "point": {"x": 0, "y": 7}, "numbers": [3]},
-        {"type": "elimination", "point": {"x": 8, "y": 0}, "numbers": [3]},
-        {"type": "elimination", "point": {"x": 8, "y": 2}, "numbers": [3]}
+        {"type": "elimination", "point": {"x": 8, "y": 2}, "numbers": [3]},
+        {"type": "elimination", "point": {"x": 8, "y": 0}, "numbers": [3]}
     ])
+})
+
+test('aic type12 1', () => {
+    const board = createTestBoard(aicType12Input1)
+    const result = aicType12(board)
+
+    expect(result).toMatchObject({
+        "effects": [
+            {"type": "elimination", "point": {"x": 1, "y": 6}, "numbers": [5]}
+        ],
+        "actors": [
+            {"point": {"x": 1, "y": 0}},
+            {"point": {"x": 1, "y": 0}},
+            {"point": {"x": 3, "y": 0}},
+            {"point": {"x": 3, "y": 2}},
+            {"point": {"x": 3, "y": 2}},
+            {"point": {"x": 3, "y": 6}},
+            {"point": {"x": 3, "y": 6}},
+            {"point": {"x": 1, "y": 6}}
+        ]
+    })
 })

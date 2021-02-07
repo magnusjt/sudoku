@@ -20,7 +20,7 @@ export const addCandidates = (board: Board, point: Point, numbers: number[]): Ef
     return {type: 'addCandidates', point, numbers: candidatesToAdd} as AddCandidatesEffect
 }
 
-const effectsEqual = (eff1: Effect, eff2: Effect) => {
+export const effectsEqual = (eff1: Effect, eff2: Effect) => {
     if(eff1.type === 'value' && eff2.type === 'value'){
         return pointsEqual(eff1.point, eff2.point) && eff1.number === eff2.number
     }else if(eff1.type === 'elimination' && eff2.type === 'elimination'){
@@ -29,12 +29,14 @@ const effectsEqual = (eff1: Effect, eff2: Effect) => {
     return false
 }
 
+export const uniqueEffects = (effects: Effect[]) => uniqueBy(effects, effectsEqual)
+
 export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
     const effects = points
         .map(point => removeCandidates(board, point, numbers))
         .filter(eff => eff.type !== 'none')
 
-    return uniqueBy(effects, effectsEqual)
+    return uniqueEffects(effects)
 }
 
 export const addCandidatesToPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {

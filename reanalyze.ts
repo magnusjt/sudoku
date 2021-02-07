@@ -10,7 +10,9 @@ const rename = false
 for(let line of lines){
     const previousMetaData = JSON.parse(line)
     const board = boardFromStr(previousMetaData.boardData)
+    console.time()
     const metaData = getBoardMetaData(board)
+    console.timeEnd()
 
     if(!rename){
         metaData.name = previousMetaData.name

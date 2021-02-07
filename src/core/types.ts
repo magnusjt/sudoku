@@ -33,6 +33,8 @@ export type ValueEffect = {
 
 export type Actor = {
     point: Point
+    cand?: number
+    chainSet?: 'yes' | 'no'
 }
 
 export type Technique = (board: SolverBoard) => {effects: Effect[], actors: Actor[]} | null

@@ -97,6 +97,10 @@ export const getAffectedPoints = (point: Point): Point[] => {
     ].filter(p => !pointsEqual(p, point))
 }
 
+export const pointsSeeEachOther = (point1: Point, point2: Point) => {
+    return point1.x === point2.x || point1.y === point2.y || getBoxNumber(point1) === getBoxNumber(point2)
+}
+
 export const getRowsOutsideBox = boxNumber => {
     const boxY = getBoxY(boxNumber)
     return getAllRows().filter(points => points[0].y < boxY || points[0].y >= boxY + 3)

@@ -12,7 +12,7 @@ import { isBoardFinished } from './utils/sudokuUtils'
 import { unique } from './utils/misc'
 import { applyEffects } from './utils/effects'
 import { bruteForce } from './solvers/bruteForce'
-import { remotePairChain, simpleColoring, xChain, xyChain } from './solvers/chains'
+import { aicType12, remotePairChain, simpleColoring, xChain, xyChain } from './solvers/chains'
 import { bugPlus1 } from './solvers/bug'
 
 export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
@@ -42,6 +42,7 @@ export const techniques: {type: string, fn: Technique, difficulty: string}[] = [
     {type: 'simpleColoring', fn: simpleColoring, difficulty: 'master'}, // Quite time consuming, but not actually that hard
     {type: 'xChain', fn: xChain, difficulty: 'master'}, // Let's have a stare shall we?
     {type: 'xyChain', fn: xyChain, difficulty: 'master'}, // Stare even harder...
+    {type: 'aicType12', fn: aicType12, difficulty: 'master'}, // Stare even more harder...
     {type: 'bruteForce', fn: bruteForce, difficulty: 'jedi'} // Stare for days
 ]
 

@@ -58,7 +58,11 @@ export const Solver = (props: SolverProps) => {
                 <span style={{ background: actorColor }}>&nbsp;&nbsp;</span>
                 {solveResult.actors.map((actor, i) => {
                     return (
-                        <span key={i}> {pointToStr(actor.point)} </span>
+                        <span key={i}>{' '}
+                            {pointToStr(actor.point)}
+                            {actor.cand && `[${actor.cand}]`}
+                            {actor.chainSet && `${actor.chainSet === 'yes' ? 'T' : 'F'}`}
+                        </span>
                     )
                 })}
                 <br />

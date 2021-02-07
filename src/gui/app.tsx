@@ -51,6 +51,11 @@ export function App(){
 
     const inputEnabled = !solverState && isValid && !isComplete
 
+    const hints = React.useMemo(() => {
+        if(hasError || !hintsEnabled) return []
+        return getTechniquesUntilNextValue(prepareBoardForSolver(board))
+    }, [board, hasError, hintsEnabled])
+
     const setUserData = React.useCallback((userData: UserData) => {
         storeUserData(userData)
         _setUserData(userData)
@@ -71,11 +76,6 @@ export function App(){
             [boardStr]: board
         }})
     }, [userData, setUserData])
-
-    const hints = React.useMemo(() => {
-        if(hasError) return []
-        return getTechniquesUntilNextValue(prepareBoardForSolver(board))
-    }, [board, hasError])
 
     const onSetSolveResult = React.useCallback((solveResult: SolveResult | null, boardBeforeSolve: Board) => {
         setSolverState({

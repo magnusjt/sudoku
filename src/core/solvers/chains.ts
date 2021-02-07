@@ -1,15 +1,15 @@
-import { Effect, EliminationEffect, Point, SolverBoard, Technique, ValueEffect } from '../types'
+import { Actor, Effect, EliminationEffect, Point, SolverBoard, Technique, ValueEffect } from '../types'
 import {
     removeCandidateFromAffectedPoints, removeCandidateFromPoints,
-    removeCandidatesFromPoints
+    removeCandidatesFromPoints, uniqueEffects
 } from '../utils/effects'
-import { allResults, first, unique, uniqueBy } from '../utils/misc'
+import { allResults, arraysEqual, first, unique } from '../utils/misc'
 import {
     allCandidates, cloneBoard, getAffectedPoints,
     getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
     getAllPoints, getAllUnfilledPoints,
     getBoardCell, getPointsWithCandidates,
-    getPointsWithNCandidates, pointsEqual,
+    getPointsWithNCandidates, pointsSeeEachOther,
 } from '../utils/sudokuUtils'
 
 const getPointKey = (point: Point) => `${point.y}-${point.x}`
@@ -66,6 +66,15 @@ const getLinks = (effectsIfTrue: EliminationEffect[], effectsIfFalse: ValueEffec
 const getSingleEffects = (board: SolverBoard) => {
     const effects: ValueEffect[] = []
 
+    // Note: The order matters here. Do naked singles first, since those results from strong link (i.e. cand not set)
+    // where there is only two candidates. So we check effects within the cell first this way.
+    // Naked singles
+    getPointsWithNCandidates(board, getAllPoints(), 1)
+        .forEach(point => {
+            const cand = getBoardCell(board, point).candidates[0]
+            effects.push({type: 'value', point, number: cand} as const)
+        })
+
     // Hidden singles
     for(let points of getAllHousesMinusFilledPoints(board)){
         for(let cand = 1; cand <= 9; cand++){
@@ -77,14 +86,7 @@ const getSingleEffects = (board: SolverBoard) => {
         }
     }
 
-    // Naked singles
-    getPointsWithNCandidates(board, getAllPoints(), 1)
-        .forEach(point => {
-            const cand = getBoardCell(board, point).candidates[0]
-            effects.push({type: 'value', point, number: cand} as const)
-        })
-
-    return uniqueBy(effects, (eff1, eff2) => pointsEqual(eff1.point, eff2.point) && eff1.cand === eff2.cand)
+    return uniqueEffects(effects) as ValueEffect[]
 }
 
 /**
@@ -95,6 +97,11 @@ const getSingleEffects = (board: SolverBoard) => {
  * When a candidate is not set, we can use it to make strong links towards all its effected cells. Effects are naked/hidden singles here.
  */
 const createTable = (board: SolverBoard, points: Point[], cands: number[]) => {
+    // Ensure the cells with the fewest candidates are stored first.
+    // These are the most likely starting cells that a human would choose.
+    points = points.sort((a, b) => {
+        return getBoardCell(board, a).candidates.length - getBoardCell(board, b).candidates.length
+    })
     board = cloneBoard(board)
     const table: Table = {}
     for(let point of points){
@@ -104,10 +111,16 @@ const createTable = (board: SolverBoard, points: Point[], cands: number[]) => {
                 continue
             }
 
-            const effectsIfTrue = removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
+            // Record "direct" effects when setting true
+            // Here we can record indirect effects as well (e.g. pointers) if we want group links
+            const effectsIfTrue = [
+                // Effects within the cell comes first
+                ...removeCandidatesFromPoints(board, [point], cell.candidates.filter(c => c !== cand)) as EliminationEffect[],
+                ...removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
+            ]
 
             // Temporarily remove candidate to find effectsIfFalse
-            // NB: Will find effects on totally unrelated hidden singles as well, so don't run this until all hidden singles are found
+            // NB: Will find indirect effects as well. Works as intended so long as all hidden singles are found before this.
             cell.candidates = cell.candidates.filter(c => c !== cand)
             const effectsIfFalse = getSingleEffects(board)
             cell.candidates.push(cand)
@@ -127,36 +140,33 @@ const getAllLinks = (table: Table, point: Point) => {
     return item ? item.links : []
 }
 
-const getLinkKey = (point, cand) => {
-    return `${getPointKey(point)}${cand}` // Avoids visiting the same point with same cand twice
-}
+const getChainPointCount = (chain: Link[]) =>
+    unique(chain.flatMap(link => [link.prev.point, link.next.point].map(getPointKey))).length
 
 /**
  * A chain alternates between weak and strong links. This ensures the next step follows the one before it.
  * (Set value -> (weak) -> dont't set value -> (strong) -> set value -> etc).
  *
  * This method finds all chains, but:
- * 1. Stops before they become loops/circular. It's therefore not possible to check for contradictions
+ * 1. Stops when it loops back to a previous cell, EXCEPT when the link is internal in a cell.
  * 2. No branching. Just one link for each cell. So it cannot be used for coloring.
  *
  */
 const _iterateChainsInTable = (table: Table, keepLink, check, depth: number) => {
     const followLink = (link, requiredType = 'weak', prevChain, seen) => {
-        const key = getLinkKey(link.next.point, link.next.cand)
+        const key = getPointKey(link.next.point)
         if(seen.has(key)){
             return false
         }
-        // The cand is now set/removed when starting from prev point. Prevent it from being set/removed again
-        // If we're to implement forcing chains, this won't work as we need to look for contradictions.
-        // Can probably implement that around here.
-        seen = new Set([...seen]).add(getLinkKey(link.prev.point, link.prev.cand))
+        seen = new Set([...seen]).add(getPointKey(link.prev.point))
 
         if(!keepLink(link)){
             return false
         }
 
         const chain = [...prevChain, link]
-        let currDepth = chain.length
+        // Point count is a better metric than link count I think. It's harder to keep track of links between points than within.
+        let currDepth = getChainPointCount(chain)
         if(currDepth > depth){
             return false
         }
@@ -192,11 +202,28 @@ const _iterateChainsInTable = (table: Table, keepLink, check, depth: number) => 
 }
 
 const iterateChainsInTable = (table: Table, keepLink, check) => {
-    for(let depth = 2; depth <= 12; depth++){
+    for(let depth = 3; depth <= 10; depth++){
         const result = _iterateChainsInTable(table, keepLink, check, depth)
         if(result) return true
     }
     return false
+}
+
+const chainToActors = (chain: Link[]): Actor[] => {
+    return [
+        {
+            point: chain[0].prev.point,
+            cand: chain[0].prev.cand,
+            chainSet: chain[0].type === 'strong' ? 'no' : 'yes'
+        },
+        ...chain.map(link => {
+            return {
+                point: link.next.point,
+                cand: link.next.cand,
+                chainSet: link.type === 'strong' ? 'yes' as const : 'no' as const
+            }
+        }),
+    ]
 }
 
 /**
@@ -222,10 +249,11 @@ export function remotePairChain(board: SolverBoard){
     let result: any = null
     const keepLink = (link) => {
         // Every link is between pairs
-        return unique([
-            ...getBoardCell(board, link.prev.point).candidates,
-            ...getBoardCell(board, link.next.point).candidates,
-        ]).length === 2
+        return arraysEqual(
+            getBoardCell(board, link.prev.point).candidates,
+            getBoardCell(board, link.next.point).candidates,
+            (a, b) => a === b
+        )
     }
     iterateChainsInTable(table, keepLink, (chain: Link[]) => {
         if(chain.length <= 2) return false;
@@ -250,13 +278,9 @@ export function remotePairChain(board: SolverBoard){
         const cands = getBoardCell(board, start).candidates
         const affected = getAffectedPointsInCommon([start, end])
         const effects = removeCandidatesFromPoints(board, affected, cands)
-        const points = [
-            chain[0].prev.point,
-            ...chain.map(link => link.next.point),
-        ]
-        const actors = points.map(point => ({point}))
+
         if(effects.length > 0){
-            result = {effects, actors}
+            result = {effects, actors: chainToActors(chain)}
             return true
         }
     })
@@ -288,13 +312,9 @@ export function xChain(board: SolverBoard){
         const cand = firstLink.prev.cand
         const affected = getAffectedPointsInCommon([start, end])
         const effects = removeCandidatesFromPoints(board, affected, [cand])
-        const points = [
-            chain[0].prev.point,
-            ...chain.map(link => link.next.point),
-        ]
-        const actors = points.map(point => ({point}))
+
         if(effects.length > 0){
-            result = {effects, actors}
+            result = {effects, actors: chainToActors(chain)}
             return true
         }
     })
@@ -318,6 +338,9 @@ export function xyChain(board: SolverBoard){
         if(chain.length <= 2) return false;
         const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
+        // NOTE: We might restrict each strong link to be within cells as well.
+        // Right now we allow strong links to go directly to other cells.
+        // Not sure if this is still considered an xy chain. I guess it still is, but with fewer steps.
         if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
             return false
         }
@@ -329,13 +352,9 @@ export function xyChain(board: SolverBoard){
         const cand = firstLink.prev.cand
         const affected = getAffectedPointsInCommon([start, end])
         const effects = removeCandidatesFromPoints(board, affected, [cand])
-        const points = [
-            chain[0].prev.point,
-            ...chain.map(link => link.next.point),
-        ]
-        const actors = points.map(point => ({point}))
+
         if(effects.length > 0){
-            result = {effects, actors}
+            result = {effects, actors: chainToActors(chain)}
             return true
         }
     })
@@ -435,6 +454,61 @@ function *simpleColoringGenerator(board: SolverBoard){
     }
 
     return null
+}
+
+/**
+ * Alternating inference chain type 1.
+ * Like xy-chain, begins and ends with the same candidate.
+ * The only difference is that we consider all cells, not just bi-value cells
+ *
+ * AIC type 2 begins and ends with different candidates.
+ * The end candidate can then be eliminated from the start cell, and vice versa
+ */
+export function aicType12(board: SolverBoard){
+    const unfilledPoints = getAllUnfilledPoints(board)
+    const table = createTable(board, unfilledPoints, allCandidates)
+
+    let result: any = null
+    const keepLink = () => true
+    iterateChainsInTable(table, keepLink, (chain: Link[]) => {
+        if(chain.length <= 2) return false;
+        const firstLink = chain[0]
+        const lastLink = chain[chain.length - 1]
+        if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
+            return false
+        }
+
+        const start = firstLink.prev.point
+        const end = lastLink.next.point
+
+        if(firstLink.prev.cand === lastLink.next.cand){
+            // AIC type 1
+            const cand = firstLink.prev.cand
+            const affected = getAffectedPointsInCommon([start, end])
+            const effects = removeCandidatesFromPoints(board, affected, [cand])
+            if(effects.length > 0){
+                result = {effects, actors: chainToActors(chain)}
+                return true
+            }
+        }else{
+            // AIC type 2
+            if(!pointsSeeEachOther(start, end)){
+                return false
+            }
+            const effects = [
+                ...removeCandidateFromPoints(board, [start], lastLink.next.cand),
+                ...removeCandidateFromPoints(board, [end], firstLink.prev.cand)
+            ]
+            if(effects.length > 0){
+                result = {effects, actors: chainToActors(chain)}
+                return true
+            }
+        }
+
+        return false
+    })
+
+    return result
 }
 
 export const simpleColoring: Technique = (board: SolverBoard) => first(simpleColoringGenerator(board))
