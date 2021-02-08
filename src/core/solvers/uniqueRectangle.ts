@@ -3,7 +3,7 @@ import {
     getAllRows,
     getBoardCell,
     getBoxNumber,
-    getColumn,
+    getColumn, getPointId,
     getPointsWithNCandidates,
     pointsEqual
 } from '../utils/sudokuUtils'
@@ -58,9 +58,10 @@ export const uniqueRectangle1: Technique = (board: SolverBoard) => {
 
             for(let colPair of matchingPairs){
                 const corners = uniqueBy([...colPair.points, ...pair.points], pointsEqual)
+                const x = Object.values<any>(groupBy(corners, p => p.x)).filter(xs => xs.length === 1).map(xs => xs[0])[0].x
+                const y = Object.values<any>(groupBy(corners, p => p.y)).filter(ys => ys.length === 1).map(ys => ys[0])[0].y
                 const missingCorner = {
-                    x: Object.values<any>(groupBy(corners, p => p.x)).filter(xs => xs.length === 1).map(xs => xs[0])[0].x,
-                    y: Object.values<any>(groupBy(corners, p => p.y)).filter(ys => ys.length === 1).map(ys => ys[0])[0].y
+                    x, y, id: getPointId(x, y)
                 }
                 const candidates = pair.candidates
                 const effects = removeCandidatesFromPoints(board, [missingCorner], candidates)

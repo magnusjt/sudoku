@@ -1,18 +1,20 @@
 import { Point, Board, Cell } from '../types'
 import { arraysEqual, difference, intersectionOfAll, memoize } from './misc'
 
-export const pointsEqual = (pointA: Point, pointB: Point) => pointA.x === pointB.x && pointA.y === pointB.y
+export const pointsEqual = (pointA: Point, pointB: Point) => pointA.id === pointB.id
 export const pointListsEqual = (pointsA: Point[], pointsB: Point[]) => arraysEqual(pointsA, pointsB, pointsEqual)
 
 export const allCandidates = Array(9).fill(0).map((_, i) => i + 1)
 
 export const candidatesExcept = (cands: number[]) => difference(allCandidates, cands, (a,b) => a === b)
 
+export const getPointId = (x, y) => y * 9 + x
+
 export const getAllPoints = memoize((): Point[] => {
     const points: Point[] = []
     for(let x = 0; x < 9; x++){
         for(let y = 0; y < 9; y++){
-            points.push({x, y})
+            points.push({x, y, id: getPointId(x, y)})
         }
     }
     return points
@@ -23,7 +25,7 @@ export const getAllUnfilledPoints = (board: Board): Point[] => getAllPoints().fi
 export const getColumn = memoize((x: number): Point[] => {
     const col: Point[] = []
     for(let y = 0; y < 9; y++){
-        col.push({x, y})
+        col.push({x, y, id: getPointId(x, y)})
     }
     return col
 }, (x) => x)
@@ -31,7 +33,7 @@ export const getColumn = memoize((x: number): Point[] => {
 export const getRow = memoize((y: number): Point[] => {
     const row: Point[] = []
     for(let x = 0; x < 9; x++){
-        row.push({x, y})
+        row.push({x, y, id: getPointId(x, y)})
     }
     return row
 }, y => y)
@@ -42,7 +44,7 @@ export const getBox = memoize((point: Point): Point[] => {
     const yStart = Math.floor(point.y/3)*3
     for(let x = xStart; x < xStart + 3; x++){
         for(let y = yStart; y < yStart + 3; y++){
-            box.push({x, y})
+            box.push({x, y, id: getPointId(x, y)})
         }
     }
     return box
@@ -72,7 +74,7 @@ export const getAllBoxes = memoize((): Point[][] => {
     for(let k = 0; k < 9; k++){
         const x = getBoxX(k)
         const y = getBoxY(k)
-        boxes.push(getBox({x, y}))
+        boxes.push(getBox({x, y, id: getPointId(x, y)}))
     }
     return boxes
 }, () => 'T')

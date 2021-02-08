@@ -17,28 +17,28 @@ import { SolverBoard, Point, Technique } from '../types'
 import {
     allCandidates,
     getAllBoxes,
-    getBoxNumber, getColNumber, getColsOutsideBox, getColumn,
-    getPointsWithCandidates, getRowNumber,
+    getBoxNumber, getColsOutsideBox, getColumn, getPointId,
+    getPointsWithCandidates,
     getRowsOutsideBox,
     pointsEqual
 } from '../utils/sudokuUtils'
 import { removeCandidateFromPoints } from '../utils/effects'
-import { allResults, difference, first, groupBy, unique } from '../utils/misc'
+import { allResults, difference, first, unique } from '../utils/misc'
 
 function *emptyRectangleGenerator(board: SolverBoard){
     const getResult = (pairHouse: Point[], erPoints: Point[], pointerX, pointerY, cand) => {
         const pair = getPointsWithCandidates(board, pairHouse, [cand])
         if(pair.length !== 2) return null
 
-        let pointToRemove
+        let pointToRemove: Point
         if(pair.some(point => point.x === pointerX)){
             const otherPoint = pair.find(point => point.x !== pointerX)
             if(!otherPoint) return null
-            pointToRemove = {x: otherPoint.x, y: pointerY}
+            pointToRemove = {x: otherPoint.x, y: pointerY, id: getPointId(otherPoint.x, pointerY)}
         }else if(pair.some(point => point.y === pointerY)){
             const otherPoint = pair.find(point => point.y !== pointerY)
             if(!otherPoint) return null
-            pointToRemove = {x: pointerX, y: otherPoint.y}
+            pointToRemove = {x: pointerX, y: otherPoint.y, id: getPointId(pointerX, otherPoint.y)}
         }else{
             return null
         }

@@ -43,9 +43,6 @@ export const uniqueBy = <T>(arr: T[], isEqual): T[] => {
 export const difference = <T>(arr1: T[], arr2: T[], isEqual): T[] => {
     return arr1.filter(a => !arr2.some(b => isEqual(a, b)))
 }
-export const intersection = <T>(arr1: T[], arr2: T[], isEqual): T[] => {
-    return uniqueBy([...arr1, ...arr2], isEqual).filter(x => arr1.some(a => isEqual(a, x) && arr2.some(a => isEqual(a, x))))
-}
 export const intersectionOfAll = <T>(arr: T[][], isEqual): T[] => {
     return uniqueBy(arr.flat(), isEqual).filter(x => arr.every(subArr => subArr.some(a => isEqual(a, x))))
 }

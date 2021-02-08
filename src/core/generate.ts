@@ -1,4 +1,4 @@
-import { allCandidates, canPutDigit, cloneBoard, getAllPoints } from './utils/sudokuUtils'
+import { allCandidates, canPutDigit, cloneBoard, getAllPoints, getPointId } from './utils/sudokuUtils'
 import { Board, Cell, Point } from './types'
 import { hasUniqueSolution } from './utils/hasUniqueSolution'
 
@@ -66,7 +66,7 @@ const generateSeedBoard = (board: Board, cands, x, y) => {
     board[y][x].given = true // Just set everything to given since we're gonna fill everything anyway
 
     for(let n of cands){
-        if(canPutDigit(board, {x,y}, n)){
+        if(canPutDigit(board, {x,y, id: getPointId(x, y)}, n)){
             board[y][x].value = n
             const solution = generateSeedBoard(board, cands, x+1,y)
             if(solution){

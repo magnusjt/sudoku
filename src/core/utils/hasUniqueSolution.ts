@@ -1,5 +1,5 @@
 import { Board } from '../types'
-import { canPutDigit, cloneBoard } from './sudokuUtils'
+import { canPutDigit, cloneBoard, getPointId } from './sudokuUtils'
 
 export const hasUniqueSolution = (board: Board) => {
     board = cloneBoard(board)
@@ -21,7 +21,7 @@ const getSolutionCount = (board: Board, x = 0, y = 0) => {
 
     let count = 0
     for(let n = 1; n <= 9; n++){
-        if(canPutDigit(board, {x, y}, n)){
+        if(canPutDigit(board, {x, y, id: getPointId(x, y)}, n)){
             board[y][x].value = n
             count += getSolutionCount(board, x+1,y)
             if(count >= 2){

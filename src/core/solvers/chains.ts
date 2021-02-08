@@ -9,7 +9,7 @@ import {
     getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
     getAllPoints, getAllUnfilledPoints,
     getBoardCell, getPointsWithCandidates,
-    getPointsWithNCandidates, pointsSeeEachOther,
+    getPointsWithNCandidates, pointsEqual, pointsSeeEachOther,
 } from '../utils/sudokuUtils'
 
 const getPointKey = (point: Point) => `${point.y}-${point.x}`
@@ -114,15 +114,15 @@ const createTable = (board: SolverBoard, points: Point[], cands: number[]) => {
             // Record "direct" effects when setting true
             // Here we can record indirect effects as well (e.g. pointers) if we want group links
             const effectsIfTrue = [
-                // Effects within the cell comes first
                 ...removeCandidatesFromPoints(board, [point], cell.candidates.filter(c => c !== cand)) as EliminationEffect[],
                 ...removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
-            ]
+            ].filter(eff => points.some(p => pointsEqual(p, eff.point)))
 
             // Temporarily remove candidate to find effectsIfFalse
             // NB: Will find indirect effects as well. Works as intended so long as all hidden singles are found before this.
             cell.candidates = cell.candidates.filter(c => c !== cand)
             const effectsIfFalse = getSingleEffects(board)
+                .filter(eff => points.some(p => pointsEqual(p, eff.point)))
             cell.candidates.push(cand)
 
             if(effectsIfTrue.length > 0 || effectsIfFalse.length > 0){
@@ -140,72 +140,67 @@ const getAllLinks = (table: Table, point: Point) => {
     return item ? item.links : []
 }
 
-const getChainPointCount = (chain: Link[]) =>
-    unique(chain.flatMap(link => [link.prev.point, link.next.point].map(getPointKey))).length
+const chainIsLoopStartToEnd = (chain: Link[]) => {
+    return chain.length >= 1 && pointsEqual(chain[0].prev.point, chain[chain.length - 1].next.point)
+}
+const linkIsInternal = (link: Link) => pointsEqual(link.prev.point, link.next.point)
 
-/**
- * A chain alternates between weak and strong links. This ensures the next step follows the one before it.
- * (Set value -> (weak) -> dont't set value -> (strong) -> set value -> etc).
- *
- * This method finds all chains, but:
- * 1. Stops when it loops back to a previous cell, EXCEPT when the link is internal in a cell.
- * 2. No branching. Just one link for each cell. So it cannot be used for coloring.
- *
- */
-const _iterateChainsInTable = (table: Table, keepLink, check, depth: number) => {
-    const followLink = (link, requiredType = 'weak', prevChain, seen) => {
-        const key = getPointKey(link.next.point)
-        if(seen.has(key)){
-            return false
-        }
-        seen = new Set([...seen]).add(getPointKey(link.prev.point))
+// This function is a bit ugly since it had to be fast. It was the slowest function in the chain iteration.
+const getChainPointCount = (chain: Link[]) => {
+    // Count the first link.prev point
+    let count = 1
 
-        if(!keepLink(link)){
-            return false
+    // Now count the link.next points
+    for(let link of chain){
+        if(!linkIsInternal(link)) count++
+    }
+    return count
+}
+
+const iterateChainsInTable = (table: Table, keepLink, check, maxDepthInPoints: number = 10) => {
+    const queue: Link[][] = Object.values(table).flatMap(x => x.links.map(link => [link]))
+
+    while(queue.length > 0){
+        const chain = queue.shift()!
+        const lastLink = chain[chain.length - 1]
+
+        if(!keepLink(lastLink)){
+            continue
         }
 
-        const chain = [...prevChain, link]
-        // Point count is a better metric than link count I think. It's harder to keep track of links between points than within.
-        let currDepth = getChainPointCount(chain)
-        if(currDepth > depth){
-            return false
+        const seen = chain.some(link => pointsEqual(link.prev.point, lastLink.next.point))
+        const isInternal = pointsEqual(lastLink.next.point, lastLink.prev.point)
+        // NB: Loop might not be start to end. Could be a loop with a tail.
+        const isLoop = seen && !isInternal
+
+        if(check(chain, isLoop)){
+            return true
         }
-        if(depth === currDepth){
-            if(check(chain)){
-                return true
-            }
+
+        if(isLoop){
+            continue
+        }
+
+        const currDepth = getChainPointCount(chain)
+        if(currDepth >= maxDepthInPoints){
+            continue
         }
 
         // Although a strong link can be followed by a strong or weak link (as a strong link can be used as a weak link),
         // we have to choose the weak link. This is because link types must be alternating (the candidate is not set -> leads to set -> not set -> etc).
         // We record both strong and weak links in the table,
         // so if a link is strong, we always have the weak counterpart recorded as well.
-        const nextLinkType = link.type === 'strong' ? 'weak' : 'strong'
-        const cand = link.next.cand
+        const nextLinkType = lastLink.type === 'strong' ? 'weak' : 'strong'
+        const cand = lastLink.next.cand
 
-        const nextLinks = getAllLinks(table, link.next.point)
-            .filter(link => link.prev.cand === cand && link.type === nextLinkType)
+        const nextLinks = getAllLinks(table, lastLink.next.point)
+            .filter(link => link.prev.cand === cand && link.type === nextLinkType && !(isInternal && linkIsInternal(link)))
 
         for(let nextLink of nextLinks){
-            const done = followLink(nextLink, requiredType, chain, seen)
-            if(done) return true
+            queue.push([...chain, nextLink])
         }
     }
 
-    for(let { links } of Object.values(table)){
-        for(let link of links){
-            const done = followLink(link, 'weak', [], new Set())
-            if(done) return true
-        }
-    }
-    return false
-}
-
-const iterateChainsInTable = (table: Table, keepLink, check) => {
-    for(let depth = 3; depth <= 10; depth++){
-        const result = _iterateChainsInTable(table, keepLink, check, depth)
-        if(result) return true
-    }
     return false
 }
 
@@ -255,8 +250,9 @@ export function remotePairChain(board: SolverBoard){
             (a, b) => a === b
         )
     }
-    iterateChainsInTable(table, keepLink, (chain: Link[]) => {
-        if(chain.length <= 2) return false;
+    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+        if(isLoop) return false
+        if(chain.length <= 2) return false
         const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
         // Starts and ends with strong link. Read this as:
@@ -300,8 +296,9 @@ export function xChain(board: SolverBoard){
 
     let result: any = null
     const keepLink = (link: Link) => link.prev.cand === link.next.cand
-    iterateChainsInTable(table, keepLink, (chain: Link[]) => {
-        if(chain.length <= 2) return false;
+    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+        if(isLoop) return false
+        if(chain.length <= 2) return false
         const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
         if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
@@ -334,8 +331,9 @@ export function xyChain(board: SolverBoard){
 
     let result: any = null
     const keepLink = () => true
-    iterateChainsInTable(table, keepLink, (chain: Link[]) => {
-        if(chain.length <= 2) return false;
+    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+        if(isLoop) return false
+        if(chain.length <= 2) return false
         const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
         // NOTE: We might restrict each strong link to be within cells as well.
@@ -470,8 +468,9 @@ export function aicType12(board: SolverBoard){
 
     let result: any = null
     const keepLink = () => true
-    iterateChainsInTable(table, keepLink, (chain: Link[]) => {
-        if(chain.length <= 2) return false;
+    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+        if(isLoop) return false
+        if(chain.length <= 2) return false
         const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
         if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){

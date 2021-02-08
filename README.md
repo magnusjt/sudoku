@@ -71,7 +71,7 @@ Add support for solvers (still can't solve everything without brute force):
 - 2-string kite (This is just an x chain with 4 cells, but quite a bit easier to spot)
 - Finned fish
 - Sashimi fish
-- More Chains
+- More Chains (grouped will solve some more shiz)
 - ALS (almost locked set. Find the one thing missing for a different technique, and use that in a chain)
 
 

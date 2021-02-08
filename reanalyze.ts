@@ -3,7 +3,7 @@ import fs from 'fs'
 import { arraysEqual } from './src/core/utils/misc'
 import { boardFromStr } from './src/core/sudoku'
 
-const lines = fs.readFileSync('./boards/boardsV2.txt', 'utf8').split('\n').filter(line => line.trim() !== '')
+const lines = fs.readFileSync('./boards/boardsV3.txt', 'utf8').split('\n').filter(line => line.trim() !== '')
 
 const rename = false
 

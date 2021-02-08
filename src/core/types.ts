@@ -4,6 +4,7 @@ export type Cell = {
     given: boolean
 }
 export type Point = {
+    id: number
     x: number
     y: number
 }

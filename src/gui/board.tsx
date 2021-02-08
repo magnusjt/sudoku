@@ -1,6 +1,6 @@
 import { Actor, Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../core/types'
 import React from 'react'
-import { getAffectedPoints, getBoardCell, pointsEqual } from '../core/utils/sudokuUtils'
+import { getAffectedPoints, getBoardCell, getPointId, pointsEqual } from '../core/utils/sudokuUtils'
 import useEventListener from '@use-it/event-listener'
 import {
     actorColor,
@@ -205,7 +205,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
         <div>
             {board.map((row, y) => {
                 const cells = row.map((cell, x) => {
-                    const point = {x, y}
+                    const point: Point = {x, y, id: getPointId(x, y)}
                     const selected = selectedCells.some(p => pointsEqual(p, point))
                     const affected = affectedPoints.some(p => pointsEqual(p, point))
                     const solutionValue = getBoardCell(solutionBoard, point).value as number
@@ -228,7 +228,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                                 cell={cell}
                                 selected={selected}
                                 affected={affected}
-                                point={{x, y}}
+                                point={point}
                                 solveResult={props.solveResult}
                                 highlightedNumber={highlightedNumber}
                                 selectedDigit={selectedDigit}
