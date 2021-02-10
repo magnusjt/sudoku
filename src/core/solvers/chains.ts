@@ -140,7 +140,7 @@ const getAllLinks = (table: Table, point: Point) => {
     return item ? item.links : []
 }
 
-const chainIsLoopStartToEnd = (chain: Link[]) => {
+const chainIsLoop = (chain: Link[]) => {
     return chain.length >= 1 && pointsEqual(chain[0].prev.point, chain[chain.length - 1].next.point)
 }
 const linkIsInternal = (link: Link) => pointsEqual(link.prev.point, link.next.point)
@@ -157,47 +157,59 @@ const getChainPointCount = (chain: Link[]) => {
     return count
 }
 
-const iterateChainsInTable = (table: Table, keepLink, check, maxDepthInPoints: number = 10) => {
-    const queue: Link[][] = Object.values(table).flatMap(x => x.links.map(link => [link]))
+type QueueItem = {
+    seen: Set<number>
+    chain: Link[]
+}
 
-    while(queue.length > 0){
-        const chain = queue.shift()!
+const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 13) => {
+    const isValidNextLink = (queueItem: QueueItem, link: Link) => {
+        const first = queueItem.chain[0]
+        const last = queueItem.chain[queueItem.chain.length - 1]
+
+        const requiredLinkType = last.type === 'strong' ? 'weak' : 'strong'
+
+        const lastWasInternal = last.prev.point.id === last.next.point.id
+        const nextIsInternal = link.prev.point.id === link.next.point.id
+
+        const isLoop = first.prev.point.id === link.next.point.id
+        const isLasso = !isLoop && !nextIsInternal && queueItem.seen.has(link.next.point.id)
+
+        return (
+            link.prev.cand === last.next.cand &&
+            link.type === requiredLinkType &&
+            !isLasso &&
+            !(lastWasInternal && nextIsInternal) &&
+            keepLink(link)
+        )
+    }
+
+    const queue: QueueItem[] = Object.values(table)
+        .flatMap(x => x.links
+            .filter(link => link.type === 'strong' && keepLink(link)) // Only start on strong links.
+            .map(link => ({ chain: [link], seen: new Set([link.prev.point.id]) }))
+        )
+
+    let i = 0
+    while(i < queue.length){
+        const queueItem = queue[i++] // Don't shift the queue. Turns out to be super slow when it becomes large.
+        const { chain } = queueItem
+        const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
 
-        if(!keepLink(lastLink)){
-            continue
-        }
-
-        const seen = chain.some(link => pointsEqual(link.prev.point, lastLink.next.point))
-        const isInternal = pointsEqual(lastLink.next.point, lastLink.prev.point)
-        // NB: Loop might not be start to end. Could be a loop with a tail.
-        const isLoop = seen && !isInternal
-
+        const isLoop = firstLink.prev.point.id === lastLink.next.point.id
         if(check(chain, isLoop)){
             return true
         }
 
-        if(isLoop){
+        const nextLinks = getAllLinks(table, lastLink.next.point).filter(link => isValidNextLink(queueItem, link))
+        const seen = new Set([...queueItem.seen, lastLink.next.point.id])
+        if(queueItem.chain.length >= maxDepth){
             continue
         }
-
-        const currDepth = getChainPointCount(chain)
-        if(currDepth >= maxDepthInPoints){
-            continue
-        }
-
-        // Although a strong link can be followed by a strong or weak link (as a strong link can be used as a weak link),
-        // we have to choose the weak link. This is because link types must be alternating (the candidate is not set -> leads to set -> not set -> etc).
-        // We record both strong and weak links in the table,
-        // so if a link is strong, we always have the weak counterpart recorded as well.
-        const nextLinkType = lastLink.type === 'strong' ? 'weak' : 'strong'
-        const cand = lastLink.next.cand
-
-        const nextLinks = getAllLinks(table, lastLink.next.point)
-            .filter(link => link.prev.cand === cand && link.type === nextLinkType && !(isInternal && linkIsInternal(link)))
 
         for(let nextLink of nextLinks){
-            queue.push([...chain, nextLink])
+            queue.push({ chain: [...chain, nextLink], seen })
         }
     }
 
@@ -250,6 +262,7 @@ export function remotePairChain(board: SolverBoard){
             (a, b) => a === b
         )
     }
+    const maxDepth = 20
     iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
         if(isLoop) return false
         if(chain.length <= 2) return false
@@ -279,7 +292,7 @@ export function remotePairChain(board: SolverBoard){
             result = {effects, actors: chainToActors(chain)}
             return true
         }
-    })
+    }, maxDepth)
 
     return result
 }
@@ -294,6 +307,7 @@ export function xChain(board: SolverBoard){
     const unfilledPoints = getAllUnfilledPoints(board)
     const table = createTable(board, unfilledPoints, allCandidates)
 
+    const maxDepth = 10
     let result: any = null
     const keepLink = (link: Link) => link.prev.cand === link.next.cand
     iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
@@ -314,7 +328,7 @@ export function xChain(board: SolverBoard){
             result = {effects, actors: chainToActors(chain)}
             return true
         }
-    })
+    }, maxDepth)
 
     return result
 }
@@ -329,6 +343,7 @@ export function xyChain(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
     const table = createTable(board, biValuePoints, allCandidates)
 
+    const maxDepth = 20
     let result: any = null
     const keepLink = () => true
     iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
@@ -355,7 +370,7 @@ export function xyChain(board: SolverBoard){
             result = {effects, actors: chainToActors(chain)}
             return true
         }
-    })
+    }, maxDepth)
 
     return result
 }
@@ -413,8 +428,7 @@ function *simpleColoringGenerator(board: SolverBoard){
 
             if(Object.values(colors).length > 18) continue // 9*2=18, that is each e.g. row has a conjugate pair. Doesn't make sense to color in more than that?
 
-            const uncoloredPoints = getPointsWithCandidates(board, points, [cand])
-                .filter(point => !colors[getPointKey(point)])
+            const uncoloredPoints = points.filter(point => !colors[getPointKey(point)])
 
             const effects: Effect[] = []
 
@@ -466,11 +480,13 @@ export function aicType12(board: SolverBoard){
     const unfilledPoints = getAllUnfilledPoints(board)
     const table = createTable(board, unfilledPoints, allCandidates)
 
+    const maxDepth = 13
     let result: any = null
     const keepLink = () => true
     iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
         if(isLoop) return false
         if(chain.length <= 2) return false
+
         const firstLink = chain[0]
         const lastLink = chain[chain.length - 1]
         if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
@@ -505,7 +521,7 @@ export function aicType12(board: SolverBoard){
         }
 
         return false
-    })
+    }, maxDepth)
 
     return result
 }
