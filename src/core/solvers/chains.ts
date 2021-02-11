@@ -3,13 +3,13 @@ import {
     removeCandidateFromAffectedPoints, removeCandidateFromPoints,
     removeCandidatesFromPoints, uniqueEffects
 } from '../utils/effects'
-import { allResults, arraysEqual, first, unique } from '../utils/misc'
+import { allResults, arraysEqual, difference, first, unique } from '../utils/misc'
 import {
-    allCandidates, cloneBoard, getAffectedPoints,
+    allCandidates, candidatesExcept, cloneBoard, getAffectedPoints,
     getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
     getAllPoints, getAllUnfilledPoints,
-    getBoardCell, getPointsWithCandidates,
-    getPointsWithNCandidates, pointsEqual, pointsSeeEachOther,
+    getBoardCell, getBox, getBoxNumber, getColNumber, getColumn, getPointsWithCandidates,
+    getPointsWithNCandidates, getRow, getRowNumber, pointsEqual, pointsSeeEachOther,
 } from '../utils/sudokuUtils'
 
 const getPointKey = (point: Point) => `${point.y}-${point.x}`
@@ -140,22 +140,7 @@ const getAllLinks = (table: Table, point: Point) => {
     return item ? item.links : []
 }
 
-const chainIsLoop = (chain: Link[]) => {
-    return chain.length >= 1 && pointsEqual(chain[0].prev.point, chain[chain.length - 1].next.point)
-}
 const linkIsInternal = (link: Link) => pointsEqual(link.prev.point, link.next.point)
-
-// This function is a bit ugly since it had to be fast. It was the slowest function in the chain iteration.
-const getChainPointCount = (chain: Link[]) => {
-    // Count the first link.prev point
-    let count = 1
-
-    // Now count the link.next points
-    for(let link of chain){
-        if(!linkIsInternal(link)) count++
-    }
-    return count
-}
 
 type QueueItem = {
     seen: Set<number>
@@ -186,7 +171,7 @@ const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 
 
     const queue: QueueItem[] = Object.values(table)
         .flatMap(x => x.links
-            .filter(link => link.type === 'strong' && keepLink(link)) // Only start on strong links.
+            .filter(keepLink)
             .map(link => ({ chain: [link], seen: new Set([link.prev.point.id]) }))
         )
 
@@ -333,6 +318,125 @@ export function xChain(board: SolverBoard){
     return result
 }
 
+const getDiscontinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
+    if(!isLoop){
+        return null
+    }
+
+    const firstLink = chain[0]
+    const lastLink = chain[chain.length - 1]
+
+    if(firstLink.type === 'strong' && lastLink.type === 'strong' && firstLink.prev.cand === lastLink.next.cand){
+        const effects = removeCandidatesFromPoints(board, [firstLink.prev.point], candidatesExcept([firstLink.prev.cand]))
+        if(effects.length > 0){
+            return {effects, actors: chainToActors(chain)}
+        }
+    }
+    if(firstLink.type === 'weak' && lastLink.type === 'strong' && firstLink.prev.cand !== lastLink.next.cand){
+        const effects = removeCandidatesFromPoints(board, [firstLink.prev.point], [firstLink.prev.cand])
+        if(effects.length > 0){
+            return {effects, actors: chainToActors(chain)}
+        }
+    }
+
+    return null
+}
+
+const getContinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
+    if(!isLoop){
+        return null
+    }
+
+    const firstLink = chain[0]
+    const lastLink = chain[chain.length - 1]
+
+    if(
+        (
+            (firstLink.type === 'weak' && lastLink.type === 'strong') ||
+            (firstLink.type === 'strong' && lastLink.type === 'weak')
+        ) &&
+        firstLink.prev.cand === lastLink.next.cand
+    ){
+        const pointsInChain = chain.map(link => link.next.point) // It's a loop, so the first point is included
+        const weakLinks = chain.filter(link => link.type === 'weak')
+
+        const effects: Effect[] = []
+
+        for(let link of weakLinks){
+            if(linkIsInternal(link)){
+                effects.push(
+                    ...removeCandidatesFromPoints(board, [link.prev.point], candidatesExcept([link.prev.cand, link.next.cand]))
+                )
+            }else{
+                let pointsToRemove: Point[] = []
+                if(getBoxNumber(link.prev.point) === getBoxNumber(link.next.point)){
+                    pointsToRemove.push(...getBox(link.prev.point))
+                }
+                if(getColNumber(link.prev.point) === getColNumber(link.next.point)){
+                    pointsToRemove.push(...getColumn(link.prev.point.x))
+                }
+                if(getRowNumber(link.prev.point) === getRowNumber(link.next.point)){
+                    pointsToRemove.push(...getRow(link.prev.point.y))
+                }
+                pointsToRemove = difference(pointsToRemove, pointsInChain, pointsEqual)
+                const cand = link.next.cand
+                effects.push(
+                    ...removeCandidatesFromPoints(board, pointsToRemove, [cand])
+                )
+            }
+        }
+        if(effects.length > 0){
+            return {effects, actors: chainToActors(chain)}
+        }
+    }
+    return null
+}
+
+const getAicType1 = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
+    const firstLink = chain[0]
+    const lastLink = chain[chain.length - 1]
+
+    if(isLoop){
+        return null
+    }
+
+    if(firstLink.type === 'strong' && lastLink.type === 'strong'){
+        const cand = firstLink.prev.cand
+        const affected = getAffectedPointsInCommon([firstLink.prev.point, lastLink.next.point])
+        const effects = removeCandidatesFromPoints(board, affected, [cand])
+
+        if(effects.length > 0){
+            return {effects, actors: chainToActors(chain)}
+        }
+    }
+
+    return null
+}
+
+const getAicType2 = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
+    const firstLink = chain[0]
+    const lastLink = chain[chain.length - 1]
+
+    if(isLoop){
+        return null
+    }
+
+    if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
+        if(pointsSeeEachOther(firstLink.prev.point, lastLink.next.point)){
+            const effects = [
+                ...removeCandidateFromPoints(board, [firstLink.prev.point], lastLink.next.cand),
+                ...removeCandidateFromPoints(board, [lastLink.next.point], firstLink.prev.cand)
+            ]
+
+            if(effects.length > 0){
+                return {effects, actors: chainToActors(chain)}
+            }
+        }
+    }
+
+    return null
+}
+
 /**
  * xy chains consider only bi value points
  * Like x chains and remote pairs, they must start and end with strong links
@@ -370,6 +474,36 @@ export function xyChain(board: SolverBoard){
             result = {effects, actors: chainToActors(chain)}
             return true
         }
+    }, maxDepth)
+
+    return result
+}
+
+/**
+ * Alternating inference chain type 1.
+ * Like xy-chain, begins and ends with the same candidate.
+ * The only difference is that we consider all cells, not just bi-value cells
+ *
+ * AIC type 2 begins and ends with different candidates.
+ * The end candidate can then be eliminated from the start cell, and vice versa
+ */
+export function aicType12(board: SolverBoard){
+    const unfilledPoints = getAllUnfilledPoints(board)
+    const table = createTable(board, unfilledPoints, allCandidates)
+
+    const maxDepth = 13
+    let result: any = null
+    const keepLink = () => true
+
+    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+        if(chain.length <= 2) return false
+
+        getDiscontinuousNiceLoop(board, chain, isLoop)
+        getAicType1(board, chain, isLoop)
+        getAicType2(board, chain, isLoop)
+        getContinuousNiceLoop(board, chain, isLoop)
+
+        return true
     }, maxDepth)
 
     return result
@@ -466,64 +600,6 @@ function *simpleColoringGenerator(board: SolverBoard){
     }
 
     return null
-}
-
-/**
- * Alternating inference chain type 1.
- * Like xy-chain, begins and ends with the same candidate.
- * The only difference is that we consider all cells, not just bi-value cells
- *
- * AIC type 2 begins and ends with different candidates.
- * The end candidate can then be eliminated from the start cell, and vice versa
- */
-export function aicType12(board: SolverBoard){
-    const unfilledPoints = getAllUnfilledPoints(board)
-    const table = createTable(board, unfilledPoints, allCandidates)
-
-    const maxDepth = 13
-    let result: any = null
-    const keepLink = () => true
-    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
-        if(isLoop) return false
-        if(chain.length <= 2) return false
-
-        const firstLink = chain[0]
-        const lastLink = chain[chain.length - 1]
-        if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
-            return false
-        }
-
-        const start = firstLink.prev.point
-        const end = lastLink.next.point
-
-        if(firstLink.prev.cand === lastLink.next.cand){
-            // AIC type 1
-            const cand = firstLink.prev.cand
-            const affected = getAffectedPointsInCommon([start, end])
-            const effects = removeCandidatesFromPoints(board, affected, [cand])
-            if(effects.length > 0){
-                result = {effects, actors: chainToActors(chain)}
-                return true
-            }
-        }else{
-            // AIC type 2
-            if(!pointsSeeEachOther(start, end)){
-                return false
-            }
-            const effects = [
-                ...removeCandidateFromPoints(board, [start], lastLink.next.cand),
-                ...removeCandidateFromPoints(board, [end], firstLink.prev.cand)
-            ]
-            if(effects.length > 0){
-                result = {effects, actors: chainToActors(chain)}
-                return true
-            }
-        }
-
-        return false
-    }, maxDepth)
-
-    return result
 }
 
 export const simpleColoring: Technique = (board: SolverBoard) => first(simpleColoringGenerator(board))
