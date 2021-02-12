@@ -8,7 +8,7 @@ import { uniqueRectangle1 } from './solvers/uniqueRectangle'
 import { skyscraper } from './solvers/skyscraper'
 import { emptyRectangle } from './solvers/emptyRectangle'
 import { wWing, xyWing, xyzWing } from './solvers/wing'
-import { isBoardFinished } from './utils/sudokuUtils'
+import { isBoardFinished, mergeResults } from './utils/sudokuUtils'
 import { unique } from './utils/misc'
 import { applyEffects } from './utils/effects'
 import { bruteForce } from './solvers/bruteForce'
@@ -118,11 +118,8 @@ export const applyTechniques = (board: SolverBoard, techniqueTypes: string[]): B
  * Basic elimination is just using the constraints of sudoku alone
  */
 export const applyBasicEliminations = (board: SolverBoard): SolverBoard => {
-    const res = allBasicEliminations(board)
-    if(res){
-        board = applyEffects(board, res.effects)
-    }
-    return board
+    const result = mergeResults(allBasicEliminations(board))
+    return applyEffects(board, result.effects)
 }
 
 /**

@@ -1,4 +1,4 @@
-import { SolverBoard, Point, Technique } from '../types'
+import { SolverBoard, Point } from '../types'
 import { allResults, difference, first, getCombinations, groupBy } from '../utils/misc'
 import {
     getAffectedPointsInCommon,
@@ -53,5 +53,5 @@ function *skyscraperGenerator(board: SolverBoard){
     return null
 }
 
-export const skyscraper: Technique = (board: SolverBoard) => first(skyscraperGenerator(board))
-export const allSkyscrapers: Technique = (board: SolverBoard) => allResults(skyscraperGenerator(board))
+export const skyscraper = (board: SolverBoard) => first(skyscraperGenerator(board))
+export const allSkyscrapers = (board: SolverBoard) => allResults(skyscraperGenerator(board))

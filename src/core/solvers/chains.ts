@@ -1,5 +1,14 @@
-import { Actor, Effect, EliminationEffect, Point, SolverBoard, Technique, ValueEffect } from '../types'
 import {
+    Actor,
+    Effect,
+    EliminationEffect,
+    Point,
+    SetValueEffect,
+    SolverBoard,
+    TechniqueResult
+} from '../types'
+import {
+    applyEffects,
     removeCandidateFromAffectedPoints, removeCandidateFromPoints,
     removeCandidatesFromPoints, uniqueEffects
 } from '../utils/effects'
@@ -11,11 +20,28 @@ import {
     getBoardCell, getBox, getBoxNumber, getColNumber, getColumn, getPointsWithCandidates,
     getPointsWithNCandidates, getRow, getRowNumber, pointsEqual, pointsSeeEachOther,
 } from '../utils/sudokuUtils'
+import { allInversePointers, allPointers } from './pointer'
 
 const getPointKey = (point: Point) => `${point.y}-${point.x}`
 
-type Link = {
+type Link = NormalLink
+
+type NormalLink = {
     type: 'weak' | 'strong'
+    group: false
+    prev: {
+        point: Point
+        cand: number
+    }
+    next: {
+        point: Point
+        cand: number
+    }
+}
+type GroupLink = {
+    type: 'strong-strong' | 'weak-weak' | 'weak' | 'strong'
+    actors: Actor[]
+    group: true
     prev: {
         point: Point
         cand: number
@@ -33,49 +59,79 @@ type Table = {
     }
 }
 
-const getLinks = (effectsIfTrue: EliminationEffect[], effectsIfFalse: ValueEffect[], point: Point, cand: number): Link[] => {
+const getLinks = (effectsIfTrue: EliminationEffect[], effectsIfFalse: SetValueEffect[], point: Point, cand: number): NormalLink[] => {
     const prev = { point, cand }
     return [
         ...effectsIfFalse.map((eff) => ({
-            type: 'strong',
+            type: 'strong' as const,
+            group: false as const,
             prev,
             next: {
                 point: eff.point,
                 cand: eff.number
             }
-        } as unknown as Link)),
+        })),
         ...effectsIfTrue.flatMap((eff) => eff.numbers.map(cand => ({
-            type: 'weak',
+            type: 'weak' as const,
+            group: false as const,
             prev,
             next: {
                 point: eff.point,
                 cand
             }
-        } as Link)))
+        })))
     ]
 }
 
-/**
- * Find all naked and hidden singles that result from a strong link (e.g. where a candidate is NOT set).
- * Hinges on all actual singles being found before doing this.
- * Also: I guess one could do a lot more here, but singles are kind of the "direct" effect.
- *
- * NB: We need to find naked singles because eliminating a candidate for a strong link may mean the strong link
- * is between the candidate and another candidate in the cell (which is now a naked single)
- */
-const getSingleEffects = (board: SolverBoard) => {
-    const effects: ValueEffect[] = []
+const getGroupLinks = (
+    resultsIfTrue: TechniqueResult<EliminationEffect>[],
+    resultsIfFalse: TechniqueResult<EliminationEffect>[],
+    point: Point,
+    cand: number
+): GroupLink[] => {
+    const prev = { point, cand }
 
-    // Note: The order matters here. Do naked singles first, since those results from strong link (i.e. cand not set)
-    // where there is only two candidates. So we check effects within the cell first this way.
-    // Naked singles
+    return [
+        ...resultsIfFalse.flatMap(result => {
+            const actors = result.actors
+            return result.effects.flatMap((eff) => eff.numbers.map(cand => ({
+                type: 'strong-strong' as const,
+                group: true as const,
+                actors,
+                prev,
+                next: {
+                    point: eff.point,
+                    cand
+                }
+            })))
+        }),
+        ...resultsIfTrue.flatMap(result => {
+            const actors = result.actors
+            return result.effects.map((eff) => ({
+                type: 'weak' as const,
+                group: true as const,
+                actors,
+                prev,
+                next: {
+                    point: eff.point,
+                    cand
+                }
+            }))
+        })
+    ]
+}
+
+const getNakedSingles = (board: SolverBoard): SetValueEffect[] => {
+    const effects: SetValueEffect[] = []
     getPointsWithNCandidates(board, getAllPoints(), 1)
         .forEach(point => {
             const cand = getBoardCell(board, point).candidates[0]
             effects.push({type: 'value', point, number: cand} as const)
         })
-
-    // Hidden singles
+    return effects
+}
+const getHiddenSingles = (board: SolverBoard): SetValueEffect[] => {
+    const effects: SetValueEffect[] = []
     for(let points of getAllHousesMinusFilledPoints(board)){
         for(let cand = 1; cand <= 9; cand++){
             const pointsWithCand = points.filter(p => getBoardCell(board, p).candidates.some(c => c === cand))
@@ -85,8 +141,31 @@ const getSingleEffects = (board: SolverBoard) => {
             }
         }
     }
+    return effects
+}
 
-    return uniqueEffects(effects) as ValueEffect[]
+const getValueFalseEffects = (board: SolverBoard): SetValueEffect[] => {
+    return uniqueEffects([
+        ...getNakedSingles(board),
+        ...getHiddenSingles(board)
+    ])
+}
+
+const getValueTrueEffects = (board: SolverBoard, point: Point, cand: number): EliminationEffect[] => {
+    const cell = getBoardCell(board, point)
+    return [
+        ...removeCandidatesFromPoints(board, [point], cell.candidates.filter(c => c !== cand)),
+        ...removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
+    ]
+}
+
+const getGroupResults = (board: SolverBoard, singleEliminationEffects: EliminationEffect[]): TechniqueResult<EliminationEffect>[] => {
+    board = cloneBoard(board)
+    board = applyEffects(board, singleEliminationEffects)
+    return [
+        ...allPointers(board),
+        ...allInversePointers(board)
+    ]
 }
 
 /**
@@ -111,24 +190,24 @@ const createTable = (board: SolverBoard, points: Point[], cands: number[]) => {
                 continue
             }
 
+            const originalCands = [...cell.candidates]
+
             // Record "direct" effects when setting true
             // Here we can record indirect effects as well (e.g. pointers) if we want group links
-            const effectsIfTrue = [
-                ...removeCandidatesFromPoints(board, [point], cell.candidates.filter(c => c !== cand)) as EliminationEffect[],
-                ...removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
-            ].filter(eff => points.some(p => pointsEqual(p, eff.point)))
+            const effectsIfTrue = getValueTrueEffects(board, point, cand)
+                .filter(eff => points.some(p => pointsEqual(p, eff.point)))
 
             // Temporarily remove candidate to find effectsIfFalse
             // NB: Will find indirect effects as well. Works as intended so long as all hidden singles are found before this.
             cell.candidates = cell.candidates.filter(c => c !== cand)
-            const effectsIfFalse = getSingleEffects(board)
+            const effectsIfFalse = getValueFalseEffects(board)
                 .filter(eff => points.some(p => pointsEqual(p, eff.point)))
-            cell.candidates.push(cand)
+            cell.candidates = originalCands
 
             if(effectsIfTrue.length > 0 || effectsIfFalse.length > 0){
-                const links = getLinks(effectsIfTrue, effectsIfFalse, point, cand)
+                const normalLinks = getLinks(effectsIfTrue, effectsIfFalse, point, cand)
                 table[getPointKey(point)] = table[getPointKey(point)] ?? { point, links: [] }
-                table[getPointKey(point)].links.push(...links)
+                table[getPointKey(point)].links.push(...normalLinks)
             }
         }
     }
@@ -564,7 +643,7 @@ function *simpleColoringGenerator(board: SolverBoard){
 
             const uncoloredPoints = points.filter(point => !colors[getPointKey(point)])
 
-            const effects: Effect[] = []
+            const effects: EliminationEffect[] = []
 
             // Check color traps:
             // All points seeing two different colors must be eliminated, since one of those colors must mean that the cand is set
@@ -602,5 +681,5 @@ function *simpleColoringGenerator(board: SolverBoard){
     return null
 }
 
-export const simpleColoring: Technique = (board: SolverBoard) => first(simpleColoringGenerator(board))
-export const allSimpleColorings: Technique = (board: SolverBoard) => allResults(simpleColoringGenerator(board))
+export const simpleColoring = (board: SolverBoard) => first(simpleColoringGenerator(board))
+export const allSimpleColorings = (board: SolverBoard) => allResults(simpleColoringGenerator(board))

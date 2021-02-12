@@ -1,4 +1,4 @@
-import { SolverBoard, Point, Technique } from '../types'
+import { SolverBoard, Point } from '../types'
 import {
     getAllBoxes, getAllCols, getAllRows, getBox, getBoxNumber,
     getColNumber,
@@ -27,7 +27,7 @@ function *pointerGenerator(board: SolverBoard){
                 pointsToRemove = difference(getRow(pointsWithCand[0].y), pointsWithCand, pointsEqual)
             }
             const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
-            const actors = pointsWithCand.map(point => ({point}))
+            const actors = pointsWithCand.map(point => ({point, cand}))
 
             if(effects.length > 0){
                 yield {effects, actors}
@@ -50,7 +50,7 @@ function *inversePointerGenerator(board: SolverBoard){
             if(unique(pointsWithCand.map(getBoxNumber)).length === 1){
                 const pointsToRemove = difference(getBox(pointsWithCand[0]), pointsWithCand, pointsEqual)
                 const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
-                const actors = pointsWithCand.map(point => ({point}))
+                const actors = pointsWithCand.map(point => ({point, cand}))
 
                 if(effects.length > 0){
                     yield {effects, actors}
@@ -61,8 +61,8 @@ function *inversePointerGenerator(board: SolverBoard){
     return null
 }
 
-export const pointer: Technique = (board: SolverBoard) => first(pointerGenerator(board))
-export const allPointers: Technique = (board: SolverBoard) => allResults(pointerGenerator(board))
+export const pointer = (board: SolverBoard) => first(pointerGenerator(board))
+export const allPointers = (board: SolverBoard) => allResults(pointerGenerator(board))
 
-export const inversePointer: Technique = (board: SolverBoard) => first(inversePointerGenerator(board))
-export const allInversePointers: Technique = (board: SolverBoard) => allResults(inversePointerGenerator(board))
+export const inversePointer = (board: SolverBoard) => first(inversePointerGenerator(board))
+export const allInversePointers = (board: SolverBoard) => allResults(inversePointerGenerator(board))

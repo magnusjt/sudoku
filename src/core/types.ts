@@ -26,10 +26,17 @@ export type AddCandidatesEffect = {
     numbers: number[]
 }
 
-export type ValueEffect = {
+export type ValueEffect = SetValueEffect | RemoveValueEffect
+
+export type SetValueEffect = {
     type: 'value',
     point: Point,
-    number: number | null
+    number: number
+}
+export type RemoveValueEffect = {
+    type: 'value',
+    point: Point,
+    number: null
 }
 
 export type Actor = {
@@ -38,7 +45,9 @@ export type Actor = {
     chainSet?: 'yes' | 'no'
 }
 
-export type Technique = (board: SolverBoard) => {effects: Effect[], actors: Actor[]} | null
+export type TechniqueResult<T extends Effect> = {effects: T[], actors: Actor[]}
+export type Technique = <T extends Effect>(board: SolverBoard) => TechniqueResult<T> | null
+export type TechniqueAll = <T extends Effect>(board: SolverBoard) => TechniqueResult<T>[]
 
 export type SolveResult = {
     board: SolverBoard

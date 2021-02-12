@@ -1,4 +1,4 @@
-import { Point, SolverBoard, Technique } from '../types'
+import { Point, SolverBoard } from '../types'
 import { allResults, difference, first, getCombinations, groupBy } from '../utils/misc'
 import {
     getAllUnfilledPoints, getColNumber,
@@ -55,13 +55,13 @@ function *fishGenerator(board: SolverBoard, len: number){
  * Two columns has the same candidate in only two rows. The rest of the rows can be eliminated
  * Two rows has the same candidate in only two cols. The rest of the columns can be eliminated.
  */
-export const xWing: Technique = (board: SolverBoard) => first(fishGenerator(board, 2))
-export const allXWings: Technique = (board: SolverBoard) => allResults(fishGenerator(board, 2))
+export const xWing = (board: SolverBoard) => first(fishGenerator(board, 2))
+export const allXWings = (board: SolverBoard) => allResults(fishGenerator(board, 2))
 
-export const swordfish: Technique = (board: SolverBoard) => first(fishGenerator(board, 3))
-export const allSwordfish: Technique = (board: SolverBoard) => allResults(fishGenerator(board, 3))
+export const swordfish = (board: SolverBoard) => first(fishGenerator(board, 3))
+export const allSwordfish = (board: SolverBoard) => allResults(fishGenerator(board, 3))
 
-export const jellyfish: Technique = (board: SolverBoard) => first(fishGenerator(board, 4))
-export const allJellyfish: Technique = (board: SolverBoard) => allResults(fishGenerator(board, 4))
+export const jellyfish = (board: SolverBoard) => first(fishGenerator(board, 4))
+export const allJellyfish = (board: SolverBoard) => allResults(fishGenerator(board, 4))
 
 // NB: Larger fish can always be decomposed into smaller fish, so no point looking

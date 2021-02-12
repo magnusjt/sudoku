@@ -1,4 +1,4 @@
-import { SolverBoard, Technique, ValueEffect } from '../types'
+import { SetValueEffect, SolverBoard } from '../types'
 import { canPutDigit, cloneBoard, getAllUnfilledPoints, getBoardCell, getPointId } from '../utils/sudokuUtils'
 import { allResults, first } from '../utils/misc'
 
@@ -8,7 +8,7 @@ function *generateBruteForceDigits(board: SolverBoard){
     const unfilledPoints = getAllUnfilledPoints(board)
     for(let point of unfilledPoints){
         yield {
-            effects: [{type: 'value', point, number: getBoardCell(clonedBoard, point).value} as ValueEffect],
+            effects: [{type: 'value', point, number: getBoardCell(clonedBoard, point).value} as SetValueEffect],
             actors: [{point}]
         }
     }
@@ -40,5 +40,5 @@ const solve = (board: SolverBoard, x = 0, y = 0) => {
     return null
 }
 
-export const bruteForce: Technique = (board: SolverBoard) => first(generateBruteForceDigits(board))
-export const allBruteForceDigits: Technique = (board: SolverBoard) => allResults(generateBruteForceDigits(board))
+export const bruteForce = (board: SolverBoard) => first(generateBruteForceDigits(board))
+export const allBruteForceDigits = (board: SolverBoard) => allResults(generateBruteForceDigits(board))

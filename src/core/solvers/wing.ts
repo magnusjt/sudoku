@@ -1,4 +1,4 @@
-import { SolverBoard, Technique } from '../types'
+import { SolverBoard } from '../types'
 import {
     allCandidates,
     getAffectedPoints, getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
@@ -98,11 +98,11 @@ function *wWingGenerator(board: SolverBoard){
     return null
 }
 
-export const xyWing: Technique = (board: SolverBoard) => first(xyWingGenerator(board))
-export const allXyWings: Technique = (board: SolverBoard) => allResults(xyWingGenerator(board))
+export const xyWing = (board: SolverBoard) => first(xyWingGenerator(board))
+export const allXyWings = (board: SolverBoard) => allResults(xyWingGenerator(board))
 
-export const xyzWing: Technique = (board: SolverBoard) => first(xyzWingGenerator(board))
-export const allXyzWings: Technique = (board: SolverBoard) => allResults(xyzWingGenerator(board))
+export const xyzWing = (board: SolverBoard) => first(xyzWingGenerator(board))
+export const allXyzWings = (board: SolverBoard) => allResults(xyzWingGenerator(board))
 
-export const wWing: Technique = (board: SolverBoard) => first(wWingGenerator(board))
-export const allWWings: Technique = (board: SolverBoard) => allResults(wWingGenerator(board))
+export const wWing = (board: SolverBoard) => first(wWingGenerator(board))
+export const allWWings = (board: SolverBoard) => allResults(wWingGenerator(board))

@@ -13,7 +13,7 @@
  *
  * NB: There is something called a dual rectangle where you can eliminate two points, but we can just run the algo twice and get the same result.
  */
-import { SolverBoard, Point, Technique } from '../types'
+import { SolverBoard, Point } from '../types'
 import {
     allCandidates,
     getAllBoxes,
@@ -95,5 +95,5 @@ function *emptyRectangleGenerator(board: SolverBoard){
     return null
 }
 
-export const emptyRectangle: Technique = (board: SolverBoard) => first(emptyRectangleGenerator(board))
-export const allEmptyRectangles: Technique = (board: SolverBoard) => allResults(emptyRectangleGenerator(board))
+export const emptyRectangle = (board: SolverBoard) => first(emptyRectangleGenerator(board))
+export const allEmptyRectangles = (board: SolverBoard) => allResults(emptyRectangleGenerator(board))

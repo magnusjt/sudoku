@@ -1,5 +1,3 @@
-import { Technique } from '../types'
-
 export const getCombinations = <T>(items: T[], len: number, initIndex = 0): T[][] => {
     if(len === 0) return []
     const combos: T[][] = []
@@ -16,19 +14,11 @@ export const getCombinations = <T>(items: T[], len: number, initIndex = 0): T[][
     return combos
 }
 
-export const first = <T>(iterable: Iterable<T>) => iterable[Symbol.iterator]().next().value
-export const allResults = (iterable: Iterable<ReturnType<Technique>>) => {
-    return Array.from(iterable)
-        .reduce<ReturnType<Technique>>((allResults, result) => {
-            if(result === null) return allResults
-            if(allResults === null){
-                allResults = {effects: [], actors: []}
-            }
-            allResults.effects.push(...result.effects)
-            allResults.actors.push(...result.actors)
-            return allResults
-        }, null)
-}
+const isNotNull = <T>(x: T): x is Exclude<T, null> => x !== null
+
+export const first = <T>(iterable: Iterable<T | null>): T | null => iterable[Symbol.iterator]().next().value
+export const allResults = <T>(iterable: Iterable<T | null>): T[] =>
+    Array.from(iterable).filter(isNotNull)
 
 export const unique = <T>(arr: T[]): T[] => [...new Set(arr)]
 export const uniqueBy = <T>(arr: T[], isEqual): T[] => {

@@ -1,4 +1,4 @@
-import { SolverBoard, Technique } from '../types'
+import { SolverBoard } from '../types'
 import { removeCandidateFromAffectedPoints } from '../utils/effects'
 import { allResults, first  } from '../utils/misc'
 import {
@@ -65,5 +65,5 @@ function *bugPlus1Generator(board: SolverBoard){
     return null
 }
 
-export const bugPlus1: Technique = (board: SolverBoard) => first(bugPlus1Generator(board))
-export const allBugPlus1: Technique = (board: SolverBoard) => allResults(bugPlus1Generator(board))
+export const bugPlus1 = (board: SolverBoard) => first(bugPlus1Generator(board))
+export const allBugPlus1 = (board: SolverBoard) => allResults(bugPlus1Generator(board))

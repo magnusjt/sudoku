@@ -1,23 +1,32 @@
-import { AddCandidatesEffect, Board, Effect, EliminationEffect, NoneEffect, Point } from '../types'
+import {
+    AddCandidatesEffect,
+    Board,
+    Effect,
+    EliminationEffect,
+    NoneEffect,
+    Point,
+    RemoveValueEffect,
+    SetValueEffect
+} from '../types'
 import { cloneBoard, getAffectedPoints, getBoardCell, pointsEqual } from './sudokuUtils'
 import { arraysEqual, unique, uniqueBy } from './misc'
 
-export const removeCandidates = (board: Board, point: Point, numbers: number[]): Effect => {
+export const removeCandidates = (board: Board, point: Point, numbers: number[]): EliminationEffect | NoneEffect => {
     const cell = getBoardCell(board, point)
     const candidatesToRemove = cell.candidates.filter(x => numbers.includes(x))
     if(candidatesToRemove.length === 0 || cell.value !== null){
         return {type: 'none'} as NoneEffect
     }
-    return {type: 'elimination', point, numbers: candidatesToRemove} as EliminationEffect
+    return {type: 'elimination', point, numbers: candidatesToRemove}
 }
 
-export const addCandidates = (board: Board, point: Point, numbers: number[]): Effect => {
+export const addCandidates = (board: Board, point: Point, numbers: number[]): AddCandidatesEffect | NoneEffect => {
     const cell = getBoardCell(board, point)
     const candidatesToAdd = numbers.filter(x => !cell.candidates.includes(x))
     if(candidatesToAdd.length === 0 || cell.value !== null){
         return {type: 'none'} as NoneEffect
     }
-    return {type: 'addCandidates', point, numbers: candidatesToAdd} as AddCandidatesEffect
+    return {type: 'addCandidates', point, numbers: candidatesToAdd}
 }
 
 export const effectsEqual = (eff1: Effect, eff2: Effect) => {
@@ -29,31 +38,31 @@ export const effectsEqual = (eff1: Effect, eff2: Effect) => {
     return false
 }
 
-export const uniqueEffects = (effects: Effect[]) => uniqueBy(effects, effectsEqual)
+export const uniqueEffects = <T extends Effect>(effects: T[]) => uniqueBy(effects, effectsEqual)
 
-export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
+export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): EliminationEffect[] => {
     const effects = points
         .map(point => removeCandidates(board, point, numbers))
-        .filter(eff => eff.type !== 'none')
+        .filter(eff => eff.type !== 'none') as EliminationEffect[]
 
     return uniqueEffects(effects)
 }
 
-export const addCandidatesToPoints = (board: Board, points: Point[], numbers: number[]): Effect[] => {
+export const addCandidatesToPoints = (board: Board, points: Point[], numbers: number[]): AddCandidatesEffect[] => {
     return points
         .map(point => addCandidates(board, point, numbers))
-        .filter(eff => eff.type !== 'none')
+        .filter(eff => eff.type !== 'none') as AddCandidatesEffect[]
 }
 
-export const removeCandidateFromPoints = (board: Board, points: Point[], number: number): Effect[] => {
+export const removeCandidateFromPoints = (board: Board, points: Point[], number: number): EliminationEffect[] => {
     return removeCandidatesFromPoints(board, points, [number])
 }
 
-export const removeCandidateFromAffectedPoints = (board: Board, point: Point, number: number): Effect[] => {
+export const removeCandidateFromAffectedPoints = (board: Board, point: Point, number: number): EliminationEffect[] => {
     return removeCandidateFromPoints(board, getAffectedPoints(point), number)
 }
 
-export const toggleCandidate = (board: Board, points: Point[], digit: number): Effect[] => {
+export const toggleCandidate = (board: Board, points: Point[], digit: number): AddCandidatesEffect[] | EliminationEffect[] => {
     const addCand = !points.every(p => {
         const cell = getBoardCell(board, p)
         return cell.value !== null || cell.candidates.includes(digit)
@@ -66,7 +75,7 @@ export const toggleCandidate = (board: Board, points: Point[], digit: number): E
     }
 }
 
-export const toggleValue = (board: Board, point: Point, digit: number): Effect[] => {
+export const toggleValue = (board: Board, point: Point, digit: number): (SetValueEffect | EliminationEffect)[] | RemoveValueEffect[] => {
     const cell = getBoardCell(board, point)
     if(cell.given){
         return []

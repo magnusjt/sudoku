@@ -1,4 +1,4 @@
-import { SolverBoard, Technique } from '../types'
+import { SolverBoard } from '../types'
 import { removeCandidateFromAffectedPoints } from '../utils/effects'
 import { allResults, first  } from '../utils/misc'
 import { getAllPoints, getBoardCell } from '../utils/sudokuUtils'
@@ -24,5 +24,5 @@ function *basicEliminationsGenerator(board: SolverBoard){
     return null
 }
 
-export const basicElimination: Technique = (board: SolverBoard) => first(basicEliminationsGenerator(board))
-export const allBasicEliminations: Technique = (board: SolverBoard) => allResults(basicEliminationsGenerator(board))
+export const basicElimination = (board: SolverBoard) => first(basicEliminationsGenerator(board))
+export const allBasicEliminations = (board: SolverBoard) => allResults(basicEliminationsGenerator(board))

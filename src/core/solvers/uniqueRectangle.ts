@@ -1,4 +1,4 @@
-import { SolverBoard, Point, Technique } from '../types'
+import { SolverBoard, Point } from '../types'
 import {
     getAllRows,
     getBoardCell,
@@ -42,7 +42,7 @@ const findNakedPairs = (board: SolverBoard, points: Point[]) => {
  * TODO: Type 6: See if one of the rectangle candidates form an x-wing. If so, it must be placed on two points diagonally. If this removes all other candidates from the rectangle, it is invalid, and so can be eliminated.
  * TODO: Hidden, avoidable 1/2, BUG, missing candidates. These seem a bit too exotic tbh.
  */
-export const uniqueRectangle1: Technique = (board: SolverBoard) => {
+export const uniqueRectangle1 = (board: SolverBoard) => {
     for(let points of getAllRows()){
         const pairs = findNakedPairs(board, points)
         for(let pair of pairs){

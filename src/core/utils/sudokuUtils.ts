@@ -1,4 +1,4 @@
-import { Point, Board, Cell } from '../types'
+import { Point, Board, Cell, TechniqueResult, Effect } from '../types'
 import { arraysEqual, difference, intersectionOfAll, memoize } from './misc'
 
 export const pointsEqual = (pointA: Point, pointB: Point) => pointA.id === pointB.id
@@ -159,4 +159,12 @@ export const boardHasError = (board: Board, solution: Board) => {
 
 export const boardIsComplete = (board: Board) => {
     return getAllPoints().every(point => getBoardCell(board, point).value !== null)
+}
+
+export const mergeResults = <T extends Effect>(results: TechniqueResult<T>[]) => {
+    return results.reduce((allResults, result) => {
+        allResults.effects.push(...result.effects)
+        allResults.actors.push(...result.actors)
+        return allResults
+    }, {effects: [], actors: []} as TechniqueResult<T>)
 }
