@@ -3,241 +3,70 @@ import {
     Effect,
     EliminationEffect,
     Point,
-    SetValueEffect,
     SolverBoard,
-    TechniqueResult
 } from '../types'
 import {
-    applyEffects,
-    removeCandidateFromAffectedPoints, removeCandidateFromPoints,
-    removeCandidatesFromPoints, uniqueEffects
+    removeCandidateFromPoints,
+    removeCandidatesFromPoints
 } from '../utils/effects'
-import { allResults, arraysEqual, difference, first, unique } from '../utils/misc'
+import { allResults, arraysEqual, difference, first, intersectionOfAll, unique } from '../utils/misc'
 import {
-    allCandidates, candidatesExcept, cloneBoard, getAffectedPoints,
-    getAffectedPointsInCommon, getAllHousesMinusFilledPoints,
-    getAllPoints, getAllUnfilledPoints,
-    getBoardCell, getBox, getBoxNumber, getColNumber, getColumn, getPointsWithCandidates,
-    getPointsWithNCandidates, getRow, getRowNumber, pointsEqual, pointsSeeEachOther,
+    allCandidates,
+    candidatesExcept,
+    getAffectedPoints,
+    getAffectedPointsInCommon,
+    getAllPoints,
+    getAllUnfilledPoints,
+    getBoardCell,
+    getBox,
+    getBoxNumber,
+    getColNumber,
+    getColumn,
+    getPointsWithCandidates,
+    getPointsWithNCandidates,
+    getRow,
+    getRowNumber,
+    pointsEqual,
+    pointsSeeEachOther,
 } from '../utils/sudokuUtils'
-import { allInversePointers, allPointers } from './pointer'
+import {
+    createTable,
+    getAllLinks,
+    getPointKey,
+    Link,
+    LinkNode,
+    SingleLink,
+    SingleNode,
+    SingleTable,
+    Table
+} from './chainGraph'
 
-const getPointKey = (point: Point) => `${point.y}-${point.x}`
+const linkIsInternal = (link: Link) => {
+    const prevPoints = link.prev.type === 'single' ? [link.prev.point] : link.prev.points
+    const nextPoints = link.next.type === 'single' ? [link.next.point] : link.next.points
 
-type Link = NormalLink
-
-type NormalLink = {
-    type: 'weak' | 'strong'
-    group: false
-    prev: {
-        point: Point
-        cand: number
-    }
-    next: {
-        point: Point
-        cand: number
-    }
+    return intersectionOfAll([prevPoints, nextPoints], pointsEqual).length > 0
 }
-type GroupLink = {
-    type: 'strong-strong' | 'weak-weak' | 'weak' | 'strong'
-    actors: Actor[]
-    group: true
-    prev: {
-        point: Point
-        cand: number
-    }
-    next: {
-        point: Point
-        cand: number
-    }
-}
-
-type Table = {
-    [key: string]: {
-        point: Point
-        links: Link[]
-    }
-}
-
-const getLinks = (effectsIfTrue: EliminationEffect[], effectsIfFalse: SetValueEffect[], point: Point, cand: number): NormalLink[] => {
-    const prev = { point, cand }
-    return [
-        ...effectsIfFalse.map((eff) => ({
-            type: 'strong' as const,
-            group: false as const,
-            prev,
-            next: {
-                point: eff.point,
-                cand: eff.number
-            }
-        })),
-        ...effectsIfTrue.flatMap((eff) => eff.numbers.map(cand => ({
-            type: 'weak' as const,
-            group: false as const,
-            prev,
-            next: {
-                point: eff.point,
-                cand
-            }
-        })))
-    ]
-}
-
-const getGroupLinks = (
-    resultsIfTrue: TechniqueResult<EliminationEffect>[],
-    resultsIfFalse: TechniqueResult<EliminationEffect>[],
-    point: Point,
-    cand: number
-): GroupLink[] => {
-    const prev = { point, cand }
-
-    return [
-        ...resultsIfFalse.flatMap(result => {
-            const actors = result.actors
-            return result.effects.flatMap((eff) => eff.numbers.map(cand => ({
-                type: 'strong-strong' as const,
-                group: true as const,
-                actors,
-                prev,
-                next: {
-                    point: eff.point,
-                    cand
-                }
-            })))
-        }),
-        ...resultsIfTrue.flatMap(result => {
-            const actors = result.actors
-            return result.effects.map((eff) => ({
-                type: 'weak' as const,
-                group: true as const,
-                actors,
-                prev,
-                next: {
-                    point: eff.point,
-                    cand
-                }
-            }))
-        })
-    ]
-}
-
-const getNakedSingles = (board: SolverBoard): SetValueEffect[] => {
-    const effects: SetValueEffect[] = []
-    getPointsWithNCandidates(board, getAllPoints(), 1)
-        .forEach(point => {
-            const cand = getBoardCell(board, point).candidates[0]
-            effects.push({type: 'value', point, number: cand} as const)
-        })
-    return effects
-}
-const getHiddenSingles = (board: SolverBoard): SetValueEffect[] => {
-    const effects: SetValueEffect[] = []
-    for(let points of getAllHousesMinusFilledPoints(board)){
-        for(let cand = 1; cand <= 9; cand++){
-            const pointsWithCand = points.filter(p => getBoardCell(board, p).candidates.some(c => c === cand))
-            if(pointsWithCand.length === 1){
-                const point = pointsWithCand[0]
-                effects.push({type: 'value', point, number: cand} as const)
-            }
-        }
-    }
-    return effects
-}
-
-const getValueFalseEffects = (board: SolverBoard): SetValueEffect[] => {
-    return uniqueEffects([
-        ...getNakedSingles(board),
-        ...getHiddenSingles(board)
-    ])
-}
-
-const getValueTrueEffects = (board: SolverBoard, point: Point, cand: number): EliminationEffect[] => {
-    const cell = getBoardCell(board, point)
-    return [
-        ...removeCandidatesFromPoints(board, [point], cell.candidates.filter(c => c !== cand)),
-        ...removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
-    ]
-}
-
-const getGroupResults = (board: SolverBoard, singleEliminationEffects: EliminationEffect[]): TechniqueResult<EliminationEffect>[] => {
-    board = cloneBoard(board)
-    board = applyEffects(board, singleEliminationEffects)
-    return [
-        ...allPointers(board),
-        ...allInversePointers(board)
-    ]
-}
-
-/**
- * The table concept I glanced from hodoku. Called trebors tables or something like that.
- * The idea is to record what effects occur when a candidate is either set or not set. Only direct effects are considered.
- * Direct in this case is hidden/naked singles and just basic eliminations.
- * When a candidate is set, we can use it to make weak links towards all its effected cells. Effects are basic eliminations.
- * When a candidate is not set, we can use it to make strong links towards all its effected cells. Effects are naked/hidden singles here.
- */
-const createTable = (board: SolverBoard, points: Point[], cands: number[]) => {
-    // Ensure the cells with the fewest candidates are stored first.
-    // These are the most likely starting cells that a human would choose.
-    points = points.sort((a, b) => {
-        return getBoardCell(board, a).candidates.length - getBoardCell(board, b).candidates.length
-    })
-    board = cloneBoard(board)
-    const table: Table = {}
-    for(let point of points){
-        for(let cand of cands){
-            const cell = getBoardCell(board, point)
-            if(!cell.candidates.includes(cand)){
-                continue
-            }
-
-            const originalCands = [...cell.candidates]
-
-            // Record "direct" effects when setting true
-            // Here we can record indirect effects as well (e.g. pointers) if we want group links
-            const effectsIfTrue = getValueTrueEffects(board, point, cand)
-                .filter(eff => points.some(p => pointsEqual(p, eff.point)))
-
-            // Temporarily remove candidate to find effectsIfFalse
-            // NB: Will find indirect effects as well. Works as intended so long as all hidden singles are found before this.
-            cell.candidates = cell.candidates.filter(c => c !== cand)
-            const effectsIfFalse = getValueFalseEffects(board)
-                .filter(eff => points.some(p => pointsEqual(p, eff.point)))
-            cell.candidates = originalCands
-
-            if(effectsIfTrue.length > 0 || effectsIfFalse.length > 0){
-                const normalLinks = getLinks(effectsIfTrue, effectsIfFalse, point, cand)
-                table[getPointKey(point)] = table[getPointKey(point)] ?? { point, links: [] }
-                table[getPointKey(point)].links.push(...normalLinks)
-            }
-        }
-    }
-    return table
-}
-
-const getAllLinks = (table: Table, point: Point) => {
-    const item = table[getPointKey(point)]
-    return item ? item.links : []
-}
-
-const linkIsInternal = (link: Link) => pointsEqual(link.prev.point, link.next.point)
 
 type QueueItem = {
-    seen: Set<number>
+    seen: Set<number | string>
     chain: Link[]
 }
 
+const getSeenKey = (node: LinkNode) => node.type === 'single' ? node.point.id : node.groupId
+
 const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 13) => {
     const isValidNextLink = (queueItem: QueueItem, link: Link) => {
-        const first = queueItem.chain[0]
+        const first: SingleLink = queueItem.chain[0] as SingleLink
         const last = queueItem.chain[queueItem.chain.length - 1]
 
         const requiredLinkType = last.type === 'strong' ? 'weak' : 'strong'
 
-        const lastWasInternal = last.prev.point.id === last.next.point.id
-        const nextIsInternal = link.prev.point.id === link.next.point.id
+        const lastWasInternal = linkIsInternal(last)
+        const nextIsInternal = linkIsInternal(link)
 
-        const isLoop = first.prev.point.id === link.next.point.id
-        const isLasso = !isLoop && !nextIsInternal && queueItem.seen.has(link.next.point.id)
+        const isLoop = link.next.type !== 'group' && first.prev.point.id === link.next.point.id
+        const isLasso = !isLoop && !nextIsInternal && queueItem.seen.has(getSeenKey(link.next))
 
         return (
             link.prev.cand === last.next.cand &&
@@ -250,24 +79,26 @@ const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 
 
     const queue: QueueItem[] = Object.values(table)
         .flatMap(x => x.links
-            .filter(keepLink)
-            .map(link => ({ chain: [link], seen: new Set([link.prev.point.id]) }))
+            .filter(link => keepLink(link) && link.prev.type === 'single')
+            .map(link => ({ chain: [link], seen: new Set([getSeenKey(link.prev)]) }))
         )
 
     let i = 0
     while(i < queue.length){
         const queueItem = queue[i++] // Don't shift the queue. Turns out to be super slow when it becomes large.
         const { chain } = queueItem
-        const firstLink = chain[0]
+        const firstLink = chain[0] as SingleLink
         const lastLink = chain[chain.length - 1]
 
-        const isLoop = firstLink.prev.point.id === lastLink.next.point.id
-        if(check(chain, isLoop)){
-            return true
+        if(lastLink.next.type !== 'group'){
+            const isLoop = firstLink.prev.point.id === lastLink.next.point.id
+            if(check(chain, isLoop)){
+                return true
+            }
         }
 
-        const nextLinks = getAllLinks(table, lastLink.next.point).filter(link => isValidNextLink(queueItem, link))
-        const seen = new Set([...queueItem.seen, lastLink.next.point.id])
+        const nextLinks = getAllLinks(table, lastLink.next).filter(link => isValidNextLink(queueItem, link))
+        const seen = new Set([...queueItem.seen, getSeenKey(lastLink.next)])
         if(queueItem.chain.length >= maxDepth){
             continue
         }
@@ -281,18 +112,33 @@ const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 
 }
 
 const chainToActors = (chain: Link[]): Actor[] => {
-    return [
-        {
+    const first = chain[0].prev.type === 'single'
+        ? [{
             point: chain[0].prev.point,
             cand: chain[0].prev.cand,
-            chainSet: chain[0].type === 'strong' ? 'no' : 'yes'
-        },
-        ...chain.map(link => {
-            return {
-                point: link.next.point,
+            chainSet: chain[0].type === 'strong' ? 'no' as const : 'yes' as const
+        }]
+        : chain[0].prev.points.map(point => ({
+            point: point,
+            cand: chain[0].prev.cand,
+            chainSet: chain[0].type === 'strong' ? 'no' as const : 'yes' as const
+        }))
+
+    return [
+        ...first,
+        ...chain.flatMap(link => {
+            if(link.next.type === 'single'){
+                return [{
+                    point: link.next.point,
+                    cand: link.next.cand,
+                    chainSet: link.type === 'strong' ? 'yes' as const : 'no' as const
+                }]
+            }
+            return link.next.points.map(point => ({
+                point: point,
                 cand: link.next.cand,
                 chainSet: link.type === 'strong' ? 'yes' as const : 'no' as const
-            }
+            }))
         }),
     ]
 }
@@ -315,10 +161,10 @@ const chainToActors = (chain: Link[]): Actor[] => {
  */
 export function remotePairChain(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
-    const table = createTable(board, biValuePoints, allCandidates)
+    const table = createTable(board, biValuePoints, allCandidates, false)
 
     let result: any = null
-    const keepLink = (link) => {
+    const keepLink = (link: SingleLink) => {
         // Every link is between pairs
         return arraysEqual(
             getBoardCell(board, link.prev.point).candidates,
@@ -327,7 +173,7 @@ export function remotePairChain(board: SolverBoard){
         )
     }
     const maxDepth = 20
-    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+    iterateChainsInTable(table, keepLink, (chain: SingleLink[], isLoop) => {
         if(isLoop) return false
         if(chain.length <= 2) return false
         const firstLink = chain[0]
@@ -369,12 +215,12 @@ export function remotePairChain(board: SolverBoard){
  */
 export function xChain(board: SolverBoard){
     const unfilledPoints = getAllUnfilledPoints(board)
-    const table = createTable(board, unfilledPoints, allCandidates)
+    const table = createTable(board, unfilledPoints, allCandidates, false)
 
     const maxDepth = 10
     let result: any = null
-    const keepLink = (link: Link) => link.prev.cand === link.next.cand
-    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+    const keepLink = (link: SingleLink) => link.prev.cand === link.next.cand
+    iterateChainsInTable(table, keepLink, (chain: SingleLink[], isLoop) => {
         if(isLoop) return false
         if(chain.length <= 2) return false
         const firstLink = chain[0]
@@ -397,13 +243,56 @@ export function xChain(board: SolverBoard){
     return result
 }
 
+
+/**
+ * xy chains consider only bi value points
+ * Like x chains and remote pairs, they must start and end with strong links
+ * Also, the initial and final links must be on the same candidate.
+ * This ensures that the candidate is in one of those cells.
+ */
+export function xyChain(board: SolverBoard){
+    const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
+    const table = createTable(board, biValuePoints, allCandidates, false)
+
+    const maxDepth = 20
+    let result: any = null
+    const keepLink = () => true
+    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+        if(isLoop) return false
+        if(chain.length <= 2) return false
+        const firstLink = chain[0] as SingleLink
+        const lastLink = chain[chain.length - 1] as SingleLink
+        // NOTE: We might restrict each strong link to be within cells as well.
+        // Right now we allow strong links to go directly to other cells.
+        // Not sure if this is still considered an xy chain. I guess it still is, but with fewer steps.
+        if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
+            return false
+        }
+        if(firstLink.prev.cand !== lastLink.next.cand){
+            return false
+        }
+        const start = firstLink.prev.point
+        const end = lastLink.next.point
+        const cand = firstLink.prev.cand
+        const affected = getAffectedPointsInCommon([start, end])
+        const effects = removeCandidatesFromPoints(board, affected, [cand])
+
+        if(effects.length > 0){
+            result = {effects, actors: chainToActors(chain)}
+            return true
+        }
+    }, maxDepth)
+
+    return result
+}
+
 const getDiscontinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
     if(!isLoop){
         return null
     }
 
-    const firstLink = chain[0]
-    const lastLink = chain[chain.length - 1]
+    const firstLink = chain[0] as SingleLink
+    const lastLink = chain[chain.length - 1] as SingleLink
 
     if(firstLink.type === 'strong' && lastLink.type === 'strong' && firstLink.prev.cand === lastLink.next.cand){
         const effects = removeCandidatesFromPoints(board, [firstLink.prev.point], candidatesExcept([firstLink.prev.cand]))
@@ -426,8 +315,8 @@ const getContinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolea
         return null
     }
 
-    const firstLink = chain[0]
-    const lastLink = chain[chain.length - 1]
+    const firstLink = chain[0] as SingleLink
+    const lastLink = chain[chain.length - 1] as SingleLink
 
     if(
         (
@@ -472,8 +361,8 @@ const getContinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolea
 }
 
 const getAicType1 = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
-    const firstLink = chain[0]
-    const lastLink = chain[chain.length - 1]
+    const firstLink = chain[0] as SingleLink
+    const lastLink = chain[chain.length - 1] as SingleLink
 
     if(isLoop){
         return null
@@ -493,8 +382,8 @@ const getAicType1 = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
 }
 
 const getAicType2 = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
-    const firstLink = chain[0]
-    const lastLink = chain[chain.length - 1]
+    const firstLink = chain[0] as SingleLink
+    const lastLink = chain[chain.length - 1] as SingleLink
 
     if(isLoop){
         return null
@@ -516,81 +405,35 @@ const getAicType2 = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
     return null
 }
 
-/**
- * xy chains consider only bi value points
- * Like x chains and remote pairs, they must start and end with strong links
- * Also, the initial and final links must be on the same candidate.
- * This ensures that the candidate is in one of those cells.
- */
-export function xyChain(board: SolverBoard){
-    const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
-    const table = createTable(board, biValuePoints, allCandidates)
+export const chainMaker = (board: SolverBoard) => {
+    const results = []
 
-    const maxDepth = 20
-    let result: any = null
-    const keepLink = () => true
-    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
-        if(isLoop) return false
-        if(chain.length <= 2) return false
-        const firstLink = chain[0]
-        const lastLink = chain[chain.length - 1]
-        // NOTE: We might restrict each strong link to be within cells as well.
-        // Right now we allow strong links to go directly to other cells.
-        // Not sure if this is still considered an xy chain. I guess it still is, but with fewer steps.
-        if(!(firstLink.type === 'strong' && lastLink.type === 'strong')){
+    const init = () => {
+        const maxDepth = 13
+        const unfilledPoints = getAllUnfilledPoints(board)
+        const table = createTable(board, unfilledPoints, allCandidates, true)
+        const keepLink = () => true
+
+        iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
+            if(chain.length <= 2) return false
+
+            getDiscontinuousNiceLoop(board, chain, isLoop)
+            getAicType1(board, chain, isLoop)
+            getAicType2(board, chain, isLoop)
+            getContinuousNiceLoop(board, chain, isLoop)
+
             return false
-        }
-        if(firstLink.prev.cand !== lastLink.next.cand){
-            return false
-        }
-        const start = firstLink.prev.point
-        const end = lastLink.next.point
-        const cand = firstLink.prev.cand
-        const affected = getAffectedPointsInCommon([start, end])
-        const effects = removeCandidatesFromPoints(board, affected, [cand])
+        }, maxDepth)
+    }
 
-        if(effects.length > 0){
-            result = {effects, actors: chainToActors(chain)}
-            return true
-        }
-    }, maxDepth)
-
-    return result
-}
-
-/**
- * Alternating inference chain type 1.
- * Like xy-chain, begins and ends with the same candidate.
- * The only difference is that we consider all cells, not just bi-value cells
- *
- * AIC type 2 begins and ends with different candidates.
- * The end candidate can then be eliminated from the start cell, and vice versa
- */
-export function aicType12(board: SolverBoard){
-    const unfilledPoints = getAllUnfilledPoints(board)
-    const table = createTable(board, unfilledPoints, allCandidates)
-
-    const maxDepth = 13
-    let result: any = null
-    const keepLink = () => true
-
-    iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
-        if(chain.length <= 2) return false
-
-        getDiscontinuousNiceLoop(board, chain, isLoop)
-        getAicType1(board, chain, isLoop)
-        getAicType2(board, chain, isLoop)
-        getContinuousNiceLoop(board, chain, isLoop)
-
-        return true
-    }, maxDepth)
-
-    return result
+    return (type) => {
+        init()
+    }
 }
 
 function *simpleColoringGenerator(board: SolverBoard){
     const unfilledPoints = getAllUnfilledPoints(board)
-    const table = createTable(board, unfilledPoints, allCandidates)
+    const table: SingleTable = createTable(board, unfilledPoints, allCandidates, false) as SingleTable
     const oppositeColor = (color) => color === 'yes' ? 'no' : 'yes'
 
     const getNextQueueItems = (pointKey: string, cand: number, color: string) => {

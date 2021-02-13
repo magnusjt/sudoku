@@ -39,6 +39,23 @@ export type RemoveValueEffect = {
     number: null
 }
 
+export type GroupEffect = GroupEliminationEffect | GroupSetValueEffect
+
+// The cands are removed from the whole group
+export type GroupEliminationEffect = {
+    type: 'group-elimination'
+    group: Point[]
+    groupId: string
+    number: number
+}
+// One of the group must have the value
+export type GroupSetValueEffect = {
+    type: 'group-value'
+    group: Point[],
+    groupId: string,
+    number: number
+}
+
 export type Actor = {
     point: Point
     cand?: number

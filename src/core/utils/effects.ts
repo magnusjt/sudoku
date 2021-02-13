@@ -2,7 +2,7 @@ import {
     AddCandidatesEffect,
     Board,
     Effect,
-    EliminationEffect,
+    EliminationEffect, GroupEffect,
     NoneEffect,
     Point,
     RemoveValueEffect,
@@ -29,16 +29,20 @@ export const addCandidates = (board: Board, point: Point, numbers: number[]): Ad
     return {type: 'addCandidates', point, numbers: candidatesToAdd}
 }
 
-export const effectsEqual = (eff1: Effect, eff2: Effect) => {
+export const effectsEqual = (eff1: Effect | GroupEffect, eff2: Effect | GroupEffect) => {
     if(eff1.type === 'value' && eff2.type === 'value'){
         return pointsEqual(eff1.point, eff2.point) && eff1.number === eff2.number
     }else if(eff1.type === 'elimination' && eff2.type === 'elimination'){
         return pointsEqual(eff1.point, eff2.point) && arraysEqual(eff1.numbers, eff2.numbers, (a, b) => a === b)
+    }else if(eff1.type === 'group-elimination' && eff2.type === 'group-elimination'){
+        return eff1.groupId === eff2.groupId && eff1.number === eff2.number
+    }else if(eff1.type === 'group-value' && eff2.type === 'group-value'){
+        return eff1.groupId === eff2.groupId && eff1.number === eff2.number
     }
     return false
 }
 
-export const uniqueEffects = <T extends Effect>(effects: T[]) => uniqueBy(effects, effectsEqual)
+export const uniqueEffects = <T extends Effect | GroupEffect>(effects: T[]) => uniqueBy(effects, effectsEqual)
 
 export const removeCandidatesFromPoints = (board: Board, points: Point[], numbers: number[]): EliminationEffect[] => {
     const effects = points

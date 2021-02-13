@@ -87,6 +87,18 @@ export const getAllHouses = memoize((): Point[][] => {
     ]
 }, () => 'T')
 
+export const getBoxGroups = memoize(() => {
+    const groups: Point[][] = []
+    for(let line of [...getAllRows(), ...getAllCols()]){
+        groups.push(
+            line.slice(0, 3),
+            line.slice(3, 6),
+            line.slice(6, 9)
+        )
+    }
+    return groups
+}, () => 'T')
+
 export const getAllHousesMinusFilledPoints = (board: Board): Point[][] => getAllHouses()
     .map(points => points.filter(p => getBoardCell(board, p).value === null))
     .filter(points => points.length > 0)
