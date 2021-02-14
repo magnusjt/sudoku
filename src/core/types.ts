@@ -62,9 +62,9 @@ export type Actor = {
     chainSet?: 'yes' | 'no'
 }
 
-export type TechniqueResult<T extends Effect> = {effects: T[], actors: Actor[]}
-export type Technique = <T extends Effect>(board: SolverBoard) => TechniqueResult<T> | null
-export type TechniqueAll = <T extends Effect>(board: SolverBoard) => TechniqueResult<T>[]
+export type TechniqueResult<T extends Effect = Effect> = {effects: T[], actors: Actor[]}
+export type Technique = <T extends Effect = Effect>(board: SolverBoard) => TechniqueResult<T> | null
+export type TechniqueAll = <T extends Effect = Effect>(board: SolverBoard) => TechniqueResult<T>[]
 
 export type SolveResult = {
     board: SolverBoard

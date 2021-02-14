@@ -36,7 +36,7 @@ export const difference = <T>(arr1: T[], arr2: T[], isEqual): T[] => {
 export const intersectionOfAll = <T>(arr: T[][], isEqual): T[] => {
     return uniqueBy(arr.flat(), isEqual).filter(x => arr.every(subArr => subArr.some(a => isEqual(a, x))))
 }
-export const arraysEqual = (arr1, arr2, isEqual) => {
+export const arraysEqual = (arr1, arr2, isEqual = (a, b) => a === b) => {
     return arr1.length === arr2.length && arr1.every((a, i) => isEqual(a, arr2[i]))
 }
 type Groups<T> = {[key: string]: T[]}

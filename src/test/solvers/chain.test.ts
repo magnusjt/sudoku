@@ -2,10 +2,19 @@ import {input as remotePairChainInput1} from '../sudokus/remotePairChain'
 import {input as xChainInput1} from '../sudokus/xChain'
 import {input as xyChainInput1} from '../sudokus/xyChain'
 import {input as simpleColoringInput1} from '../sudokus/simpleColoring'
-import {input as aicType12Input1} from '../sudokus/aicType12'
+import {input as discontinuousNiceLoopInput1} from '../sudokus/discontinuousNiceLoop'
+import {input as aicType1Input1} from '../sudokus/aicType1'
+import {input as aicType2Input1} from '../sudokus/aicType2'
 import { createTestBoard } from '../util'
-import { aicType12, remotePairChain, simpleColoring, xChain, xyChain } from '../../core/solvers/chains'
+import {
+    aicType1, aicType2,
+    createFindChain, discontinuousNiceLoop,
+    remotePairChain,
+    xChain,
+    xyChain
+} from '../../core/solvers/chains'
 import { applyTechniques } from '../../core/solve'
+import { simpleColoring } from '../../core/solvers/simpleColoring'
 
 test('remote pair chain 1', () => {
     const board = createTestBoard(remotePairChainInput1)
@@ -93,23 +102,36 @@ test('simple coloring 1', () => {
     ])
 })
 
-test('aic type12 1', () => {
-    const board = createTestBoard(aicType12Input1)
-    const result = aicType12(board)
+test('aic type1 1', () => {
+    const board = createTestBoard(aicType1Input1)
+    const result = aicType1(createFindChain(board))()
 
     expect(result).toMatchObject({
         "effects": [
-            {"type": "elimination", "point": {"x": 1, "y": 6}, "numbers": [5]}
-        ],
-        "actors": [
-            {"point": {"x": 1, "y": 0}},
-            {"point": {"x": 1, "y": 0}},
-            {"point": {"x": 3, "y": 0}},
-            {"point": {"x": 3, "y": 2}},
-            {"point": {"x": 3, "y": 2}},
-            {"point": {"x": 3, "y": 6}},
-            {"point": {"x": 3, "y": 6}},
-            {"point": {"x": 1, "y": 6}}
+            {"type": "elimination", "point": {"x": 1, "y": 0}, "numbers": [3]},
+            {"type": "elimination", "point": {"x": 2, "y": 4}, "numbers": [3]}
+        ]
+    })
+})
+
+test('aic type2 1', () => {
+    const board = createTestBoard(aicType2Input1)
+    const result = aicType2(createFindChain(board))()
+
+    expect(result).toMatchObject({
+        "effects": [
+            {"type": "elimination", "point": {"x": 0, "y": 8}, "numbers": [8]}
+        ]
+    })
+})
+
+test('discontinuous nice loop 1', () => {
+    const board = createTestBoard(discontinuousNiceLoopInput1)
+    const result = discontinuousNiceLoop(createFindChain(board))()
+
+    expect(result).toMatchObject({
+        "effects": [
+            {"type": "elimination", "point": {"x": 7, "y": 0}, "numbers": [7]},
         ]
     })
 })
