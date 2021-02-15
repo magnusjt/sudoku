@@ -51,4 +51,10 @@ export const highlightedCandidateColor = lighten(selectedColor, 0.15)
 export const selectedDigitHighlightColor = '#66c187'
 export const errorColor = '#fc4444'
 
+export const setCandidateColor = darken(setValueColor, 0.1)
+export const eliminateCandidateColor = darken(eliminationColor, 0.2)
+export const actorCandidateColor = darken(actorColor, 0.2)
+export const actorChainCandidateYesColor = darken(setValueColor, 0.2)
+export const actorChainCandidateNoColor = '#2475ff'
+
 export const getContrastText = theme.palette.getContrastText

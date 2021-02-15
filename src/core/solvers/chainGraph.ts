@@ -27,7 +27,7 @@ import {
 } from '../utils/effects'
 import { intersectionOfAll, unique } from '../utils/misc'
 
-export const getPointKey = (point: Point) => `${point.y}-${point.x}`
+export const getPointKey = (point: Point) => point.id
 export const getGroupId = (group: Point[]) => group.map(p => p.id).join('-')
 
 export type SingleNode = {

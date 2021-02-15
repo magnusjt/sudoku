@@ -9,7 +9,7 @@ function *simpleColoringGenerator(board: SolverBoard){
     const table: SingleTable = createTable(board, unfilledPoints, allCandidates, false) as SingleTable
     const oppositeColor = (color) => color === 'yes' ? 'no' : 'yes'
 
-    const getNextQueueItems = (pointKey: string, cand: number, color: string) => {
+    const getNextQueueItems = (pointKey: number, cand: number, color: string) => {
         return table[pointKey].links
             .filter(link => link.prev.cand === cand && link.next.cand === cand && link.type === 'strong')
             .map(link => ({ point: link.next.point, color }))

@@ -1,19 +1,29 @@
-import { Actor, Board, Cell, Effect, Point, SolveResult, ValueEffect } from '../core/types'
+import {
+    Actor,
+    Board,
+    Cell,
+    Effect,
+    EliminationEffect,
+    Point,
+    SolveResult,
+    ValueEffect
+} from '../core/types'
 import React from 'react'
 import { getAffectedPoints, getBoardCell, getPointId, pointsEqual } from '../core/utils/sudokuUtils'
 import useEventListener from '@use-it/event-listener'
 import {
+    actorCandidateColor, actorChainCandidateNoColor, actorChainCandidateYesColor,
     actorColor,
     affectedColor,
     boardBackgroundColor,
     boardBorderColor,
-    boardBorderHardColor,
+    boardBorderHardColor, eliminateCandidateColor,
     eliminationColor,
     errorColor,
     getContrastText, highlightedCandidateColor,
     highlightedColor,
     selectedColor,
-    selectedDigitHighlightColor,
+    selectedDigitHighlightColor, setCandidateColor,
     setValueColor
 } from '../theme'
 import { darken } from '@material-ui/core/styles'
@@ -34,6 +44,7 @@ const Candidates = (props) => {
                     <div
                         style={{
                             position: 'absolute',
+                            background: props.bgs[number] ?? '',
                             top,
                             left,
                             width: Math.round(boxSize),
@@ -65,7 +76,7 @@ type CellDisplayProps = {
 
 const cellHasElimination = (effects: Effect[], point: Point) => effects
     .filter((eff: Effect) => eff.type === 'elimination')
-    .some((eff) => pointsEqual((eff as ValueEffect).point, point))
+    .some((eff) => pointsEqual((eff as EliminationEffect).point, point))
 
 const cellHasSetValue = (effects: Effect[], point: Point) => effects
     .filter((eff: Effect) => eff.type === 'value')
@@ -74,28 +85,20 @@ const cellHasSetValue = (effects: Effect[], point: Point) => effects
 const cellHasActor = (actors: Actor[], point: Point) => actors
     .some(actor => pointsEqual(actor.point, point))
 
-const CellDisplay = (props: CellDisplayProps) => {
-    const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
-    const {point, selected, affected, cell, highlightedNumber, solutionValue, selectedDigit, celebration} = props
-    const [celebrationCounter, setCelebrationCount] = React.useState(0)
-
-    React.useEffect(() => {
-        setCelebrationCount(0)
-    }, [celebration])
-
-    React.useEffect(() => {
-        if(celebration){
-            if(celebrationCounter < 100) {
-                setTimeout(() => {
-                    setCelebrationCount(celebrationCounter + 1)
-                }, 50)
-            }
-        }
-    })
-
-    const hasElimination = React.useMemo(() => cellHasElimination(effects, point), [effects, point])
-    const hasSetValue = React.useMemo(() => cellHasSetValue(effects, point), [effects, point])
-    const hasActor = React.useMemo(() => cellHasActor(actors, point), [actors, point])
+const getCellBackgroundColor = (
+    actors: Actor[],
+    effects: Effect[],
+    point: Point,
+    cell: Cell,
+    affected: boolean,
+    selected: boolean,
+    highlightedNumber: number | null,
+    selectedDigit: number | null,
+    solutionValue: number
+) => {
+    const hasElimination = cellHasElimination(effects, point)
+    const hasSetValue = cellHasSetValue(effects, point)
+    const hasActor = cellHasActor(actors, point)
     const hasError = cell.value !== null && cell.value !== solutionValue
 
     let bg = boardBackgroundColor
@@ -121,6 +124,68 @@ const CellDisplay = (props: CellDisplayProps) => {
 
     if(selected) bg = selectedColor
     if(hasError) bg = errorColor
+
+    return bg
+}
+
+const getCandidateBackgrounds = (actors: Actor[], effects: Effect[], cell: Cell, point: Point) => {
+    const bgs: {[key: number]: string} = {}
+
+    actors = actors.filter(actor => pointsEqual(actor.point, point))
+    effects = effects.filter(eff => eff.type !== 'none' && pointsEqual(eff.point, point))
+
+    for(const actor of actors){
+        if(actor.cand){
+            bgs[actor.cand] = actorCandidateColor
+            if(actor.chainSet === 'yes'){
+                bgs[actor.cand] = actorChainCandidateYesColor
+            }
+            if(actor.chainSet === 'no'){
+                bgs[actor.cand] = actorChainCandidateNoColor
+            }
+        }
+    }
+
+    for(const eff of effects){
+        if(eff.type === 'elimination'){
+            for(let cand of eff.numbers){
+                bgs[cand] = eliminateCandidateColor
+            }
+        }
+        if(eff.type === 'value' && eff.number !== null){
+            bgs[eff.number] = setCandidateColor
+        }
+    }
+
+    return bgs
+}
+
+const CellDisplay = (props: CellDisplayProps) => {
+    const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
+    const {point, selected, affected, cell, highlightedNumber, solutionValue, selectedDigit, celebration} = props
+    const [celebrationCounter, setCelebrationCount] = React.useState(0)
+
+    React.useEffect(() => {
+        setCelebrationCount(0)
+    }, [celebration])
+
+    React.useEffect(() => {
+        if(celebration){
+            if(celebrationCounter < 100) {
+                setTimeout(() => {
+                    setCelebrationCount(celebrationCounter + 1)
+                }, 50)
+            }
+        }
+    })
+
+    let bg = React.useMemo(() =>
+        getCellBackgroundColor(actors, effects, point, cell, affected, selected, highlightedNumber, selectedDigit, solutionValue)
+    , [actors, effects, point, cell, affected, selected, highlightedNumber, selectedDigit, solutionValue])
+
+    const candBgs = React.useMemo(() =>
+        getCandidateBackgrounds(actors, effects, cell, point)
+    , [actors, effects, cell, point])
 
     if(props.celebration){
         const pointNumber = (point.y * 9 + point.x)
@@ -155,7 +220,7 @@ const CellDisplay = (props: CellDisplayProps) => {
     return (
         <div style={style}>
             {cell.value === null
-                ? <Candidates candidates={cell.candidates} width={style.width-2} height={style.height-2} />
+                ? <Candidates candidates={cell.candidates} width={style.width-2} height={style.height-2} bgs={candBgs} />
                 : <span style={{ fontSize: Math.floor(style.height/2) }}>{cell.value}</span>
             }
         </div>

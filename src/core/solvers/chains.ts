@@ -322,12 +322,22 @@ const getDiscontinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boo
     const firstLink = chain[0] as SingleLink
     const lastLink = chain[chain.length - 1] as SingleLink
 
+    // first OFF and last ON and same cand -> contradiction. It must be the candidate
     if(firstLink.type === 'strong' && lastLink.type === 'strong' && firstLink.prev.cand === lastLink.next.cand){
         const effects = removeCandidatesFromPoints(board, [firstLink.prev.point], candidatesExcept([firstLink.prev.cand]))
         if(effects.length > 0){
             return {effects, actors: chainToActors(chain)}
         }
     }
+    // first ON and last OFF and same cand -> contradiction. It can't be the candidate
+    if(firstLink.type === 'weak' && lastLink.type === 'weak' && firstLink.prev.cand === lastLink.next.cand){
+        const effects = removeCandidatesFromPoints(board, [firstLink.prev.point], [firstLink.prev.cand])
+        if(effects.length > 0){
+            return {effects, actors: chainToActors(chain)}
+        }
+    }
+
+    // first ON and last ON and not same cand -> contradiction. It can't be the candidate
     if(firstLink.type === 'weak' && lastLink.type === 'strong' && firstLink.prev.cand !== lastLink.next.cand){
         const effects = removeCandidatesFromPoints(board, [firstLink.prev.point], [firstLink.prev.cand])
         if(effects.length > 0){
@@ -448,7 +458,7 @@ export const createFindChain = (board: SolverBoard) => {
 
     let initialized = false
 
-    const init = () => {
+    const init = (name) => {
         initialized = true
         const maxDepth = 13
         const unfilledPoints = getAllUnfilledPoints(board)
@@ -470,13 +480,19 @@ export const createFindChain = (board: SolverBoard) => {
             addResult(getAicType2(board, chain, isLoop), 'aicType2' + grouped)
             addResult(getContinuousNiceLoop(board, chain, isLoop), 'continuousNiceLoop' + grouped)
 
-            return false
+            return results.some(x => x.name === name)
         }, maxDepth)
+
+        results.sort((a, b) => {
+            const actorsDiff = a.result.actors.length - b.result.actors.length
+            const effectsDiff = b.result.effects.length - a.result.effects.length
+            return actorsDiff !== 0 ? actorsDiff : effectsDiff
+        })
     }
 
     return (name) => {
         if(!initialized){
-            init()
+            init(name)
         }
         return results.find(x => x.name === name)?.result ?? null
     }

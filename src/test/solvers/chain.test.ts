@@ -3,11 +3,12 @@ import {input as xChainInput1} from '../sudokus/xChain'
 import {input as xyChainInput1} from '../sudokus/xyChain'
 import {input as simpleColoringInput1} from '../sudokus/simpleColoring'
 import {input as discontinuousNiceLoopInput1} from '../sudokus/discontinuousNiceLoop'
+import {input as continuousNiceLoopInput1} from '../sudokus/continuousNiceLoop'
 import {input as aicType1Input1} from '../sudokus/aicType1'
 import {input as aicType2Input1} from '../sudokus/aicType2'
 import { createTestBoard } from '../util'
 import {
-    aicType1, aicType2,
+    aicType1, aicType2, continuousNiceLoop,
     createFindChain, discontinuousNiceLoop,
     remotePairChain,
     xChain,
@@ -132,6 +133,23 @@ test('discontinuous nice loop 1', () => {
     expect(result).toMatchObject({
         "effects": [
             {"type": "elimination", "point": {"x": 7, "y": 0}, "numbers": [7]},
+        ]
+    })
+})
+
+test('continuous nice loop 1', () => {
+    const board = createTestBoard(continuousNiceLoopInput1)
+    const result = continuousNiceLoop(createFindChain(board))()
+
+    expect(result).toMatchObject({
+        "effects": [
+            {"type": "elimination", "point": {"x": 4, "y": 1}, "numbers": [3]},
+            {"type": "elimination", "point": {"x": 4, "y": 5}, "numbers": [3]},
+            {"type": "elimination", "point": {"x": 5, "y": 7}, "numbers": [8]},
+            {"type": "elimination", "point": {"x": 5, "y": 6}, "numbers": [6, 8]},
+            {"type": "elimination", "point": {"x": 3, "y": 3}, "numbers": [2]},
+            {"type": "elimination", "point": {"x": 3, "y": 5}, "numbers": [2]},
+            {"type": "elimination", "point": {"x": 4, "y": 5}, "numbers": [2]}
         ]
     })
 })
