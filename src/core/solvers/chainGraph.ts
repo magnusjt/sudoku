@@ -25,7 +25,7 @@ import {
     removeCandidatesFromPoints,
     uniqueEffects
 } from '../utils/effects'
-import { intersectionOfAll, unique } from '../utils/misc'
+import { difference, intersectionOfAll, unique, uniqueBy } from '../utils/misc'
 
 export const getPointKey = (point: Point) => point.id
 export const getGroupId = (group: Point[]) => group.map(p => p.id).join('-')
@@ -52,7 +52,7 @@ export type SingleLink = Link<SingleNode, SingleNode>
 
 export type Table<T extends Link = Link> = {
     [key: string]: {
-        point: Point
+        points: Point[]
         links: T[]
     }
 }
@@ -152,8 +152,8 @@ const getSingleTrueSingleEffects = (board: SolverBoard, point: Point, cand: numb
         ...removeCandidateFromAffectedPoints(board, point, cand) as EliminationEffect[]
     ]
 }
-const getSingleTrueGroupEffects = (board: SolverBoard, singleTrueSingleEffects: EliminationEffect[]): GroupEliminationEffect[] => {
-    return getGroupTrueGroupEffects(board, singleTrueSingleEffects)
+const getSingleTrueGroupEffects = (board: SolverBoard, allGroups: Point[][], point: Point, singleTrueSingleEffects: EliminationEffect[]): GroupEliminationEffect[] => {
+    return getGroupTrueGroupEffects(board, allGroups, [point], singleTrueSingleEffects)
 }
 
 // If group is false, what single point effects are there?
@@ -202,24 +202,24 @@ const getGroupFalseGroupEffects = (board: SolverBoard, points: Point[], cand: nu
     return effects
 }
 
-// If group is true, what single point effects are there?
+// If group is true, i.e. one of the points is true, what single point effects are there?
 const getGroupTrueSingleEffects = (board: SolverBoard, points: Point[], cand: number): EliminationEffect[] => {
     return intersectionOfAll(points.map(point => getSingleTrueSingleEffects(board, point, cand)), effectsEqual)
 }
 
 // If group is true, what group effects are there?
-const getGroupTrueGroupEffects = (board: SolverBoard, groupTrueSingleEffects: EliminationEffect[]): GroupEliminationEffect[] => {
+const getGroupTrueGroupEffects = (board: SolverBoard, allGroups: Point[][], trueGroup: Point[], groupTrueSingleEffects: EliminationEffect[]): GroupEliminationEffect[] => {
     const groupEffects: GroupEliminationEffect[] = []
-    for(let group of getBoxGroups()){
+    for(let group of allGroups){
         for(let cand of allCandidates){
-            const pointsWithCand = getPointsWithCandidates(board, group, [cand])
-            if(pointsWithCand.length > 2){
-                const eliminatesWholeGroup = pointsWithCand.every(p => groupTrueSingleEffects.some(eff => p.id === eff.point.id && eff.numbers.includes(cand)))
+            const falseGroup = difference(getPointsWithCandidates(board, group, [cand]), trueGroup, pointsEqual)
+            if(falseGroup.length > 2){
+                const eliminatesWholeGroup = falseGroup.every(p => groupTrueSingleEffects.some(eff => p.id === eff.point.id && eff.numbers.includes(cand)))
                 if(eliminatesWholeGroup){
                     groupEffects.push({
                         type: 'group-elimination',
-                        group: pointsWithCand,
-                        groupId: pointsWithCand.map(p => p.id).join('-'),
+                        group: falseGroup,
+                        groupId: falseGroup.map(p => p.id).join('-'),
                         number: cand
                     })
                 }
@@ -243,6 +243,12 @@ export const createTable = (board: SolverBoard, points: Point[], cands: number[]
         return getBoardCell(board, a).candidates.length - getBoardCell(board, b).candidates.length
     })
 
+    let groupsTable: Table = {}
+    if (withGroups) {
+        groupsTable = createGroupTable(board)
+    }
+    const allGroups = uniqueBy(Object.values(groupsTable).map(x => x.points), (a, b) => getGroupId(a) === getGroupId(b))
+
     const table: Table = {}
     for(let point of points){
         for(let cand of cands){
@@ -257,28 +263,23 @@ export const createTable = (board: SolverBoard, points: Point[], cands: number[]
             let groupEffectsIfTrue: GroupEliminationEffect[] = []
             let groupEffectsIfFalse: GroupSetValueEffect[] = []
             if(withGroups){
-                groupEffectsIfTrue = getSingleTrueGroupEffects(board, effectsIfTrue)
+                groupEffectsIfTrue = getSingleTrueGroupEffects(board, allGroups, point, effectsIfTrue)
                 groupEffectsIfFalse = getSingleFalseGroupEffects(board, point, cand)
             }
 
             if(effectsIfTrue.length > 0 || effectsIfFalse.length > 0){
                 const node: SingleNode = { type: 'single', point, cand }
                 const link = getLinks(node, effectsIfTrue, effectsIfFalse, groupEffectsIfTrue, groupEffectsIfFalse)
-                table[getPointKey(point)] = table[getPointKey(point)] ?? { point, links: [] }
+                table[getPointKey(point)] = table[getPointKey(point)] ?? { points: [point], links: [] }
                 table[getPointKey(point)].links.push(...link)
             }
         }
     }
 
-    if(withGroups){
-        const groupTable = createGroupTable(board)
-        return {
-            ...table,
-            ...groupTable
-        }
+    return {
+        ...table,
+        ...groupsTable
     }
-
-    return table
 }
 
 export const createGroupTable = (board: SolverBoard) => {
@@ -286,6 +287,14 @@ export const createGroupTable = (board: SolverBoard) => {
     const table: Table = {}
 
     const groups = getBoxGroups()
+        .flatMap(group => {
+            return [
+                group,
+                [group[0], group[1]],
+                [group[0], group[2]],
+                [group[1], group[2]]
+            ]
+        })
     for(let group of groups){
         for(let cand of allCandidates){
             const points = getPointsWithCandidates(board, group, [cand])
@@ -293,7 +302,7 @@ export const createGroupTable = (board: SolverBoard) => {
                 const groupId = getGroupId(points)
                 const effectsIfTrue = getGroupTrueSingleEffects(board, points, cand)
                 const effectsIfFalse = getGroupFalseSingleEffects(board, points, cand)
-                const groupEffectsIfTrue = getGroupTrueGroupEffects(board, effectsIfTrue)
+                const groupEffectsIfTrue = getGroupTrueGroupEffects(board, groups, points, effectsIfTrue)
                 const groupEffectsIfFalse = getGroupFalseGroupEffects(board, points, cand)
                 const hasEffects = effectsIfTrue.length > 0 || effectsIfFalse.length > 0 || groupEffectsIfTrue.length > 0 || groupEffectsIfFalse.length > 0
 

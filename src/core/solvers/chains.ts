@@ -38,16 +38,21 @@ import {
 
 const getNodePoints = (node: LinkNode) => node.type === 'single' ? [node.point] : node.points
 
-const linkIsInternal = (link: Link) => {
+const linkIsInternalWithinPoint = (link: Link) => {
     if (link.prev.type === 'single' && link.next.type === 'single') {
         return link.prev.point.id === link.next.point.id
     }
+    return false
+}
 
-    const prevPoints = getNodePoints(link.prev)
+/*
+const prevPoints = getNodePoints(link.prev)
     const nextPoints = getNodePoints(link.next)
 
-    return intersectionOfAll([prevPoints, nextPoints], pointsEqual).length > 0
-}
+    return new Set([...prevPoints.map(p => p.id), ...nextPoints.map(p => p.id)]).size !== prevPoints.length + nextPoints.length
+
+    //return intersectionOfAll([prevPoints, nextPoints], pointsEqual).length > 0
+ */
 
 type QueueItem = {
     seen: Set<number | string>
@@ -68,10 +73,10 @@ const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 
 
         if(!keepLink(link)) return false
 
-        const lastWasInternal = linkIsInternal(last)
-        const nextIsInternal = linkIsInternal(link)
+        const lastWasInternal = linkIsInternalWithinPoint(last)
+        const nextIsInternal = linkIsInternalWithinPoint(link)
 
-        if(lastWasInternal && nextIsInternal) return false
+        if(lastWasInternal && nextIsInternal) return false // Prevent eternal loop
 
         const isLoop = link.next.type !== 'group' && first.prev.point.id === link.next.point.id
 
@@ -107,12 +112,12 @@ const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 
             continue
         }
 
-        const nextLinks = getAllLinks(table, lastLink.next).filter(link => isValidNextLink(queueItem, link))
         const seen = new Set([...queueItem.seen, ...getSeenKeys(lastLink.next)])
         if(queueItem.chain.length >= maxDepth){
             continue
         }
 
+        const nextLinks = getAllLinks(table, lastLink.next).filter(link => isValidNextLink(queueItem, link))
         for(let nextLink of nextLinks){
             queue.push({ chain: [...chain, nextLink], seen })
         }
@@ -161,7 +166,7 @@ const chainToActors = (chain: Link[]): Actor[] => {
 
 const chainIsAlternatingInternal = (chain: Link[]) => {
     for(let i = 0; i < chain.length; i += 2){
-        if(!linkIsInternal(chain[i])) return false
+        if(!linkIsInternalWithinPoint(chain[i])) return false
     }
     return true
 }
@@ -370,7 +375,7 @@ const getContinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolea
 
         for(let link of weakSingleLinks){
             // TODO: What about internal links with grouping?
-            if(linkIsInternal(link) && link.prev.type === 'single' && link.next.type === 'single'){
+            if(linkIsInternalWithinPoint(link) && link.prev.type === 'single' && link.next.type === 'single'){
                 effects.push(
                     ...removeCandidatesFromPoints(board, [link.prev.point], candidatesExcept([link.prev.cand, link.next.cand]))
                 )
@@ -450,9 +455,10 @@ const isGrouped = (chain: Link[]) => chain.some(link => link.prev.type === 'grou
 
 export const createFindChain = (board: SolverBoard) => {
     const results: {name: string, result: TechniqueResult}[] = []
-    const addResult = (result: TechniqueResult | null, name: string) => {
+    const addResult = (result: TechniqueResult | null, name: string, chain) => {
         if(result !== null){
-            results.push({name, result})
+            const grouped = isGrouped(chain) ? 'Grouped' : ''
+            results.push({name: name + grouped, result})
         }
     }
 
@@ -460,25 +466,29 @@ export const createFindChain = (board: SolverBoard) => {
 
     const init = (name) => {
         initialized = true
-        const maxDepth = 13
+        const maxDepth = 10
         const unfilledPoints = getAllUnfilledPoints(board)
         const table = createTable(board, unfilledPoints, allCandidates, true)
         const keepLink = () => true
         let depth = 0
 
+        let n = 0
         iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
             if(chain.length <= 2) return false
-            const grouped = isGrouped(chain) ? 'Grouped' : ''
 
+            n++
+            if(n % 100000 === 0){
+                console.log(n)
+            }
             if(chain.length > depth){
                 depth = chain.length
                 console.log(depth)
             }
 
-            addResult(getDiscontinuousNiceLoop(board, chain, isLoop), 'discontinuousNiceLoop' + grouped)
-            addResult(getAicType1(board, chain, isLoop), 'aicType1' + grouped)
-            addResult(getAicType2(board, chain, isLoop), 'aicType2' + grouped)
-            addResult(getContinuousNiceLoop(board, chain, isLoop), 'continuousNiceLoop' + grouped)
+            addResult(getDiscontinuousNiceLoop(board, chain, isLoop), 'discontinuousNiceLoop', chain)
+            addResult(getAicType1(board, chain, isLoop), 'aicType1', chain)
+            addResult(getAicType2(board, chain, isLoop), 'aicType2', chain)
+            addResult(getContinuousNiceLoop(board, chain, isLoop), 'continuousNiceLoop', chain)
 
             return results.some(x => x.name === name)
         }, maxDepth)

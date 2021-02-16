@@ -3,13 +3,14 @@ import {input as xChainInput1} from '../sudokus/xChain'
 import {input as xyChainInput1} from '../sudokus/xyChain'
 import {input as simpleColoringInput1} from '../sudokus/simpleColoring'
 import {input as discontinuousNiceLoopInput1} from '../sudokus/discontinuousNiceLoop'
+import {input as discontinuousNiceLoopGroupedInput1, input2 as discontinuousNiceLoopGroupedInput2} from '../sudokus/discontinuousNiceLoopGrouped'
 import {input as continuousNiceLoopInput1} from '../sudokus/continuousNiceLoop'
 import {input as aicType1Input1} from '../sudokus/aicType1'
 import {input as aicType2Input1} from '../sudokus/aicType2'
 import { createTestBoard } from '../util'
 import {
     aicType1, aicType2, continuousNiceLoop,
-    createFindChain, discontinuousNiceLoop,
+    createFindChain, discontinuousNiceLoop, discontinuousNiceLoopGrouped,
     remotePairChain,
     xChain,
     xyChain
@@ -22,17 +23,7 @@ test('remote pair chain 1', () => {
     const result = remotePairChain(board)
 
     expect(result).toMatchObject({
-        effects: [{type: 'elimination', point: {y: 5, x: 6}, numbers: [5]}],
-        actors: [
-            {point: {y: 5, x: 0}},
-            {point: {y: 5, x: 0}},
-            {point: {y: 2, x: 0}},
-            {point: {y: 2, x: 0}},
-            {point: {y: 2, x: 8}},
-            {point: {y: 2, x: 8}},
-            {point: {y: 1, x: 6}},
-            {point: {y: 1, x: 6}},
-        ]
+        effects: [{type: 'elimination', point: {y: 5, x: 6}, numbers: [5]}]
     })
 })
 
@@ -61,19 +52,8 @@ test('xy chain 1', () => {
 
     expect(result).toMatchObject({
         effects: [
-            {type: 'elimination', point: {y: 1, x: 3}, numbers: [3]},
-            {type: 'elimination', point: {y: 2, x: 3}, numbers: [3]},
-            {type: 'elimination', point: {y: 6, x: 5}, numbers: [3]},
-        ],
-        actors: [
-            {point: {y: 6, x: 3}},
-            {point: {y: 6, x: 3}},
-            {point: {y: 4, x: 3}},
-            {point: {y: 4, x: 3}},
-            {point: {y: 4, x: 5}},
-            {point: {y: 4, x: 5}},
-            {point: {y: 1, x: 5}},
-            {point: {y: 1, x: 5}},
+            {type: 'elimination', point: {y: 4, x: 5}, numbers: [2]},
+            {type: 'elimination', point: {y: 1, x: 4}, numbers: [2]},
         ]
     })
 })
@@ -109,8 +89,7 @@ test('aic type1 1', () => {
 
     expect(result).toMatchObject({
         "effects": [
-            {"type": "elimination", "point": {"x": 1, "y": 0}, "numbers": [3]},
-            {"type": "elimination", "point": {"x": 2, "y": 4}, "numbers": [3]}
+            {"type": "elimination", "point": {"x": 1, "y": 0}, "numbers": [3]}
         ]
     })
 })
@@ -150,6 +129,70 @@ test('continuous nice loop 1', () => {
             {"type": "elimination", "point": {"x": 3, "y": 3}, "numbers": [2]},
             {"type": "elimination", "point": {"x": 3, "y": 5}, "numbers": [2]},
             {"type": "elimination", "point": {"x": 4, "y": 5}, "numbers": [2]}
+        ]
+    })
+})
+
+test('discontinuous nice loop grouped 1', () => {
+    let board = createTestBoard(discontinuousNiceLoopGroupedInput1)
+    board = applyTechniques(board, [
+        'nakedSingle',
+        'hiddenSingle',
+        'pointer',
+        'inversePointer',
+        'nakedPair',
+        'hiddenPair',
+        'nakedTriple',
+        'hiddenTriple',
+        'nakedQuad',
+        'hiddenQuad',
+
+    ])
+    const result = discontinuousNiceLoopGrouped(createFindChain(board))()
+
+    expect(result).toMatchObject({
+        "effects": [
+            {"type": "elimination", "point": {"x": 1, "y": 1}, "numbers": [9]},
+        ]
+    })
+})
+
+test('discontinuous nice loop grouped 2', () => {
+    let board = createTestBoard(discontinuousNiceLoopGroupedInput2)
+    board = applyTechniques(board, [
+        'basic',
+        'fullHouse',
+        'hiddenSingle',
+        'pointer',
+        'inversePointer',
+        'nakedSingle',
+        'nakedPair',
+        'hiddenPair',
+        'xwing',
+        'nakedTriple',
+        'hiddenTriple',
+        'nakedQuad',
+        'uniqueRectangle1',
+        'bugPlus1',
+        'skyscraper',
+        'swordfish',
+        'emptyRectangle',
+        'hiddenQuad',
+        'remotePairChain',
+        'wwing',
+        'jellyfish',
+        'xywing',
+        'xyzwing',
+        'simpleColoring',
+        'xChain',
+        'xyChain',
+        'discontinuousNiceLoop',
+    ])
+    const result = discontinuousNiceLoopGrouped(createFindChain(board))()
+
+    expect(result).toMatchObject({
+        "effects": [
+            {"type": "elimination", "point": {"x": 1, "y": 0}, "numbers": [8]},
         ]
     })
 })
