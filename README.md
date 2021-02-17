@@ -17,6 +17,8 @@ GUI:
 - Save progress
 - Digit selection outside the grid
 - Display technique descriptions
+- Import/export save data
+- Input custom board
 
 Supported solvers:
 - Basic sudoku eliminations
@@ -35,6 +37,9 @@ Supported solvers:
 - Simple Coloring (special case of x chains where only conjugate pairs are considered. Can be solved with one or more x chains as well)
 - x chain
 - xy chain
+- discontinuous nice loop (also grouped)
+- continuous nice loop (also grouped)
+- alternate inference chain type 1 and 2 (also grouped)
 - Brute force
 
 Generate sudokus:
@@ -56,10 +61,8 @@ GUI/Solver:
 
 GUI:
 - Mobile
-- Input custom board
 - Color tool
 - Filter on technique instead of difficulty
-- Import/export save data
 
 Generate sudokus:
 - Better name generation
@@ -71,7 +74,7 @@ Add support for solvers (still can't solve everything without brute force):
 - 2-string kite (This is just an x chain with 4 cells, but quite a bit easier to spot)
 - Finned fish
 - Sashimi fish
-- More Chains (grouped will solve some more shiz)
+- Chains needs more love. Not very performant, and the grouped chains are bit icky.
 - ALS (almost locked set. Find the one thing missing for a different technique, and use that in a chain)
 
 

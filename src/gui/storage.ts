@@ -1,8 +1,13 @@
 import { Board } from '../core/types'
-import { unique } from '../core/utils/misc'
+import { unique, uniqueBy } from '../core/utils/misc'
+import { BoardMetaData } from '../core/utils/getBoardMetaData'
 
 export type UserData = {
     solved: string[]
+    custom: {
+        meta: BoardMetaData
+        date: string
+    }[]
     progress: {
         [key: string]: Board
     }
@@ -15,16 +20,20 @@ const deserialize = (data: any): UserData => {
     if(!data.progress){
         data.progress = {}
     }
+    if(!data.custom){
+        data.custom = []
+    }
 
     return data
 }
 const serialize = (data: UserData): string => {
     return JSON.stringify(data)
 }
-const merge = (data: UserData, existing: UserData): UserData => {
+const merge = (data: Partial<UserData>, existing: UserData): UserData => {
     return {
-        solved: unique([...data.solved, ...existing.solved]),
-        progress: {...existing.progress, ...data.progress}
+        solved: unique([...(data.solved ?? []), ...existing.solved]),
+        progress: {...existing.progress, ...data.progress},
+        custom: uniqueBy([...(data.custom ?? []), ...existing.custom], (a, b) => a.meta?.boardData === b.meta?.boardData)
     }
 }
 
@@ -49,9 +58,10 @@ export const loadUserData = (): UserData => {
 export const storeUserData = (data: UserData) => {
     localStorageSet(data)
 }
-export const mergeUserData = (data: UserData) => {
+export const mergeUserData = (data: Partial<UserData>) => {
     const existing = localStorageGet()
     localStorageSet(merge(data, existing))
+    return localStorageGet()
 }
 
 export const addSolvedBoard = (boardStr: string) => {

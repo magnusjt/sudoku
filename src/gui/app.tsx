@@ -20,6 +20,7 @@ import { DigitSelector } from './digit-selector'
 import { boardHasError, boardIsComplete } from '../core/utils/sudokuUtils'
 import { loadUserData, storeUserData, UserData } from './storage'
 import { Help } from './help'
+import { ImportExport } from './import-export'
 
 type SolverState = {
     boardBeforeSolve: Board
@@ -40,6 +41,7 @@ export function App(){
     const [inputMode, setInputMode] = React.useState<InputMode>('value')
     const [hintsEnabled, setHintsEnabled] = React.useState(false)
     const [puzzleSelectOpen, setPuzzleSelectOpen] = React.useState(false)
+    const [importExportOpen, setImportExportOpen] = React.useState(false)
     const [helpOpen, setHelpOpen] = React.useState(false)
     const [boardMetaData, setBoardMetaData] = React.useState<BoardMetaData | null>(null)
     const [selectedCells, setSelectedCells] = React.useState<Point[]>([])
@@ -59,6 +61,10 @@ export function App(){
     const setUserData = React.useCallback((userData: UserData) => {
         storeUserData(userData)
         _setUserData(userData)
+    }, [])
+
+    const onNewUserData = React.useCallback((userData: UserData) => {
+      _setUserData(userData)
     }, [])
 
     const updateSolvedBoards = React.useCallback((boardStr: string) => {
@@ -182,8 +188,8 @@ export function App(){
                                 </Button>
                             </div>
                             <div>
-                                <Button color='secondary' variant='contained'>
-                                    Export
+                                <Button color='secondary' variant='contained' onClick={() => setImportExportOpen(true)}>
+                                    Import / Export
                                 </Button>
                             </div>
                             <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end' }}>
@@ -268,6 +274,18 @@ export function App(){
             >
                 <Paper style={{ padding: 16 }}>
                     <Help />
+                </Paper>
+            </Dialog>
+            <Dialog
+                fullWidth
+                maxWidth={'lg'}
+                open={importExportOpen}
+                onClose={() => setImportExportOpen(false)}
+            >
+                <Paper style={{ padding: 16 }}>
+                    <ImportExport
+                        onNewUserData={onNewUserData}
+                    />
                 </Paper>
             </Dialog>
         </div>

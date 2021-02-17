@@ -13,7 +13,6 @@ import { Board } from '../core/types'
 import Typography from '@material-ui/core/Typography'
 import Divider from '@material-ui/core/Divider'
 
-
 // yea I don't give a fuck about this for now.. :P
 let globalPuzzleData: BoardMetaData[] = [];
 const loadPuzzleData = async () => {
@@ -31,11 +30,18 @@ export type PuzzleSelectProps = {
     userData: UserData
 }
 
+type Tab = {
+    type: 'difficulty'
+    difficulty: string
+} | {
+    type: 'custom'
+}
+
 export const PuzzleSelect = (props: PuzzleSelectProps) => {
     const {userData} = props
     const [puzzleData, setPuzzleData] = React.useState<BoardMetaData[]>(globalPuzzleData)
 
-    const [selectedDifficulty, setSelectedDifficulty] = React.useState('easy')
+    const [selectedTab, setSelectedTab] = React.useState<Tab>({ type: 'difficulty', difficulty: 'easy' })
     const [showTechniques, setShowTechniques] = React.useState(false)
 
     React.useEffect(() => {
@@ -46,9 +52,11 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
         }
     }, [])
 
-    const puzzles = puzzleData
-        .filter(puzzle => puzzle.difficulty.difficulty === selectedDifficulty)
-        .sort((a, b) => a.techniques.length - b.techniques.length)
+    const puzzles = selectedTab.type === 'custom'
+        ? userData.custom.sort((a, b) => new Date(a.date) > new Date(b.date) ? 1 : -1).map(c => c.meta)
+        : puzzleData
+            .filter(puzzle => puzzle.difficulty.difficulty === selectedTab.difficulty)
+            .sort((a, b) => a.techniques.length - b.techniques.length)
 
     const maxNumberOfTechniques = Math.max(...puzzles.map(t => t.techniques.length))
 
@@ -56,12 +64,20 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
         <div style={{ height: '600px', display: 'flex', flexDirection: 'column' }}>
             <div>
                 <div style={{ display: 'flex'}}>
+                <div key={'custom'}>
+                    <Button
+                        onClick={() => setSelectedTab({ type: 'custom' })}
+                        disabled={selectedTab.type === 'custom'}
+                    >
+                        Custom
+                    </Button>
+                </div>
                 {difficulties.map((difficulty) => {
                     return (
                         <div key={difficulty}>
                             <Button
-                                onClick={() => setSelectedDifficulty(difficulty)}
-                                disabled={selectedDifficulty === difficulty}
+                                onClick={() => setSelectedTab({ type: 'difficulty', difficulty})}
+                                disabled={selectedTab.type === 'difficulty' && selectedTab.difficulty === difficulty}
                             >
                                 {difficulty}
                             </Button>

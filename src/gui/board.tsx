@@ -27,6 +27,7 @@ import {
     setValueColor
 } from '../theme'
 import { darken } from '@material-ui/core/styles'
+import { uniqueBy } from '../core/utils/misc'
 
 const Candidates = (props) => {
     const height = props.height
@@ -249,7 +250,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
     const startSelect = (point, e: React.MouseEvent) => {
         e.stopPropagation() // Prevents the mousedown clear select handler from being fired
         if(e.ctrlKey){
-            setSelectedCells(points => [...points, point])
+            setSelectedCells(points => uniqueBy([...points, point], pointsEqual))
         }else{
             setSelectedCells([point])
         }
@@ -257,7 +258,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
     }
     const addSelect = (point) => {
         if(isSelecting){
-            setSelectedCells(points => [...points, point])
+            setSelectedCells(points => uniqueBy([...points, point], pointsEqual))
         }
     }
     const endSelect = React.useCallback(() => {
@@ -277,8 +278,8 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                     return (
                         <div
                             key={x}
-                            onMouseDown={(e) => startSelect({x, y}, e)}
-                            onMouseOver={() => addSelect({x, y})}
+                            onMouseDown={(e) => startSelect({x, y, id: getPointId(x, y)}, e)}
+                            onMouseOver={() => addSelect({x, y, id: getPointId(x, y)})}
                             onMouseUp={endSelect}
                             style={{
                                 'WebkitTouchCallout': 'none',

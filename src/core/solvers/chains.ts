@@ -9,7 +9,7 @@ import {
     removeCandidateFromPoints,
     removeCandidatesFromPoints
 } from '../utils/effects'
-import { arraysEqual, difference, intersectionOfAll } from '../utils/misc'
+import { arraysEqual, difference } from '../utils/misc'
 import {
     allCandidates,
     candidatesExcept,
