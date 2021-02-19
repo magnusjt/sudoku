@@ -82,9 +82,9 @@ function *wWingGenerator(board: SolverBoard){
                             const common = getAffectedPointsInCommon([wxPoints1[i], wxPoints2[j]])
                             const effects = removeCandidateFromPoints(board, common, w)
                             const actors = [
-                                ...pointsWithX.map(point => ({ point })),
-                                { point: wxPoints1[i] },
-                                { point: wxPoints2[j] }
+                                ...pointsWithX.map(point => ({ point, cand: x })),
+                                ...wx.map(cand => ({ point: wxPoints1[i], cand })),
+                                ...wx.map(cand => ({ point: wxPoints2[j], cand }))
                             ]
                             if(effects.length > 0){
                                 yield {effects, actors}

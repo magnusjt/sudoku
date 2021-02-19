@@ -18,7 +18,7 @@ function *fishGenerator(board: SolverBoard, len: number){
         const pointsToRemove = difference(pointsOnLines, fishPoints, pointsEqual)
 
         const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
-        const actors = fishPoints.map(point => ({point}))
+        const actors = fishPoints.map(point => ({point, cand}))
 
         if(effects.length > 0){
             return {effects, actors}

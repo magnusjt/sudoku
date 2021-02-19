@@ -86,7 +86,7 @@ function *simpleColoringGenerator(board: SolverBoard){
                 }
             }
 
-            const actors = Object.values(colors).map(x => ({point: x.point}))
+            const actors = Object.values(colors).map(x => ({point: x.point, cand}))
 
             if(effects.length > 0){
                 yield {effects, actors}

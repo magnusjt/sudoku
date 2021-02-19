@@ -23,7 +23,7 @@ function *skyscraperGenerator(board: SolverBoard){
         const pointsToRemove = difference(affectedInCommon, skyscraperPoints, pointsEqual)
 
         const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
-        const actors = skyscraperPoints.map(point => ({point}))
+        const actors = skyscraperPoints.map(point => ({point, cand}))
 
         if(effects.length > 0){
             return {effects, actors}

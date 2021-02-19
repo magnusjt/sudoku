@@ -47,7 +47,7 @@ function *emptyRectangleGenerator(board: SolverBoard){
         if(erPoints.some(p => pointsEqual(p, pointToRemove))) return null
 
         const effects = removeCandidateFromPoints(board, [pointToRemove], cand)
-        const actors = [...erPoints, ...pair].map(point => ({point}))
+        const actors = [...erPoints, ...pair].map(point => ({point, cand}))
         if(effects.length > 0){
             return {effects, actors}
         }

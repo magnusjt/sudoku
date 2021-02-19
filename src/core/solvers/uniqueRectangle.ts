@@ -65,7 +65,7 @@ export const uniqueRectangle1 = (board: SolverBoard) => {
                 }
                 const candidates = pair.candidates
                 const effects = removeCandidatesFromPoints(board, [missingCorner], candidates)
-                const actors = corners.map(point => ({point}))
+                const actors = corners.flatMap(point => candidates.map(cand => ({ point, cand })))
 
                 if(effects.length > 0){
                     return {effects, actors}

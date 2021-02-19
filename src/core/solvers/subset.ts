@@ -18,7 +18,7 @@ function *nakedSubsetGenerator(board: SolverBoard, len: number){
             const pointsOutside = difference(points, pointsInside, pointsEqual)
 
             const effects = removeCandidatesFromPoints(board, pointsOutside, candidates)
-            const actors = pointsInside.map(point => ({point}))
+            const actors = pointsInside.flatMap(point => candidates.map(cand => ({ point, cand })))
 
             if(effects.length > 0){
                 yield {effects, actors}
@@ -45,7 +45,7 @@ function *subsetGenerator(board: SolverBoard, len: number){
                 ...removeCandidatesFromPoints(board, pointsOutside, candidates),
                 ...removeCandidatesFromPoints(board, pointsInside, candidatesExcept(candidates))
             ]
-            const actors = pointsInside.map(point => ({point}))
+            const actors = pointsInside.flatMap(point => candidates.map(cand => ({ point, cand })))
 
             if(effects.length > 0){
                 yield {effects, actors}
