@@ -170,33 +170,37 @@ const getGroupFalseSingleEffects = (board: SolverBoard, points: Point[], cand: n
 }
 
 // If group is false, which group effects are there?
-const getGroupFalseGroupEffects = (board: SolverBoard, points: Point[], cand: number): GroupSetValueEffect[] => {
-    board = cloneBoard(board)
-    for(let point of points){
-        const cell = getBoardCell(board, point)
-        cell.candidates = cell.candidates.filter(c => c !== cand)
-    }
-    const isColumn = unique(points.map(getColNumber)).length === 1
+const getGroupFalseGroupEffects = (board: SolverBoard, falseGroup: Point[], cand: number): GroupSetValueEffect[] => {
+    const isColumn = unique(falseGroup.map(getColNumber)).length === 1
+    const isRow = unique(falseGroup.map(getRowNumber)).length === 1
 
     const housesToCheck = [
-        getBox(points[0]),
-        isColumn ? getColumn(points[0].x) : getRow(points[0].y)
+        getBox(falseGroup[0])
     ]
+    // We allow single points as input "groups" to this function, so check both row/col
+    if (isColumn) {
+        housesToCheck.push(getColumn(falseGroup[0].x))
+    }
+    if (isRow) {
+        housesToCheck.push(getRow(falseGroup[0].y))
+    }
 
     const effects: GroupSetValueEffect[] = []
     for(let house of housesToCheck){
-        const truePoints = getPointsWithCandidates(board, house, [cand])
-        const sameBox = unique(truePoints.map(getBoxNumber)).length === 1
-        const sameCol = unique(truePoints.map(getColNumber)).length === 1
-        const sameRow = unique(truePoints.map(getRowNumber)).length === 1
+        const trueGroup = difference(getPointsWithCandidates(board, house, [cand]), falseGroup, pointsEqual)
+        if (trueGroup.length >= 2) {
+            const sameBox = unique(trueGroup.map(getBoxNumber)).length === 1
+            const sameCol = unique(trueGroup.map(getColNumber)).length === 1
+            const sameRow = unique(trueGroup.map(getRowNumber)).length === 1
 
-        if(sameBox && (sameCol || sameRow)){
-            effects.push({
-                type: 'group-value' as const,
-                group: truePoints,
-                groupId: getGroupId(truePoints),
-                number: cand
-            })
+            if(sameBox && (sameCol || sameRow)){
+                effects.push({
+                    type: 'group-value' as const,
+                    group: trueGroup,
+                    groupId: getGroupId(trueGroup),
+                    number: cand
+                })
+            }
         }
     }
     return effects
@@ -219,7 +223,7 @@ const getGroupTrueGroupEffects = (board: SolverBoard, allGroups: Point[][], true
                     groupEffects.push({
                         type: 'group-elimination',
                         group: falseGroup,
-                        groupId: falseGroup.map(p => p.id).join('-'),
+                        groupId: getGroupId(falseGroup),
                         number: cand
                     })
                 }

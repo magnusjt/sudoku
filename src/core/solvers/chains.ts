@@ -45,15 +45,6 @@ const linkIsInternalWithinPoint = (link: Link) => {
     return false
 }
 
-/*
-const prevPoints = getNodePoints(link.prev)
-    const nextPoints = getNodePoints(link.next)
-
-    return new Set([...prevPoints.map(p => p.id), ...nextPoints.map(p => p.id)]).size !== prevPoints.length + nextPoints.length
-
-    //return intersectionOfAll([prevPoints, nextPoints], pointsEqual).length > 0
- */
-
 type QueueItem = {
     seen: Set<number | string>
     chain: Link[]
@@ -62,9 +53,9 @@ type QueueItem = {
 const getSeenKeys = (node: LinkNode) => node.type === 'single' ? [node.point.id] : node.points.map(p => p.id)
 
 const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 13) => {
-    const isValidNextLink = (queueItem: QueueItem, link: Link) => {
-        const first = queueItem.chain[0] as Link<SingleNode>
-        const last = queueItem.chain[queueItem.chain.length - 1]
+    const isValidNextLink = (chain: Link[], seen: Set<string | number>, link: Link) => {
+        const first = chain[0] as Link<SingleNode>
+        const last = chain[chain.length - 1]
 
         if(link.prev.cand !== last.next.cand) return false
 
@@ -84,7 +75,10 @@ const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 
         if(isLoop) return true
         if(nextIsInternal) return true
 
-        const isLasso = getSeenKeys(link.next).some(key => queueItem.seen.has(key))
+        // NB: We don't check for internal links between groups or single<->group
+        // That means that we'll not all those as lassos, and won't use the link
+
+        const isLasso = getSeenKeys(link.next).some(key => seen.has(key))
         return !isLasso
     }
 
@@ -112,12 +106,12 @@ const iterateChainsInTable = (table: Table, keepLink, check, maxDepth: number = 
             continue
         }
 
-        const seen = new Set([...queueItem.seen, ...getSeenKeys(lastLink.next)])
         if(queueItem.chain.length >= maxDepth){
             continue
         }
 
-        const nextLinks = getAllLinks(table, lastLink.next).filter(link => isValidNextLink(queueItem, link))
+        const seen = new Set([...queueItem.seen, ...getSeenKeys(lastLink.next)])
+        const nextLinks = getAllLinks(table, lastLink.next).filter(link => isValidNextLink(chain, seen, link))
         for(let nextLink of nextLinks){
             queue.push({ chain: [...chain, nextLink], seen })
         }
@@ -374,7 +368,7 @@ const getContinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolea
         const effects: Effect[] = []
 
         for(let link of weakSingleLinks){
-            // TODO: What about internal links with grouping?
+            // TODO: What about internal links with grouping? Think it doesn't matter..
             if(linkIsInternalWithinPoint(link) && link.prev.type === 'single' && link.next.type === 'single'){
                 effects.push(
                     ...removeCandidatesFromPoints(board, [link.prev.point], candidatesExcept([link.prev.cand, link.next.cand]))
@@ -383,12 +377,15 @@ const getContinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolea
                 let pointsToRemove: Point[] = []
                 const prevPoints = getNodePoints(link.prev)
                 const nextPoints = getNodePoints(link.next)
+                // link within box
                 if(arraysEqual(prevPoints.map(getBoxNumber), nextPoints.map(getBoxNumber))){
                     pointsToRemove.push(...getBox(prevPoints[0]))
                 }
+                // link within column
                 if(arraysEqual(prevPoints.map(getColNumber), nextPoints.map(getColNumber))){
                     pointsToRemove.push(...getColumn(prevPoints[0].x))
                 }
+                // link within row
                 if(arraysEqual(prevPoints.map(getRowNumber), nextPoints.map(getRowNumber))){
                     pointsToRemove.push(...getRow(prevPoints[0].y))
                 }
@@ -472,17 +469,12 @@ export const createFindChain = (board: SolverBoard) => {
         const keepLink = () => true
         let depth = 0
 
-        let n = 0
         iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
             if(chain.length <= 2) return false
 
-            n++
-            if(n % 100000 === 0){
-                console.log(n)
-            }
             if(chain.length > depth){
                 depth = chain.length
-                console.log(depth)
+                // console.log(depth)
             }
 
             addResult(getDiscontinuousNiceLoop(board, chain, isLoop), 'discontinuousNiceLoop', chain)
