@@ -1,10 +1,11 @@
-import { SolverBoard, Point } from '../types'
+import { SolverBoard, Point, EliminationEffect } from '../types'
 import {
-    getAllRows,
+    getAffectedPoints,
+    getAllRows, getAllUnfilledPoints,
     getBoardCell,
     getBoxNumber,
-    getColumn, getPointId,
-    getPointsWithNCandidates,
+    getColumn, getPointId, getPointsWithCandidates,
+    getPointsWithNCandidates, getRow,
     pointsEqual
 } from '../utils/sudokuUtils'
 import { difference, groupBy, unique, uniqueBy } from '../utils/misc'
@@ -40,7 +41,7 @@ const findNakedPairs = (board: SolverBoard, points: Point[]) => {
  * TODO: Type 4: Same as type 3, but this time check if one of the rectangle candidates are only in the rectangle cells in that box/column/row. If so, delete the other rectangle candidate.
  * TODO: Type 5: Same as type 2, but the extra candidate is on a diagonal. The candidate must be in one of these. See if there are cells that sees both of these, and eliminate the cand from those.
  * TODO: Type 6: See if one of the rectangle candidates form an x-wing. If so, it must be placed on two points diagonally. If this removes all other candidates from the rectangle, it is invalid, and so can be eliminated.
- * TODO: Hidden, avoidable 1/2, BUG, missing candidates. These seem a bit too exotic tbh.
+ * TODO: Hidden, avoidable 1/2, missing candidates. These seem a bit too exotic tbh.
  */
 export const uniqueRectangle1 = (board: SolverBoard) => {
     for(let points of getAllRows()){
@@ -74,5 +75,49 @@ export const uniqueRectangle1 = (board: SolverBoard) => {
         }
     }
 
+    return null
+}
+
+export const hiddenRectangle = (board: SolverBoard) => {
+    const unfilledPoints = getAllUnfilledPoints(board)
+    const biValuePoints = getPointsWithNCandidates(board, unfilledPoints, 2)
+
+    for(let startingCorner of biValuePoints) {
+        const cands = getBoardCell(board, startingCorner).candidates
+
+        const row = getPointsWithCandidates(board, getRow(startingCorner.y), cands).filter(p => !pointsEqual(p, startingCorner))
+        const col = getPointsWithCandidates(board, getColumn(startingCorner.x), cands).filter(p => !pointsEqual(p, startingCorner))
+
+        for(let rowCorner of row){
+            for(let colCorner of col){
+                const x = rowCorner.x
+                const y = colCorner.y
+                const oppositeCorner: Point = {x, y, id: getPointId(x, y)}
+                const oppositeCell = getBoardCell(board, oppositeCorner)
+                const hiddenRect = [startingCorner, rowCorner, colCorner, oppositeCorner]
+                const nBoxes = unique(hiddenRect.map(getBoxNumber)).length
+                if (nBoxes !== 2){
+                    continue
+                }
+
+                if (cands.every(cand => oppositeCell.candidates.includes(cand))) {
+                    for (let cand of cands) {
+                        const affected = getAffectedPoints(oppositeCorner)
+                        const everyPointWithCandIsInRect = getPointsWithCandidates(board, affected, [cand])
+                            .every(p => hiddenRect.some(hp => pointsEqual(p, hp)))
+                        if (everyPointWithCandIsInRect) {
+                            const effects: EliminationEffect[] = [{
+                                type: 'elimination',
+                                point: oppositeCorner,
+                                numbers: cands.filter(c => c !== cand)
+                            }]
+                            const actors = hiddenRect.flatMap(point => cands.map(cand => ({ point, cand })))
+                            return { effects, actors}
+                        }
+                    }
+                }
+            }
+        }
+    }
     return null
 }

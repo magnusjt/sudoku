@@ -4,7 +4,7 @@ import { fullHouse, hiddenSingle, nakedSingle } from './solvers/singles'
 import { inversePointer, pointer } from './solvers/pointer'
 import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair, nakedQuad, nakedTriple } from './solvers/subset'
 import { jellyfish, swordfish, xWing } from './solvers/fish'
-import { uniqueRectangle1 } from './solvers/uniqueRectangle'
+import { hiddenRectangle, uniqueRectangle1 } from './solvers/uniqueRectangle'
 import { skyscraper } from './solvers/skyscraper'
 import { emptyRectangle } from './solvers/emptyRectangle'
 import { wWing, xyWing, xyzWing } from './solvers/wing'
@@ -49,6 +49,7 @@ export const techniques = [
     {type: 'hiddenQuad', difficulty: 'expert'}, // Quite hard to spot imo, but not chainy
     {type: 'remotePairChain', difficulty: 'artisan'}, // Easy chain to spot if you have all candidates
     {type: 'wwing', difficulty: 'artisan'}, // More of a pattern than xyWing imo
+    {type: 'hiddenRectangle', difficulty: 'artisan'}, // Much harder than unique rect type 1
     {type: 'jellyfish', difficulty: 'artisan'}, // Highlights is a must for jellyfish
     {type: 'xywing', difficulty: 'artisan'}, // Chainy. Quite hard to spot
     {type: 'xyzwing', difficulty: 'artisan'}, // Same as xywing, but even more digits, so a bit harder.
@@ -88,6 +89,7 @@ const createTechniqueRunners = (board: SolverBoard) => {
         emptyRectangle: emptyRectangle,
         hiddenQuad: hiddenQuad,
         remotePairChain: remotePairChain,
+        hiddenRectangle: hiddenRectangle,
         wwing: wWing,
         jellyfish: jellyfish,
         xywing: xyWing,

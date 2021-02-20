@@ -1,20 +1,7 @@
 import { allCandidates, canPutDigit, cloneBoard, getAllPoints, getPointId } from './utils/sudokuUtils'
 import { Board, Cell, Point } from './types'
 import { hasUniqueSolution } from './utils/hasUniqueSolution'
-
-const rand = (n: number) => Math.floor((Math.random()*n))
-const randIndex = list => rand(list.length)
-
-const randomOrder = (list) => {
-    list = [...list]
-    for(let i = 0; i < list.length; i++){
-        const ri = randIndex(list)
-        const tmp = list[i]
-        list[i] = list[ri]
-        list[ri] = tmp
-    }
-    return list
-}
+import { rand, randomOrder } from './utils/misc'
 
 const getEmptyBoard = () => {
     const board: Board = []

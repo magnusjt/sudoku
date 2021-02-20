@@ -1,8 +1,9 @@
 import { generateBoardsWithMaxGivens } from './src/core/generate'
-import { techniques } from './src/core/solve'
+import { difficultyLevels, techniques } from './src/core/solve'
 import { getBoardMetaData } from './src/core/utils/getBoardMetaData'
 import fs from 'fs'
 import { unique } from './src/core/utils/misc'
+import { boardToStr } from './src/core/sudoku'
 
 const countPerDifficulty = unique(techniques.map(t => t.difficulty))
     .reduce((x, d) => {
@@ -16,17 +17,30 @@ const countPerTechnique = techniques.map(t => t.type)
         return x
     }, {})
 
-for(let board of generateBoardsWithMaxGivens(50, true)){
-    const meta = getBoardMetaData(board)
+const minimumDifficulty = difficultyLevels['hard']
 
-    if(countPerDifficulty[meta.difficulty.difficulty] >= 100){
-        const hasNeededTechnique = meta.techniques.some(t => {
-            return countPerTechnique[t] === 0
-        })
-        if(!hasNeededTechnique){
-            continue
-        }
+for(let board of generateBoardsWithMaxGivens(50, true)){
+    let meta
+    try {
+        meta = getBoardMetaData(board)
+    } catch (err) {
+        fs.appendFileSync('./boards/errors.txt', err.message + ' ' + boardToStr(board) + '\n')
+        continue
     }
+
+    if (meta.difficulty.level < minimumDifficulty) {
+        continue
+    }
+
+    const hasEnoughOfDifficulty = countPerDifficulty[meta.difficulty.difficulty] >= 100
+    const hasEnoughOfTechniques = meta.techniques.every(t => {
+        return countPerTechnique[t] >= 100
+    })
+
+    if (hasEnoughOfDifficulty && hasEnoughOfTechniques) {
+        continue
+    }
+
     countPerDifficulty[meta.difficulty.difficulty]++
     meta.techniques.forEach(t => {
         countPerTechnique[t]++
@@ -35,5 +49,5 @@ for(let board of generateBoardsWithMaxGivens(50, true)){
     console.log(countPerTechnique)
     console.log(countPerDifficulty)
 
-    fs.appendFileSync('./boards/boards.txt', JSON.stringify(meta) + '\n')
+    fs.appendFileSync('./boards/boards8.txt', JSON.stringify(meta) + '\n')
 }

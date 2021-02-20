@@ -3,9 +3,11 @@ import fs from 'fs'
 import { arraysEqual } from './src/core/utils/misc'
 import { boardFromStr } from './src/core/sudoku'
 
-const lines = fs.readFileSync('./boards/boardsV3.txt', 'utf8').split('\n').filter(line => line.trim() !== '')
+const lines = fs.readFileSync('./boards/boards.combined.txt', 'utf8').split('\n').filter(line => line.trim() !== '')
 
 const rename = false
+
+const boards = new Set()
 
 for(let line of lines){
     const previousMetaData = JSON.parse(line)
@@ -13,6 +15,11 @@ for(let line of lines){
     console.time()
     const metaData = getBoardMetaData(board)
     console.timeEnd()
+
+    if (boards.has(metaData.boardData)) {
+        console.log('Duplicate board: ' + metaData.boardData)
+    }
+    boards.add(metaData.boardData)
 
     if(!rename){
         metaData.name = previousMetaData.name

@@ -23,6 +23,7 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "generate": "node --experimental-specifier-resolution=node --loader ts-node/esm ./generate.ts",
+    "combine": "node --experimental-specifier-resolution=node --loader ts-node/esm ./combine.ts",
     "reanalyze": "node --experimental-specifier-resolution=node --loader ts-node/esm ./reanalyze.ts"
   },
   "eslintConfig": {

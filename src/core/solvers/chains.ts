@@ -9,7 +9,7 @@ import {
     removeCandidateFromPoints,
     removeCandidatesFromPoints
 } from '../utils/effects'
-import { arraysEqual, difference } from '../utils/misc'
+import { arraysEqual, difference, unique } from '../utils/misc'
 import {
     allCandidates,
     candidatesExcept,
@@ -194,7 +194,7 @@ export function remotePairChain(board: SolverBoard){
             (a, b) => a === b
         )
     }
-    const maxDepth = 20
+    const maxDepth = 12
     iterateChainsInTable(table, keepLink, (chain: SingleLink[], isLoop) => {
         if(isLoop) return false
         if(chain.length <= 2) return false
@@ -280,7 +280,7 @@ export function xyChain(board: SolverBoard){
     const biValuePoints = getPointsWithNCandidates(board, getAllPoints(), 2)
     const table = createTable(board, biValuePoints, allCandidates, false)
 
-    const maxDepth = 20
+    const maxDepth = 12
     let result: any = null
     const keepLink = () => true
     iterateChainsInTable(table, keepLink, (chain: Link[], isLoop) => {
@@ -377,16 +377,25 @@ const getContinuousNiceLoop = (board: SolverBoard, chain: Link[], isLoop: boolea
                 let pointsToRemove: Point[] = []
                 const prevPoints = getNodePoints(link.prev)
                 const nextPoints = getNodePoints(link.next)
+
                 // link within box
-                if(arraysEqual(prevPoints.map(getBoxNumber), nextPoints.map(getBoxNumber))){
+                const prevBoxes = unique(prevPoints.map(getBoxNumber))
+                const nextBoxes = unique(nextPoints.map(getBoxNumber))
+                if(prevBoxes.length === 1 && nextBoxes.length === 1 && prevBoxes[0] === nextBoxes[0]){
                     pointsToRemove.push(...getBox(prevPoints[0]))
                 }
+
                 // link within column
-                if(arraysEqual(prevPoints.map(getColNumber), nextPoints.map(getColNumber))){
+                const prevCols = unique(prevPoints.map(getColNumber))
+                const nextCols = unique(nextPoints.map(getColNumber))
+                if(prevCols.length === 1 && nextCols.length === 1 && prevCols[0] === nextCols[0]){
                     pointsToRemove.push(...getColumn(prevPoints[0].x))
                 }
+
                 // link within row
-                if(arraysEqual(prevPoints.map(getRowNumber), nextPoints.map(getRowNumber))){
+                const prevRows = prevPoints.map(getRowNumber)
+                const nextRows = nextPoints.map(getRowNumber)
+                if(prevRows.length === 1 && nextRows.length === 1 && prevRows[0] === nextRows[0]){
                     pointsToRemove.push(...getRow(prevPoints[0].y))
                 }
                 pointsToRemove = difference(pointsToRemove, pointsInChain, pointsEqual)

@@ -59,3 +59,17 @@ export const memoize = <T extends Function>(fn: T, getKey): T => {
         return result
     }) as unknown as T
 }
+
+export const rand = (n: number) => Math.floor((Math.random()*n))
+export const randIndex = list => rand(list.length)
+
+export const randomOrder = (list) => {
+    list = [...list]
+    for(let i = 0; i < list.length; i++){
+        const ri = randIndex(list)
+        const tmp = list[i]
+        list[i] = list[ri]
+        list[ri] = tmp
+    }
+    return list
+}

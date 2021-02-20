@@ -31,6 +31,7 @@ Supported solvers:
 - xyz wing
 - BUG+1
 - Unique rectangle type 1
+- Hidden rectangles (seems to show up in some extremely hard puzzles)
 - Empty rectangle, also with 2 candidates
 - Skyscraper
 - remote pair chain
@@ -52,7 +53,7 @@ Optimize solvers:
 - Don't generate rows/cols each time. Can be precalculated. (didn't actually do much)
 
 Bugs:
-- None (just kidding, or do I? yes, or maybe)
+- none atm
 
 # TODO
 
