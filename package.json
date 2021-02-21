@@ -1,10 +1,9 @@
 {
   "name": "sudoku",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
-  "type": "module",
   "scripts": {
-    "mobile": "echo todo", 
+    "mobile": "yarn --cwd packages/mobile run start", 
     "watch:build": "yarn --cwd packages/sudoku-core run watch:build",
     "web": "yarn --cwd packages/web run start",
     "build": "yarn workspaces run build",
@@ -26,7 +25,7 @@
       "last 1 safari version"
     ]
   },
-  "workspaces": [
-    "packages/*"
-  ]
+  "workspaces": {
+    "packages": ["packages/*"]
+  }
 }

@@ -2,7 +2,7 @@ import {input as xyWingInput1} from '../sudokus/xyWing'
 import {input as xyzWingInput1} from '../sudokus/xyzWing'
 import {input as wWingInput1} from '../sudokus/wWing'
 import { createTestBoard } from '../util'
-import { wWing, xyWing, xyzWing } from '../../core/solvers/wing'
+import { wWing, xyWing, xyzWing } from '../../src/solvers/wing'
 
 test('xy-wing 1', () => {
     const board = createTestBoard(xyWingInput1)

@@ -1,14 +1,31 @@
 {
   "name": "sudoku-native",
   "version": "0.1.0",
-  "main": "node_modules/expo/AppEntry.js",
+  "main": "__generated__/AppEntry.js",
   "private": true,
   "scripts": {
     "start": "expo start",
     "android": "expo start --android",
+    "test": "echo todo",
     "ios": "expo start --ios",
     "web": "expo start --web",
-    "eject": "expo eject"
+    "postinstall": "expo-yarn-workspaces postinstall"
+  },
+  "eslintConfig": {
+    "parser": "babel-eslint",
+    "extends": ["eslint:recommended", "plugin:react/recommended"],
+    "plugins": [
+      "react",
+      "react-native"
+    ],
+    "rules": {
+      "semi": ["error", "never"],
+      "jsx-quotes": ["error", "prefer-single"]
+    },
+    "env": {
+      "browser": true,
+      "react-native/react-native": true
+    }
   },
   "dependencies": {
     "expo": "~40.0.0",
@@ -23,9 +40,14 @@
   },
   "devDependencies": {
     "@babel/core": "~7.9.0",
+    "@babel/runtime": "~7.9.0",
     "@types/react": "~16.9.35",
     "@types/react-dom": "~16.9.8",
     "@types/react-native": "~0.63.2",
+    "eslint": "7.19.0",
+    "eslint-plugin-react": "7.22.0",
+    "eslint-plugin-react-native": "3.10.0",
+    "expo-yarn-workspaces": "1.3.1",
     "typescript": "~4.0.0"
   }
 }

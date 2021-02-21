@@ -1,6 +1,6 @@
 import {input as bugPlus1Input1} from '../sudokus/bugPlus1'
 import { createTestBoard } from '../util'
-import { bugPlus1 } from '../../core/solvers/bug'
+import { bugPlus1 } from '../../src/solvers/bug'
 
 test('BUG+1 1', () => {
     const board = createTestBoard(bugPlus1Input1)

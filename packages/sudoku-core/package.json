@@ -9,6 +9,7 @@
   "scripts": {
     "watch:build": "tsc -w --preserveWatchOutput --incremental",
     "build": "tsc",
+    "test": "jest",
     "lint": "eslint src",
     "generate": "node --experimental-specifier-resolution=node --loader ts-node/esm ./generate.ts",
     "combine": "node --experimental-specifier-resolution=node --loader ts-node/esm ./combine.ts",
@@ -24,12 +25,18 @@
       "semi": ["error", "never"]
     }
   },
+  "jest": {
+    "preset": "ts-jest"
+  },
   "dependencies": {
     "typescript": "4.1.5"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "4.15.1",
     "@typescript-eslint/parser": "4.15.1",
+    "@types/jest": "22.2.3",
+    "jest": "26.6.3",
+    "ts-jest": "26.5.1",
     "ts-node": "^9.1.1",
     "eslint": "7.19.0"
   }

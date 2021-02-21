@@ -1,6 +1,6 @@
 import {input as emptyRectangleInput1} from '../sudokus/emptyRectangle'
 import { createTestBoard } from '../util'
-import { emptyRectangle } from '../../core/solvers/emptyRectangle'
+import { emptyRectangle } from '../../src/solvers/emptyRectangle'
 
 test('emptyRectangle 1', () => {
     const board = createTestBoard(emptyRectangleInput1)

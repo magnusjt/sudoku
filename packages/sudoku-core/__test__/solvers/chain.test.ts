@@ -18,9 +18,9 @@ import {
     remotePairChain,
     xChain,
     xyChain
-} from '../../core/solvers/chains'
-import { applyTechniques } from '../../core/solve'
-import { simpleColoring } from '../../core/solvers/simpleColoring'
+} from '../../src/solvers/chains'
+import { applyTechniques } from '../../src/solve'
+import { simpleColoring } from '../../src/solvers/simpleColoring'
 
 test('remote pair chain 1', () => {
     const board = createTestBoard(remotePairChainInput1)

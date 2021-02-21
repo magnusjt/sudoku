@@ -1,5 +1,5 @@
 import { createTestBoardFromStr } from '../util'
-import { getTechniquesRequiredForSolvingBoard } from '../../core/solve'
+import { getTechniquesRequiredForSolvingBoard } from '../../src/solve'
 
 const jedi1 = '305080000087690000690005000004070010070900200000230078803700009002069000069000740'
 const jedi2 = '004000071230070004671900030090080706000706090006590003309025167000000300000000025'

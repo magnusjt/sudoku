@@ -1,8 +1,8 @@
-import { generateBoardsWithMaxGivens } from 'sudoku-core/lib/generate'
-import { hasUniqueSolution } from 'sudoku-core/lib/utils/hasUniqueSolution'
+import { generateBoardsWithMaxGivens } from '../src/generate'
+import { hasUniqueSolution } from '../src/utils/hasUniqueSolution'
 import { createTestBoard } from './util'
 import { input as knownUniqueInput} from './sudokus/nakedPair'
-import { first } from 'sudoku-core/lib/utils/misc'
+import { first } from '../src/utils/misc'
 
 test('hasUniqueSolution', () => {
     const board = createTestBoard(knownUniqueInput)

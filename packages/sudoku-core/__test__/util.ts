@@ -1,4 +1,4 @@
-import { boardFromInput, boardFromStr, prepareBoardForSolver } from 'sudoku-core/lib/sudoku'
+import { boardFromInput, boardFromStr, prepareBoardForSolver } from '../src/sudoku'
 
 export const createTestBoard = (input: number[][]) => {
     const board = boardFromInput(input)
