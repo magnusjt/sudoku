@@ -19,6 +19,7 @@ GUI:
 - Display technique descriptions
 - Import/export save data
 - Input custom board
+- Solver actors/effects displays the candidates as well as points
 
 Supported solvers:
 - Basic sudoku eliminations
@@ -26,6 +27,8 @@ Supported solvers:
 - Pointers / inverse pointers (also called locked candidates either pointing or claiming)
 - Subsets (naked/hidden pair, triple, quad)
 - Fish (x-wing, swordfish, jellyfish)
+- Finned fish
+- Sashimi fish
 - w-wing
 - xy wing
 - xyz wing
@@ -58,7 +61,8 @@ Bugs:
 # TODO
 
 GUI/Solver:
-- Solver actors/effects can display the candidates as well, not just the cell. But maybe it's nice to have to work for it a bit?
+- Maybe display chain links better
+- More actor types so we can display fins in fish and stuff like that
 
 GUI:
 - Mobile
@@ -69,12 +73,10 @@ Generate sudokus:
 - Better name generation
 - Check for duplicate boards
 - Check for symmetrically identical boards? (rotation, mirroring, digit shift)
-- Find rare techniques like jellyfish
+- Find more rare techniques like jellyfish
 
 Add support for solvers (still can't solve everything without brute force): 
 - 2-string kite (This is just an x chain with 4 cells, but quite a bit easier to spot)
-- Finned fish
-- Sashimi fish
 - Chains needs optimizations so we can check more of them. Right now we have hard limits on depth and breadth to avoid spending too much time.
 - ALS (almost locked set. Find the one thing missing for a different technique, and use that in a chain)
 

@@ -16,7 +16,7 @@ import Divider from '@material-ui/core/Divider'
 // yea I don't give a fuck about this for now.. :P
 let globalPuzzleData: BoardMetaData[] = [];
 const loadPuzzleData = async () => {
-    globalPuzzleData = await fetch(process.env.PUBLIC_URL + '/boards/boardsV5.txt')
+    globalPuzzleData = await fetch(process.env.PUBLIC_URL + '/boards/boardsV6.txt')
         .then(x => x.text())
         .then(x => x
             .split('\n')

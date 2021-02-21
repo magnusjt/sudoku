@@ -1,8 +1,20 @@
 import {input as xWingInput1} from '../sudokus/xWing'
+import {input as xWingFinnedInput1} from '../sudokus/xWingFinned'
+import {inputSashimi as xWingFinnedSashimiInput} from '../sudokus/xWingFinned'
 import {input as swordfishInput1} from '../sudokus/swordfish'
+import {input as swordfishFinnedInput1} from '../sudokus/swordfishFinned'
+import {inputSashimi as swordfishFinnedSashimiInput1} from '../sudokus/swordfishFinned'
 import {input as jellyfishInput1} from '../sudokus/jellyfish'
 import { createTestBoard } from '../util'
-import { swordfish, xWing, jellyfish } from '../../core/solvers/fish'
+import {
+    swordfish,
+    xWing,
+    jellyfish,
+    xWingFinned,
+    swordfishFinned,
+    xWingFinnedSashimi,
+    swordfishFinnedSashimi
+} from '../../core/solvers/fish'
 import { applyTechniques } from '../../core/solve'
 
 test('x-wing 1', () => {
@@ -77,6 +89,50 @@ test('jellyfish 1', () => {
             {point: {y: 5, x: 8}},
             {point: {y: 6, x: 1}},
             {point: {y: 6, x: 4}},
+        ]
+    })
+})
+
+test('x-wing finned 1', () => {
+    const board = createTestBoard(xWingFinnedInput1)
+    const result = xWingFinned(board)
+
+    expect(result).toMatchObject({
+        effects: [
+            {type: 'elimination', point: {y: 2, x: 2}, numbers: [9]}
+        ]
+    })
+})
+
+test('x-wing finned sashimi 1', () => {
+    const board = createTestBoard(xWingFinnedSashimiInput)
+    const result = xWingFinnedSashimi(board)
+
+    expect(result).toMatchObject({
+        effects: [
+            {type: 'elimination', point: {y: 6, x: 0}, numbers: [3]}
+        ]
+    })
+})
+
+test('swordfish finned 1', () => {
+    const board = createTestBoard(swordfishFinnedInput1)
+    const result = swordfishFinned(board)
+
+    expect(result).toMatchObject({
+        effects: [
+            {type: 'elimination', point: {y: 2, x: 6}, numbers: [7]}
+        ]
+    })
+})
+
+test('swordfish finned sashimi 1', () => {
+    const board = createTestBoard(swordfishFinnedSashimiInput1)
+    const result = swordfishFinnedSashimi(board)
+
+    expect(result).toMatchObject({
+        effects: [
+            {type: 'elimination', point: {y: 2, x: 3}, numbers: [2]}
         ]
     })
 })

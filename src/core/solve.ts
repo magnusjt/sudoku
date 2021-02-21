@@ -3,7 +3,15 @@ import { allBasicEliminations, basicElimination } from './solvers/basic'
 import { fullHouse, hiddenSingle, nakedSingle } from './solvers/singles'
 import { inversePointer, pointer } from './solvers/pointer'
 import { hiddenPair, hiddenQuad, hiddenTriple, nakedPair, nakedQuad, nakedTriple } from './solvers/subset'
-import { jellyfish, swordfish, xWing } from './solvers/fish'
+import {
+    jellyfish, jellyfishFinned, jellyfishFinnedSashimi,
+    swordfish,
+    swordfishFinned,
+    swordfishFinnedSashimi,
+    xWing,
+    xWingFinned,
+    xWingFinnedSashimi
+} from './solvers/fish'
 import { hiddenRectangle, uniqueRectangle1 } from './solvers/uniqueRectangle'
 import { skyscraper } from './solvers/skyscraper'
 import { emptyRectangle } from './solvers/emptyRectangle'
@@ -37,7 +45,7 @@ export const techniques = [
     {type: 'nakedSingle', difficulty: 'medium'}, // Note: Fullhouse is included earlier, so this naked single might actually be very hard to find sometimes
     {type: 'nakedPair', difficulty: 'medium'},
     {type: 'hiddenPair', difficulty: 'hard'},
-    {type: 'xwing', difficulty: 'hard'}, // When you know about it, easier than triples
+    {type: 'xWing', difficulty: 'hard'}, // When you know about it, easier than triples
     {type: 'nakedTriple', difficulty: 'hard'},
     {type: 'hiddenTriple', difficulty: 'hard'},
     {type: 'nakedQuad', difficulty: 'hard'}, // At least it's naked, but 4 is a lot :P
@@ -47,15 +55,21 @@ export const techniques = [
     {type: 'swordfish', difficulty: 'expert'}, // Quite hard to spot, but easier with highlighting
     {type: 'emptyRectangle', difficulty: 'expert'}, // Not too hard to spot when you know about it. A bit chainy
     {type: 'hiddenQuad', difficulty: 'expert'}, // Quite hard to spot imo, but not chainy
+    {type: 'xWingFinned', difficulty: 'expert'},
+    {type: 'xWingFinnedSashimi', difficulty: 'expert'},
     {type: 'remotePairChain', difficulty: 'artisan'}, // Easy chain to spot if you have all candidates
-    {type: 'wwing', difficulty: 'artisan'}, // More of a pattern than xyWing imo
+    {type: 'wWing', difficulty: 'artisan'}, // More of a pattern than xyWing imo
     {type: 'hiddenRectangle', difficulty: 'artisan'}, // Much harder than unique rect type 1
     {type: 'jellyfish', difficulty: 'artisan'}, // Highlights is a must for jellyfish
-    {type: 'xywing', difficulty: 'artisan'}, // Chainy. Quite hard to spot
-    {type: 'xyzwing', difficulty: 'artisan'}, // Same as xywing, but even more digits, so a bit harder.
+    {type: 'xyWing', difficulty: 'artisan'}, // Chainy. Quite hard to spot
+    {type: 'xyzWing', difficulty: 'artisan'}, // Same as xywing, but even more digits, so a bit harder.
+    {type: 'swordfishFinned', difficulty: 'artisan'},
+    {type: 'swordfishFinnedSashimi', difficulty: 'artisan'},
     {type: 'simpleColoring', difficulty: 'master'}, // Quite time consuming, but not actually that hard
     {type: 'xChain', difficulty: 'master'}, // Let's have a stare shall we?
     {type: 'xyChain', difficulty: 'master'}, // Stare even harder...
+    {type: 'jellyfishFinned', difficulty: 'jedi'},
+    {type: 'jellyfishFinnedSashimi', difficulty: 'jedi'},
     {type: 'discontinuousNiceLoop', difficulty: 'jedi'}, // Stare even more harder...
     {type: 'aicType1', difficulty: 'jedi'}, // Stare even more harder...
     {type: 'aicType2', difficulty: 'jedi'}, // Stare even more harder...
@@ -71,32 +85,38 @@ const createTechniqueRunners = (board: SolverBoard) => {
     const findChain = createFindChain(board)
     return {
         basic: basicElimination,
-        fullHouse: fullHouse,
-        hiddenSingle: hiddenSingle,
-        pointer: pointer,
-        inversePointer: inversePointer,
-        nakedSingle: nakedSingle,
-        nakedPair: nakedPair,
-        hiddenPair: hiddenPair,
-        xwing: xWing,
-        nakedTriple: nakedTriple,
-        hiddenTriple: hiddenTriple,
-        nakedQuad: nakedQuad,
-        uniqueRectangle1: uniqueRectangle1,
-        bugPlus1: bugPlus1,
-        skyscraper: skyscraper,
-        swordfish: swordfish,
-        emptyRectangle: emptyRectangle,
-        hiddenQuad: hiddenQuad,
-        remotePairChain: remotePairChain,
-        hiddenRectangle: hiddenRectangle,
-        wwing: wWing,
+        fullHouse,
+        hiddenSingle,
+        pointer,
+        inversePointer,
+        nakedSingle,
+        nakedPair,
+        hiddenPair,
+        xWing,
+        nakedTriple,
+        hiddenTriple,
+        nakedQuad,
+        uniqueRectangle1,
+        bugPlus1,
+        skyscraper,
+        swordfish,
+        emptyRectangle,
+        hiddenQuad,
+        xWingFinned,
+        xWingFinnedSashimi,
+        remotePairChain,
+        hiddenRectangle,
+        wWing,
         jellyfish: jellyfish,
-        xywing: xyWing,
-        xyzwing: xyzWing,
-        simpleColoring: simpleColoring,
-        xChain: xChain,
-        xyChain: xyChain,
+        xyWing,
+        xyzWing,
+        swordfishFinned,
+        swordfishFinnedSashimi,
+        simpleColoring,
+        xChain,
+        xyChain,
+        jellyfishFinned,
+        jellyfishFinnedSashimi,
         discontinuousNiceLoop: discontinuousNiceLoop(findChain),
         aicType1: aicType1(findChain),
         aicType2: aicType2(findChain),
