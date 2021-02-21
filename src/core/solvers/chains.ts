@@ -459,20 +459,54 @@ const getAicType2 = (board: SolverBoard, chain: Link[], isLoop: boolean) => {
 
 const isGrouped = (chain: Link[]) => chain.some(link => link.prev.type === 'group' || link.next.type === 'group')
 
-export const createFindChain = (board: SolverBoard) => {
-    const results: {name: string, result: TechniqueResult}[] = []
+export const createFindChain = (board: SolverBoard, allowStopEarly = true) => {
+    const results: {name: string, result: TechniqueResult, depth: number}[] = []
     const addResult = (result: TechniqueResult | null, name: string, chain) => {
         if(result !== null){
             const grouped = isGrouped(chain) ? 'Grouped' : ''
-            results.push({name: name + grouped, result})
+            results.push({name: name + grouped, result, depth: chain.length})
         }
+    }
+
+    let checked = 0
+
+    /*
+    Normally we check all chains up to a certain depth before stopping.
+    The reason is that we don't want to do the whole thing again when looking for the next chain type.
+    But looking through all these chains can be slow, and so we have to set the max depth to a low value.
+    Instead, we can have a middle ground with an early-stop criteria, and can therefore increase the depth slightly.
+     */
+    const shouldStopEarly = (depth: number) => {
+        if (!allowStopEarly) {
+            return false
+        }
+        // Stop it from running forever in case the number of chains in each depth is totally crazy
+        if (checked++ > 1000000) {
+            return true
+        }
+        if (results.length === 0) {
+            return false
+        }
+        // Favor loops
+        if (results.some(x => x.name.includes('loop'))) {
+            return true
+        }
+        // But we'll take an aic if it has more than one elimination
+        if (results.some(x => x.name.includes('aic') && x.result.effects.length > 1)) {
+            return true
+        }
+        // If we have a significantly shorter chain, always take it
+        if (results.some(x => x.depth <= depth - 2)) {
+            return true
+        }
+        return false
     }
 
     let initialized = false
 
     const init = (name) => {
         initialized = true
-        const maxDepth = 10
+        const maxDepth = 12
         const unfilledPoints = getAllUnfilledPoints(board)
         const table = createTable(board, unfilledPoints, allCandidates, true)
         const keepLink = () => true
@@ -490,6 +524,10 @@ export const createFindChain = (board: SolverBoard) => {
             addResult(getAicType1(board, chain, isLoop), 'aicType1', chain)
             addResult(getAicType2(board, chain, isLoop), 'aicType2', chain)
             addResult(getContinuousNiceLoop(board, chain, isLoop), 'continuousNiceLoop', chain)
+
+            if (shouldStopEarly(depth)) {
+                return true
+            }
 
             return results.some(x => x.name === name)
         }, maxDepth)

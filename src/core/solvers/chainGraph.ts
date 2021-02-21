@@ -217,7 +217,7 @@ const getGroupTrueGroupEffects = (board: SolverBoard, allGroups: Point[][], true
     for(let group of allGroups){
         for(let cand of allCandidates){
             const falseGroup = difference(getPointsWithCandidates(board, group, [cand]), trueGroup, pointsEqual)
-            if(falseGroup.length > 2){
+            if(falseGroup.length >= 2){
                 const eliminatesWholeGroup = falseGroup.every(p => groupTrueSingleEffects.some(eff => p.id === eff.point.id && eff.numbers.includes(cand)))
                 if(eliminatesWholeGroup){
                     groupEffects.push({

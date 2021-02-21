@@ -45,12 +45,6 @@ test('w-wing 1', () => {
         "effects": [
             {"type": "elimination", "point": {"x": 6, "y": 5}, "numbers": [7]},
             {"type": "elimination", "point": {"x": 2, "y": 3}, "numbers": [7]}
-        ],
-        "actors": [
-            {"point": {"x": 2, "y": 4}},
-            {"point": {"x": 8, "y": 4}},
-            {"point": {"x": 1, "y": 5}},
-            {"point": {"x": 7, "y": 3}}
         ]
     })
 })

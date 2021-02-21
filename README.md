@@ -75,7 +75,7 @@ Add support for solvers (still can't solve everything without brute force):
 - 2-string kite (This is just an x chain with 4 cells, but quite a bit easier to spot)
 - Finned fish
 - Sashimi fish
-- Chains needs more love. Not very performant, and the grouped chains are bit icky.
+- Chains needs optimizations so we can check more of them. Right now we have hard limits on depth and breadth to avoid spending too much time.
 - ALS (almost locked set. Find the one thing missing for a different technique, and use that in a chain)
 
 
