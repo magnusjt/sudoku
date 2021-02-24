@@ -1,6 +1,6 @@
 import { createSelector } from 'reselect'
 import { Board } from './core/types'
-import { getSolution, getTechniquesRequiredForSolvingBoard } from './core/solve'
+import { getSolution } from './core/solve'
 import { boardHasError, boardIsComplete } from './core/utils/sudokuUtils'
 import { getTechniquesUntilNextValue, prepareBoardForSolver } from './core/sudoku'
 import { State, UserData } from './state'
