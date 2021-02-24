@@ -8,26 +8,13 @@ import TableHead from '@material-ui/core/TableHead'
 import TableBody from '@material-ui/core/TableBody'
 import TableRow from '@material-ui/core/TableRow'
 import TableCell from '@material-ui/core/TableCell'
-import { UserData } from './storage'
-import { Board } from '../core/types'
 import Typography from '@material-ui/core/Typography'
 import Divider from '@material-ui/core/Divider'
-
-// yea I don't give a fuck about this for now.. :P
-let globalPuzzleData: BoardMetaData[] = [];
-const loadPuzzleData = async () => {
-    globalPuzzleData = await fetch(process.env.PUBLIC_URL + '/boards/boardsV6.txt')
-        .then(x => x.text())
-        .then(x => x
-            .split('\n')
-            .filter(line => line.trim().length !== 0)
-            .map(line => JSON.parse(line) as BoardMetaData)
-        )
-}
+import { useSelector } from 'react-redux'
+import { selectPuzzles, selectUserData } from '../selectors'
 
 export type PuzzleSelectProps = {
-    onPuzzleSelect: (puzzle: BoardMetaData, progress?: Board) => void
-    userData: UserData
+    onPuzzleSelect: (puzzle: BoardMetaData, fromProgress: boolean) => void
 }
 
 type Tab = {
@@ -38,19 +25,11 @@ type Tab = {
 }
 
 export const PuzzleSelect = (props: PuzzleSelectProps) => {
-    const {userData} = props
-    const [puzzleData, setPuzzleData] = React.useState<BoardMetaData[]>(globalPuzzleData)
+    const userData = useSelector(selectUserData)
+    const puzzleData = useSelector(selectPuzzles)
 
     const [selectedTab, setSelectedTab] = React.useState<Tab>({ type: 'difficulty', difficulty: 'easy' })
     const [showTechniques, setShowTechniques] = React.useState(false)
-
-    React.useEffect(() => {
-        if(globalPuzzleData.length === 0) {
-            loadPuzzleData().then(() => {
-                setPuzzleData(globalPuzzleData)
-            })
-        }
-    }, [])
 
     const puzzles = selectedTab.type === 'custom'
         ? userData.custom.sort((a, b) => new Date(a.date) > new Date(b.date) ? 1 : -1).map(c => c.meta)
@@ -108,7 +87,7 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
                         <TableBody>
                     {puzzles.map((puzzle, i) => {
                         const solved = userData.solved.includes(puzzle.boardData)
-                        const progress = userData.progress[puzzle.boardData]
+                        const hasProgress = !!userData.progress[puzzle.boardData]
                         return (
                             <TableRow key={i} hover>
                                 <TableCell>
@@ -130,10 +109,10 @@ export const PuzzleSelect = (props: PuzzleSelectProps) => {
                                     />
                                 </TableCell>
                                 <TableCell>
-                                    <Button color={'primary'} size={'small'} onClick={() => props.onPuzzleSelect(puzzle)} variant={'contained'}>Play</Button>
+                                    <Button color={'primary'} size={'small'} onClick={() => props.onPuzzleSelect(puzzle, false)} variant={'contained'}>Play</Button>
                                     <span> </span>
-                                    {progress &&
-                                        <Button size={'small'} onClick={() => props.onPuzzleSelect(puzzle, progress)} variant={'outlined'}>Continue</Button>
+                                    {hasProgress &&
+                                        <Button size={'small'} onClick={() => props.onPuzzleSelect(puzzle, true)} variant={'outlined'}>Continue</Button>
                                     }
                                 </TableCell>
                                 <TableCell>

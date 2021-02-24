@@ -1,5 +1,4 @@
 import React from 'react'
-import { loadUserData, mergeUserData, UserData } from './storage'
 import { useDropzone } from 'react-dropzone'
 import { boardBackgroundColor } from '../theme'
 import TextField from '@material-ui/core/TextField'
@@ -7,10 +6,13 @@ import Button from '@material-ui/core/Button'
 import { hasUniqueSolution } from '../core/utils/hasUniqueSolution'
 import { boardFromStr } from '../core/sudoku'
 import { getBoardMetaData } from '../core/utils/getBoardMetaData'
+import { actions } from '../index'
+import { UserData } from '../state'
+import { unique, uniqueBy } from '../core/utils/misc'
+import { useSelector } from 'react-redux'
+import { selectUserData } from '../selectors'
 
-export type ImportExportProps = {
-    onNewUserData: (userData: UserData) => void
-}
+export type ImportExportProps = {}
 
 const looksLikeUserData = (obj: any) => {
     return Array.isArray(obj.solved) && obj.progress && Array.isArray(obj.custom)
@@ -30,8 +32,16 @@ const downloadJsonStr = (text, fileName) => {
     setTimeout(() => URL.revokeObjectURL(a.href), 1500)
 }
 
+const mergeUserData = (oldData: UserData, newData: Partial<UserData>) => {
+    return {
+        solved: unique([...(newData.solved ?? []), ...oldData.solved]),
+        progress: {...oldData.progress, ...newData.progress},
+        custom: uniqueBy([...(newData.custom ?? []), ...oldData.custom], (a, b) => a.meta?.boardData === b.meta?.boardData)
+    }
+}
+
 export const ImportExport = (props: ImportExportProps) => {
-    const { onNewUserData } = props
+    const userData = useSelector(selectUserData)
     const [importState, setImportState] = React.useState<string | null>(null)
     const [importBoardStr, setImportBoardStr] = React.useState('')
     const [boardStrValidation, setBoardStrValidation] = React.useState<string | null>(null)
@@ -40,15 +50,15 @@ export const ImportExport = (props: ImportExportProps) => {
         try{
             const obj = JSON.parse(str)
             if (looksLikeUserData(obj)) {
-                const newUserData = mergeUserData(obj)
-                onNewUserData(newUserData)
+                const newUserData = mergeUserData(userData, obj)
+                actions.setUserData(newUserData)
                 setImportState('Import successful!')
                 return
             }
         }catch(err){}
 
         setImportState('Failed to import. Please check that the save file was exported from this app.')
-    }, [onNewUserData])
+    }, [userData])
 
     const onImportBoardStr = React.useCallback(() => {
         const str = importBoardStr.trim()
@@ -62,17 +72,18 @@ export const ImportExport = (props: ImportExportProps) => {
             return
         }
         const meta = getBoardMetaData(board)
-        const newUserData = mergeUserData({
+        const newUserData = mergeUserData(userData, {
             custom: [{ meta, date: new Date().toISOString() }]
         })
-        onNewUserData(newUserData)
+        actions.setUserData(newUserData)
         setBoardStrValidation('Import successful! Go to puzzle select to play the imported sudoku')
-    }, [importBoardStr, onNewUserData])
+    }, [importBoardStr, userData])
 
     const onExport = React.useCallback(() => {
-        const userData = loadUserData()
-        downloadJsonStr(JSON.stringify(userData, null, 2), 'sudoku.json')
-    }, [])
+        const now = new Date()
+        const time = [now.getFullYear(), now.getMonth(), now.getDay()].join('')
+        downloadJsonStr(JSON.stringify(userData, null, 2), `sudoku_${time}.json`)
+    }, [userData])
 
     const onDrop = React.useCallback((acceptedFiles) => {
         if (acceptedFiles.length === 0) {

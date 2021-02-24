@@ -14,7 +14,7 @@ export type SolverProps = {
 const pointToStr = (point: Point) => `r${point.y+1}c${point.x+1}`
 
 export const Solver = (props: SolverProps) => {
-    const {board, solveResult, onSolveResult} = props
+    const { board, solveResult, onSolveResult } = props
     const [skippedTechniques, setSkippedTechniques] = React.useState<string[]>([])
 
     const onToggleTechnique = React.useCallback((type: string) => {

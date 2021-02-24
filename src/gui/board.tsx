@@ -27,7 +27,10 @@ import {
     setValueColor
 } from '../theme'
 import { darken } from '@material-ui/core/styles'
-import { uniqueBy } from '../core/utils/misc'
+import { actions } from '../index'
+import { useSelector } from 'react-redux'
+import { State } from '../state'
+import { selectSolution } from '../selectors'
 
 const Candidates = (props) => {
     const height = props.height
@@ -71,7 +74,7 @@ type CellDisplayProps = {
     point: Point
     highlightedNumber: number | null
     selectedDigit: number | null
-    solutionValue: number
+    hasError: boolean
     celebration: boolean
 }
 
@@ -95,12 +98,11 @@ const getCellBackgroundColor = (
     selected: boolean,
     highlightedNumber: number | null,
     selectedDigit: number | null,
-    solutionValue: number
+    hasError: boolean
 ) => {
     const hasElimination = cellHasElimination(effects, point)
     const hasSetValue = cellHasSetValue(effects, point)
     const hasActor = cellHasActor(actors, point)
-    const hasError = cell.value !== null && cell.value !== solutionValue
 
     let bg = boardBackgroundColor
     if(affected) bg = affectedColor
@@ -163,7 +165,7 @@ const getCandidateBackgrounds = (actors: Actor[], effects: Effect[], cell: Cell,
 
 const CellDisplay = (props: CellDisplayProps) => {
     const {effects, actors} = props.solveResult ?? {effects: [], actors: []}
-    const {point, selected, affected, cell, highlightedNumber, solutionValue, selectedDigit, celebration} = props
+    const {point, selected, affected, cell, highlightedNumber, selectedDigit, celebration, hasError} = props
     const [celebrationCounter, setCelebrationCount] = React.useState(0)
 
     React.useEffect(() => {
@@ -181,8 +183,8 @@ const CellDisplay = (props: CellDisplayProps) => {
     })
 
     let bg = React.useMemo(() =>
-        getCellBackgroundColor(actors, effects, point, cell, affected, selected, highlightedNumber, selectedDigit, solutionValue)
-    , [actors, effects, point, cell, affected, selected, highlightedNumber, selectedDigit, solutionValue])
+        getCellBackgroundColor(actors, effects, point, cell, affected, selected, highlightedNumber, selectedDigit, hasError)
+    , [actors, effects, point, cell, affected, selected, highlightedNumber, selectedDigit, hasError])
 
     const candBgs = React.useMemo(() =>
         getCandidateBackgrounds(actors, effects, cell, point)
@@ -228,21 +230,19 @@ const CellDisplay = (props: CellDisplayProps) => {
     )
 }
 
-type SetPoints = (points: Point[]) => Point[]
-
 export type BoardDisplayProps = {
     board: Board
     solveResult: SolveResult | null
-    solutionBoard: Board
-    selectedCells: Point[],
-    setSelectedCells: (points: Point[] | SetPoints) => void
-    selectedDigit: number | null
     celebration: boolean
 }
 
 export const BoardDisplay = (props: BoardDisplayProps) => {
-    const {board, solutionBoard, selectedCells, setSelectedCells, selectedDigit, celebration} = props
+    const { board, celebration } = props
     const [isSelecting, setIsSelecting] = React.useState(false)
+
+    const solutionBoard = useSelector(selectSolution)
+    const selectedCells = useSelector((state: State) => state.selectedCells)
+    const selectedDigit = useSelector((state: State) => state.selectedDigit)
 
     const highlightedNumber = selectedCells.length === 1 ? board[selectedCells[0].y][selectedCells[0].x].value : null
     const affectedPoints = React.useMemo(() => selectedCells.length === 1 ? getAffectedPoints(selectedCells[0]) : [], [selectedCells])
@@ -250,15 +250,15 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
     const startSelect = (point, e: React.MouseEvent) => {
         e.stopPropagation() // Prevents the mousedown clear select handler from being fired
         if(e.ctrlKey){
-            setSelectedCells(points => uniqueBy([...points, point], pointsEqual))
+            actions.addSelectedCell(point)
         }else{
-            setSelectedCells([point])
+            actions.setSelectedCells([point])
         }
         setIsSelecting(true)
     }
     const addSelect = (point) => {
         if(isSelecting){
-            setSelectedCells(points => uniqueBy([...points, point], pointsEqual))
+            actions.addSelectedCell(point)
         }
     }
     const endSelect = React.useCallback(() => {
@@ -274,7 +274,8 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                     const point: Point = {x, y, id: getPointId(x, y)}
                     const selected = selectedCells.some(p => pointsEqual(p, point))
                     const affected = affectedPoints.some(p => pointsEqual(p, point))
-                    const solutionValue = getBoardCell(solutionBoard, point).value as number
+                    const hasError = !!solutionBoard && cell.value !== null && cell.value !== getBoardCell(solutionBoard, point).value
+
                     return (
                         <div
                             key={x}
@@ -298,7 +299,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
                                 solveResult={props.solveResult}
                                 highlightedNumber={highlightedNumber}
                                 selectedDigit={selectedDigit}
-                                solutionValue={solutionValue}
+                                hasError={hasError}
                                 celebration={celebration}
                             />
                         </div>
