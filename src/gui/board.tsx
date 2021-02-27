@@ -9,7 +9,7 @@ import {
     ValueEffect
 } from '../core/types'
 import React from 'react'
-import { getAffectedPoints, getBoardCell, getPointId, pointsEqual } from '../core/utils/sudokuUtils'
+import { allCandidates, getAffectedPoints, getBoardCell, getPointId, pointsEqual } from '../core/utils/sudokuUtils'
 import useEventListener from '@use-it/event-listener'
 import {
     actorCandidateColor, actorChainCandidateNoColor, actorChainCandidateYesColor,
@@ -34,31 +34,36 @@ import { selectSolution } from '../selectors'
 
 const Candidates = (props) => {
     const height = props.height
-
     const fontSize = height / 4
-    const boxSize = height / 3
-    const spacing = (boxSize - fontSize)/2
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'relative', fontSize: fontSize, fontFamily: 'monospace', color: 'inherit' }}>
-            {props.candidates.map(number => {
-                const top = Math.round(Math.floor((number - 1) / 3) * boxSize)
-                const left = Math.round(Math.floor((number - 1) % 3) * boxSize)
+        <div
+            style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr 1fr',
+                gridTemplateRows: '1fr 1fr 1fr',
+                gap: 0,
+                width: '100%',
+                height: '100%',
+                fontSize: fontSize,
+                fontFamily: 'monospace',
+                color: 'inherit'
+            }}
+        >
+            {allCandidates.map(number => {
                 return (
                     <div
                         style={{
-                            position: 'absolute',
                             background: props.bgs[number] ?? '',
-                            top,
-                            left,
-                            width: Math.round(boxSize),
-                            padding: Math.round(spacing),
+                            width: '100%',
+                            height: '100%',
                             display: 'flex',
-                            justifyContent: 'center'
+                            justifyContent: 'center',
+                            alignItems: 'center'
                         }}
                         key={number}
                     >
-                        {number}
+                        {props.candidates.includes(number) && number}
                     </div>
                 )
             })}
@@ -71,6 +76,7 @@ type CellDisplayProps = {
     selected: boolean
     affected: boolean
     cell: Cell
+    cellHeight: number
     point: Point
     highlightedNumber: number | null
     selectedDigit: number | null
@@ -205,8 +211,8 @@ const CellDisplay = (props: CellDisplayProps) => {
         display: 'flex',
         justifyContent: 'center',
         alignItems: 'center',
-        width: 80,
-        height: 80,
+        height: '100%',
+        width: '100%',
         lineHeight: 1
     }
     const {x, y} = point
@@ -223,8 +229,8 @@ const CellDisplay = (props: CellDisplayProps) => {
     return (
         <div style={style}>
             {cell.value === null
-                ? <Candidates candidates={cell.candidates} width={style.width-2} height={style.height-2} bgs={candBgs} />
-                : <span style={{ fontSize: Math.floor(style.height/2) }}>{cell.value}</span>
+                ? <Candidates candidates={cell.candidates} bgs={candBgs} height={props.cellHeight} />
+                : <span style={{ fontSize: Math.floor(props.cellHeight/2) }}>{cell.value}</span>
             }
         </div>
     )
@@ -240,6 +246,30 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
     const { board, celebration } = props
     const [isSelecting, setIsSelecting] = React.useState(false)
 
+    const ref = React.useRef<HTMLDivElement | null>(null)
+    const [height, setHeight] = React.useState(400)
+    const cellHeight = height / 9
+
+    // Preserve aspect ratio of the board.
+    // We add an absolutely positioned div with width and height 100% to measure from.
+    // We calculate those percents in pixels, and set both width and height to be the smallest of the two.
+    React.useEffect(() => {
+        const setBoardHeightDom = () => {
+            if (ref?.current?.clientWidth && ref.current?.clientHeight) {
+                const currentWidth = ref.current?.clientWidth
+                const currentHeight = ref.current?.clientHeight
+                const min = Math.min(currentWidth, currentHeight)
+                setHeight(min)
+            }
+        }
+        const setHeightAndRequest = () => {
+            setBoardHeightDom()
+            window.requestAnimationFrame(setHeightAndRequest)
+        }
+
+        setHeightAndRequest()
+    }, [ref, setHeight])
+
     const solutionBoard = useSelector(selectSolution)
     const selectedCells = useSelector((state: State) => state.selectedCells)
     const selectedDigit = useSelector((state: State) => state.selectedDigit)
@@ -247,8 +277,7 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
     const highlightedNumber = selectedCells.length === 1 ? board[selectedCells[0].y][selectedCells[0].x].value : null
     const affectedPoints = React.useMemo(() => selectedCells.length === 1 ? getAffectedPoints(selectedCells[0]) : [], [selectedCells])
 
-    const startSelect = (point, e: React.MouseEvent) => {
-        e.stopPropagation() // Prevents the mousedown clear select handler from being fired
+    const startSelect = (point: Point, e: React.MouseEvent) => {
         if(e.ctrlKey){
             actions.addSelectedCell(point)
         }else{
@@ -256,7 +285,11 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
         }
         setIsSelecting(true)
     }
-    const addSelect = (point) => {
+    const startSelectTouch = (point: Point) => {
+        actions.setSelectedCells([point])
+        setIsSelecting(true)
+    }
+    const addSelect = (point: Point) => {
         if(isSelecting){
             actions.addSelectedCell(point)
         }
@@ -268,49 +301,99 @@ export const BoardDisplay = (props: BoardDisplayProps) => {
     useEventListener('mouseup', endSelect)
 
     return (
-        <div>
-            {board.map((row, y) => {
-                const cells = row.map((cell, x) => {
-                    const point: Point = {x, y, id: getPointId(x, y)}
-                    const selected = selectedCells.some(p => pointsEqual(p, point))
-                    const affected = affectedPoints.some(p => pointsEqual(p, point))
-                    const hasError = !!solutionBoard && cell.value !== null && cell.value !== getBoardCell(solutionBoard, point).value
+        <div
+            style={{
+                width: '100%',
+                height: '100%',
+                position: 'relative',
+                display: 'flex',
+                justifyContent: 'center'
+            }}
+        >
+            {/* Add a dummy div that is used to measure the current widths and heights */}
+            <div
+                ref={ref}
+                style={{
+                    width: '100%',
+                    height: '100%',
+                    position: 'absolute',
+                    zIndex: -1
+                }}
+            />
+            <div
+                style={{
+                    width: height,
+                    height: height,
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr',
+                    gridTemplateRows: '1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr 1fr',
+                    gap: 0,
+                }}
+            >
+                {board.flatMap((row, y) => {
+                    return row.map((cell, x) => {
+                        const id = getPointId(x, y)
+                        const point: Point = {x, y, id}
+                        const selected = selectedCells.some(p => pointsEqual(p, point))
+                        const affected = affectedPoints.some(p => pointsEqual(p, point))
+                        const hasError = !!solutionBoard && cell.value !== null && cell.value !== getBoardCell(solutionBoard, point).value
 
-                    return (
-                        <div
-                            key={x}
-                            onMouseDown={(e) => startSelect({x, y, id: getPointId(x, y)}, e)}
-                            onMouseOver={() => addSelect({x, y, id: getPointId(x, y)})}
-                            onMouseUp={endSelect}
-                            style={{
-                                'WebkitTouchCallout': 'none',
-                                'WebkitUserSelect': 'none',
-                                'KhtmlUserSelect': 'none',
-                                'MozUserSelect': 'none',
-                                'msUserSelect': 'none',
-                                'userSelect': 'none',
-                            }}
-                        >
-                            <CellDisplay
-                                cell={cell}
-                                selected={selected}
-                                affected={affected}
-                                point={point}
-                                solveResult={props.solveResult}
-                                highlightedNumber={highlightedNumber}
-                                selectedDigit={selectedDigit}
-                                hasError={hasError}
-                                celebration={celebration}
-                            />
-                        </div>
-                    )
-                })
-                return (
-                    <div style={{display: 'flex'}} key={y}>
-                        {cells}
-                    </div>
-                )
-            })}
+                        return (
+                            <div
+                                key={id}
+                                data-x={x}
+                                data-y={y}
+                                className={'touchevents-suck'}
+                                onMouseDown={(e) => startSelect({x, y, id: getPointId(x, y)}, e)}
+                                onMouseOver={() => addSelect({x, y, id: getPointId(x, y)})}
+                                onMouseUp={endSelect}
+                                onTouchStart={() => startSelectTouch({x, y, id: getPointId(x, y)})}
+                                onTouchMove={(e) => {
+                                    const loc = e.touches[0]
+
+                                    const target = document.elementFromPoint(loc.clientX, loc.clientY)
+                                    const actualTarget = target?.closest('.touchevents-suck')
+
+                                    const xStr = actualTarget?.getAttribute('data-x')
+                                    const yStr = actualTarget?.getAttribute('data-y')
+
+                                    if (!(xStr && yStr)) {
+                                        return
+                                    }
+                                    const x = Number(xStr)
+                                    const y = Number(yStr)
+
+                                    addSelect({x, y, id: getPointId(x, y)})
+                                }}
+                                onTouchCancel={endSelect}
+                                onTouchEnd={endSelect}
+                                style={{
+                                    'WebkitTouchCallout': 'none',
+                                    'WebkitUserSelect': 'none',
+                                    'KhtmlUserSelect': 'none',
+                                    'MozUserSelect': 'none',
+                                    'msUserSelect': 'none',
+                                    'userSelect': 'none',
+                                    height: '100%',
+                                }}
+                            >
+                                <CellDisplay
+                                    cell={cell}
+                                    cellHeight={cellHeight}
+                                    selected={selected}
+                                    affected={affected}
+                                    point={point}
+                                    solveResult={props.solveResult}
+                                    highlightedNumber={highlightedNumber}
+                                    selectedDigit={selectedDigit}
+                                    hasError={hasError}
+                                    celebration={celebration}
+                                />
+                            </div>
+                        )
+                    })
+                })}
+            </div>
         </div>
     )
 }

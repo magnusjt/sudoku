@@ -46,7 +46,6 @@ const DigitCircle = (props: DigitProps) => {
 
 type DigitSelectorProps = {
     board: Board
-    direction: 'row' | 'column'
     onClickDigit: (digit: number) => void
     selectedDigit: number | null
 }
@@ -68,7 +67,7 @@ export const DigitSelector = (props: DigitSelectorProps) => {
 
     return (
       <div
-        style={{ display: 'flex', flexDirection: props.direction }}
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
       >
         {allCandidates.map(digit => {
             return (

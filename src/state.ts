@@ -68,9 +68,7 @@ export const createStorageMiddleware = (storage: Storage) => store => {
     return next => action => {
         next(action)
         const currUserData = store.getState().userData
-        console.log('checking')
         if (prevUserData !== currUserData) {
-            console.log('storing')
             storage.store(currUserData)
             prevUserData = currUserData
         }

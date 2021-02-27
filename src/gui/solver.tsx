@@ -1,8 +1,10 @@
 import React from 'react'
 import { Board, Point, SolveResult } from '../core/types'
 import * as solve from '../core/solve'
-import { Button } from '@material-ui/core'
+import useMediaQuery from '@material-ui/core/useMediaQuery'
+import Button from '@material-ui/core/Button'
 import { actorColor, eliminationColor, setValueColor } from '../theme'
+import { mobileMediaQuery } from './app'
 
 export type SolverProps = {
     board: Board
@@ -16,6 +18,7 @@ const pointToStr = (point: Point) => `r${point.y+1}c${point.x+1}`
 export const Solver = (props: SolverProps) => {
     const { board, solveResult, onSolveResult } = props
     const [skippedTechniques, setSkippedTechniques] = React.useState<string[]>([])
+    const isMobile = useMediaQuery(mobileMediaQuery)
 
     const onToggleTechnique = React.useCallback((type: string) => {
         setSkippedTechniques(s => {
@@ -87,27 +90,29 @@ export const Solver = (props: SolverProps) => {
                 })}
             </div>
             }
+            {!isMobile &&
             <div>
                 <h4>Skip techniques</h4>
                 <div style={{display: 'flex', flexDirection: 'column'}}>
-                {solve.techniques.map(tech => {
-                    const skipped = skippedTechniques.some(t => t === tech.type)
-                    return (
-                        <Button
-                            key={tech.type}
-                            size='small'
-                            color='default'
-                            fullWidth={true}
-                            variant='outlined'
-                            style={{color: skipped ? 'red' : ''}}
-                            onClick={() => onToggleTechnique(tech.type)}
-                        >
-                            {tech.type}
-                        </Button>
-                    )
-                })}
+                    {solve.techniques.map(tech => {
+                        const skipped = skippedTechniques.some(t => t === tech.type)
+                        return (
+                            <Button
+                                key={tech.type}
+                                size='small'
+                                color='default'
+                                fullWidth={true}
+                                variant='outlined'
+                                style={{color: skipped ? 'red' : ''}}
+                                onClick={() => onToggleTechnique(tech.type)}
+                            >
+                                {tech.type}
+                            </Button>
+                        )
+                    })}
                 </div>
             </div>
+            }
         </div>
     )
 }

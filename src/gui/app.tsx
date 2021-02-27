@@ -7,7 +7,8 @@ import useEventListener from '@use-it/event-listener'
 import Paper from '@material-ui/core/Paper'
 import Button from '@material-ui/core/Button'
 import { PuzzleSelect } from './puzzle-select'
-import { Dialog } from '@material-ui/core'
+import useMediaQuery  from '@material-ui/core/useMediaQuery'
+import Dialog from '@material-ui/core/Dialog'
 import { DigitSelector } from './digit-selector'
 import { Help } from './help'
 import { ImportExport } from './import-export'
@@ -17,6 +18,8 @@ import { actions } from '../index'
 import { Hints } from './hints'
 import { State } from '../state'
 
+export const mobileMediaQuery = '(max-width:960px)'
+
 const dummyBoard = boardFromStr('000000000000000000000000000000000000000000000000000000000000000000000000000000000')
 
 export function App(){
@@ -24,6 +27,7 @@ export function App(){
     const [puzzleSelectOpen, setPuzzleSelectOpen] = React.useState(false)
     const [importExportOpen, setImportExportOpen] = React.useState(false)
     const [helpOpen, setHelpOpen] = React.useState(false)
+    const isMobile = useMediaQuery(mobileMediaQuery)
 
     const inputMode = useSelector((state: State) => state.inputMode)
     const solverState = useSelector((state: State) => state.game?.solver ?? null)
@@ -50,8 +54,12 @@ export function App(){
     }, [solutionBoard])
 
     const onSelectDigit = React.useCallback((digit: number) => {
-        actions.selectDigit(digit)
-    }, [])
+        if (isMobile && selectedCells.length > 0) {
+            actions.setDigit(digit, selectedCells, solutionBoard)
+        } else {
+            actions.selectDigit(digit)
+        }
+    }, [isMobile, selectedCells, solutionBoard])
 
     const clearSelected = React.useCallback(() => {
         actions.setSelectedCells([])
@@ -79,9 +87,9 @@ export function App(){
     useEventListener('keydown', onGlobalKeyDown)
 
     return (
-        <div style={{ height: '100%', minHeight: 0, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <div style={{ height: '100%', minHeight: 0, display: 'flex', padding: 16 }}>
-                <div style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+        <div style={{ height: '100%', minHeight: 0, display: 'flex', justifyContent: 'center' }}>
+            <div style={{ height: '100%', width: '100%', padding: isMobile ? 0 : 16, maxWidth: 800 }}>
+                <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
                     <Paper style={{ padding: 16, marginBottom: 16 }}>
                         <div style={{ display: 'flex' }}>
                             <div style={{ marginRight: 16 }}>
@@ -101,50 +109,117 @@ export function App(){
                             </div>
                         </div>
                     </Paper>
-                    <Paper style={{ padding: 16 }}>
+                    <Paper style={{ padding: 16, paddingLeft: isMobile ? 4 : 16, paddingRight: isMobile ? 4 : 16, flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         {boardMetaData &&
-                        <h4 style={{ margin: 0, paddingBottom: 16 }}>Puzzle: {boardMetaData.name} - Difficulty: {boardMetaData.difficulty.difficulty}</h4>
-                        }
-                        <BoardDisplay
-                            board={solverState ? solverState.boardBeforeSolve : board}
-                            solveResult={solverState?.solveResult ?? null}
-                            celebration={isComplete && !hasError}
-                        />
-                        <div>
-                            <Button onClick={() => actions.setInputMode('value')} disabled={inputMode === 'value'}>Digit (a)</Button>
-                            <Button onClick={() => actions.setInputMode('candidates')} disabled={inputMode === 'candidates'}>Candidate (s)</Button>
-                            <Button onClick={actions.undo} disabled={boardStack.length === 0}>Undo (n)</Button>
-                            <Button onClick={clearSelected} disabled={selectedCells.length === 0}>Deselect all (d)</Button>
-                            <Button onClick={toggleHints}>{hintsOpen ? 'Hide hints (h)' : 'Show hints (h)'}</Button>
-                            <Button onClick={toggleSolver} disabled={hasError ?? false}>{!!solverState ? 'Hide solver (c)' : 'Show solver (c)'}</Button>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <h4 style={{ margin: 0, paddingBottom: 16 }}>Puzzle: {boardMetaData.name} - Difficulty: {boardMetaData.difficulty.difficulty}</h4>
                         </div>
-                        <br />
+                        }
+                        <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', justifyContent: 'center' }}>
+                            <BoardDisplay
+                                board={solverState ? solverState.boardBeforeSolve : board}
+                                solveResult={solverState?.solveResult ?? null}
+                                celebration={isComplete && !hasError}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                            <Button onClick={() => actions.setInputMode('value')} disabled={inputMode === 'value'}>
+                                {isMobile
+                                    ? 'Digit'
+                                    : 'Digit (a)'
+                                }
+                            </Button>
+                            <Button onClick={() => actions.setInputMode('candidates')} disabled={inputMode === 'candidates'}>
+                                {isMobile
+                                    ? 'Candidate'
+                                    : 'Candidate (s)'
+                                }
+                            </Button>
+                            <Button onClick={actions.undo} disabled={boardStack.length === 0}>
+                                {isMobile
+                                    ? 'Undo'
+                                    : 'Undo (n)'
+                                }
+                            </Button>
+                            <Button onClick={clearSelected} disabled={selectedCells.length === 0}>
+                                {isMobile
+                                    ? 'Deselect all'
+                                    : 'Deselect all (d)'
+                                }
+                            </Button>
+                            <Button onClick={toggleHints}>
+                                {isMobile
+                                    ? 'Hints'
+                                    : hintsOpen ? 'Hide hints (h)' : 'Show hints (h)'
+                                }
+                            </Button>
+                            <Button onClick={toggleSolver} disabled={hasError ?? false}>
+                                {isMobile
+                                    ? 'Solver'
+                                    : !!solverState ? 'Hide solver (c)' : 'Show solver (c)'
+                                }
+                            </Button>
+                        </div>
                         <div>
                             <DigitSelector
                                 board={board}
-                                direction={'row'}
                                 onClickDigit={onSelectDigit}
                                 selectedDigit={selectedDigit}
                             />
                         </div>
                     </Paper>
                 </div>
-                {hintsOpen &&
-                <Paper style={{ height: '100%', width: 300, padding: 16, marginLeft: 16, overflowY: 'auto' }}>
-                    <Hints />
-                </Paper>
-                }
-                {!!solverState &&
-                    <Paper style={{ height: '100%', width: 300, padding: 16, marginLeft: 16, overflowY: 'auto' }}>
-                        <Solver
-                            board={solverState.solveResult?.board ?? solverState.boardBeforeSolve}
-                            solveResult={solverState.solveResult}
-                            onSolveResult={actions.setSolveResult}
-                            onPlayFromHere={actions.playFromSolver}
-                        />
-                    </Paper>
-                }
             </div>
+            {hintsOpen &&
+            <Paper
+                style={{
+                    height: '100%',
+                    width: 300,
+                    padding: 16,
+                    marginRight: 16,
+                    overflowY: 'auto',
+                    ...isMobile
+                        ? {
+                            position: 'absolute',
+                            height: 'auto',
+                            width: 'auto',
+                            margin: 16,
+                            right: 0
+                        } : {}
+                }}
+            >
+                <Hints />
+                {isMobile &&
+                    <Button variant={'outlined'} onClick={toggleHints}>Close</Button>
+                }
+            </Paper>
+            }
+            {!!solverState &&
+            <Paper
+                style={{
+                    height: '100%',
+                    width: 300,
+                    padding: 16,
+                    overflowY: 'auto',
+                    ...isMobile
+                        ? {
+                            position: 'absolute',
+                            height: 'auto',
+                            width: 'auto',
+                            margin: 0,
+                            right: 0,
+                            opacity: '80%'
+                        } : {}
+                }}
+            >
+                <Solver
+                    board={solverState.solveResult?.board ?? solverState.boardBeforeSolve}
+                    solveResult={solverState.solveResult}
+                    onSolveResult={actions.setSolveResult}
+                    onPlayFromHere={actions.playFromSolver}
+                />
+            </Paper>
+            }
             <Dialog
                 fullWidth
                 maxWidth={'lg'}
