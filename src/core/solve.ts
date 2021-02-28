@@ -37,8 +37,8 @@ import { bugPlus1 } from './solvers/bug'
 import { simpleColoring } from './solvers/simpleColoring'
 
 export const techniques = [
-    {type: 'basic', difficulty: 'beginner'},
-    {type: 'fullHouse', difficulty: 'beginner'}, // Easy newspaper style
+    {type: 'basic', difficulty: 'easy'},
+    {type: 'fullHouse', difficulty: 'easy'}, // Easy newspaper style
     {type: 'hiddenSingle', difficulty: 'easy'}, // Can be easy or hard tbh, but with highlighting it's often easy
     {type: 'pointer', difficulty: 'medium'},
     {type: 'inversePointer', difficulty: 'medium'},
@@ -132,7 +132,6 @@ const createTechniqueRunners = (board: SolverBoard) => {
 export const difficulties = unique(techniques.map(t => t.difficulty))
 
 export const difficultyLevels = {
-    beginner: 0,
     easy: 1,
     medium: 2,
     hard: 3,

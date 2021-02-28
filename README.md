@@ -74,6 +74,7 @@ Generate sudokus:
 - Check for duplicate boards
 - Check for symmetrically identical boards? (rotation, mirroring, digit shift)
 - Find more rare techniques like jellyfish
+- Generate sexy patterns
 
 Add support for solvers (still can't solve everything without brute force): 
 - 2-string kite (This is just an x chain with 4 cells, but quite a bit easier to spot)
