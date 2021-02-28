@@ -99,7 +99,7 @@ export const ImportExport = (props: ImportExportProps) => {
     const {getRootProps, getInputProps} = useDropzone({onDrop, maxFiles: 1})
 
     return (
-        <div style={{ minHeight: '600px' }}>
+        <div>
             <h3>Import custom board</h3>
 
             <TextField
@@ -125,8 +125,8 @@ export const ImportExport = (props: ImportExportProps) => {
             <div
                 {...getRootProps()}
                 style={{
-                    width: 400,
-                    height: 400,
+                    width: '100%',
+                    height: 200,
                     display: 'flex',
                     justifyContent: 'center',
                     alignItems: 'center',
@@ -134,7 +134,7 @@ export const ImportExport = (props: ImportExportProps) => {
                 }}
             >
                 <input {...getInputProps()} />
-                <p>Drag a save file here, or click to select file</p>
+                <div>Drag a save file here, or click to select file</div>
             </div>
             {importState !== null && importState}
 

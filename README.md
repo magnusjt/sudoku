@@ -20,6 +20,7 @@ GUI:
 - Import/export save data
 - Input custom board
 - Solver actors/effects displays the candidates as well as points
+- Works on mobile (touch events, responsive)
 
 Supported solvers:
 - Basic sudoku eliminations
@@ -65,7 +66,6 @@ GUI/Solver:
 - More actor types so we can display fins in fish and stuff like that
 
 GUI:
-- Mobile
 - Color tool
 - Filter on technique instead of difficulty
 

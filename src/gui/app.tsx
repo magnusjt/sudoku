@@ -280,7 +280,7 @@ export function App(){
             }
             <Dialog
                 fullWidth
-                maxWidth={'lg'}
+                maxWidth={isMobile ? 'sm' : 'lg'}
                 open={puzzleSelectOpen}
                 onClose={() => setPuzzleSelectOpen(false)}
             >
@@ -295,7 +295,7 @@ export function App(){
             </Dialog>
             <Dialog
                 fullWidth
-                maxWidth={'lg'}
+                maxWidth={isMobile ? 'sm' : 'md'}
                 open={helpOpen}
                 onClose={() => setHelpOpen(false)}
             >
@@ -305,7 +305,7 @@ export function App(){
             </Dialog>
             <Dialog
                 fullWidth
-                maxWidth={'lg'}
+                maxWidth={isMobile ? 'sm' : 'md'}
                 open={importExportOpen}
                 onClose={() => setImportExportOpen(false)}
             >
