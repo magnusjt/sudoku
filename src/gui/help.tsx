@@ -52,7 +52,7 @@ You can spot hidden pairs by looking at each candidate and see if it's represent
 Check the house to see if there is a second candidate in those cells as well. Can be quite tricky to spot.
 `
 
-const xWing = `
+const xWingAndOtherFish = `
 An x-wing looks like the four corners of a rectangle. The same candidate is in each corner.
 The requirement is that either both rows or both columns has the candidate in only the corners.
 
@@ -67,6 +67,20 @@ and that either all 3 rows has the candidate in only the three columns, or vice 
 If that wasn't hard enough, there is also a jellyfish with 4 rows/cols as well.
 
 To spot these, use highlighting :) x-wings are pretty easy to find, while swordfish and jellyfish is pretty hard.
+
+...and if that wasn't enough, there's also finned fish, and sashimi fish.
+
+A finned fish happens when you almost have a fish, but there are some extra cells with the candidate in a row/col.
+These cells make up a "fin". Quite annoying, but there is hope. 
+Check if setting the candidate in the fin would produce the same eliminations as the fish without the fin.
+If so, go ahead and make the eliminations!
+
+A finned sashimi fish is more or less the same as a finned fish. 
+The only difference is that with sashimi, removing the fin would simply leave a single on that row/col, destroying the fish in the process. 
+One could say that the only reason there is a fish in the first place in this case is because there is a fin. 
+
+Side note: You can apply this same trick to most other techniques as well. 
+If there is something that annoyingly precludes you from using a technique, check if setting the digit in those other annoying cells has any overlap with the technique you want to use. If so, you can make the elimination! 
 `
 
 const swordfish = `
@@ -103,12 +117,43 @@ If so, check if one of those eliminates an entire leg of the L-shape if set. If 
 Now check the other cell in the row/col. If this cell "sees" the same cells as the pointer, the candidate can be eliminated from those cells.
 `
 
-const xyWing = `
+const bugPlus1 = `
+A binary universal grave or BUG is what happens when there are only two candidates in each cell, 
+and each of those candidates can only go in one of two cells in each house. 
+This situation implies that the sudoku is not unique, and is therefore not a valid state of the board.
 
+A BUG+1 is what happens when you have a BUG, but ONE cell has an additional candidate.
+To avoid the BUG, we HAVE to place this candidate in that cell.
+
+To spot a BUG, see if all cells only have two possible candidates, except ONE cell. This usually happens towards the end of the sudoku.
+Now see if each of these candidates can go in only two cells in each row/col/box (except the additional candidate).
+If so, go ahead and place the additional candidate in the cell where there are three candidates. 
+`
+
+const xyWing = `
+In an xyWing we only consider cells with 2 possible candidates.
+The idea is that you have a "pivot" cell and two "pincers".
+The pivot has two candidates, x y. The two pincers both see the pivot, and has candidates x z and y z. In summary, we have the following cells:
+
+pivot: xy
+pincer 1: xz
+pincer 2: yz
+
+If the pivot had the digit x, the cell x z would be z (since x is eliminated).
+If the pivot had the digit y, the cell y z would be z (since y is eliminated).
+
+Therefore, all cells that sees the two pincers can have z eliminated.
 `
 
 const xyzWing = `
+xyzWing is the same as xyWing, except now the "pivot" can also have the z candidate.
+So we have three cells:
 
+pivot: xyz
+pincer 1: xz
+pincer 2: yz
+
+The difference from xyWing is that now we can only eliminate z from cells that sees both pincers AND the pivot.
 `
 
 const remotePairChain = `
@@ -123,7 +168,7 @@ Pick one, and say to yourself "candidate A is true". Now continue alternating be
 If at any point you say that the candidate is true, you can check if the cell "sees" the same cells as the cell you started with.
 If so, both candidates can be eliminated from those cells.
 
-Why? You started by saying A is NOT true, and ended by saying A IS true. Now if start by saying it IS true, the starting cell is true.
+Why? You started by saying A is NOT true, and ended by saying A IS true. If, however, you start by saying it IS true, the starting cell is true.
 So the conclusion is that the candidate is either in the starting cell or the ending cell. 
 `
 
@@ -132,7 +177,7 @@ Fill in all candidates.
 Look at only one candidate. 
 Pick a cell with the candidate.
  
-Start by saying to yourself "the candidate is NOT true". Now look at cells affect by this cell.
+Start by saying to yourself "the candidate is NOT true". Now look at cells affected by this cell.
 If removing the candidate from the starting cell leads to the candidate being set in a different cell, 
 go to that cell and say "the candidate IS true". Now continue like this, alternating between true and not true.
 
@@ -164,12 +209,13 @@ const techniqueDescriptions = {
     inversePointer,
     nakedPair,
     hiddenPair,
-    xWing,
+    'xWing and fish in general': xWingAndOtherFish,
     swordfish,
     jellyfish,
     skyscraper,
     uniqueRectangle,
     emptyRectangle,
+    bugPlus1,
     xyWing,
     xyzWing,
     remotePairChain,
@@ -180,6 +226,24 @@ const techniqueDescriptions = {
 export const Help = (props) => {
     return (
         <div>
+            <h3>How to play</h3>
+            <Divider />
+            <Typography>
+                Note: On desktop there are keybinds for most buttons.
+                <ul>
+                    <li>Digit - Sets/removes a digit in selected cell. If you have selected more than one cell, it sets as candidate instead</li>
+                    <li>Candidate - Sets/removes candidate in selected cells</li>
+                    <li>Number selectors (1-9) - Sets digit in selected cells. If no cells selected, enabled/disables highlighting for the digit</li>
+                    <li>Undo - Undo the last move</li>
+                    <li>Deselect all - Deselect any selected cells. Useful if you want number highlighting using the number selector</li>
+                    <li>Hints - Toggle hints</li>
+                    <li>
+                        Solver - Toggle solver. Note that opening the solver will create a new board based on the currently set digits. It will fill in all candidates.
+                        But don't worry, when you close the solver you'll get right back to the board you had before opening the solver.
+                    </li>
+                </ul>
+            </Typography>
+            <br />
             <h3>Techniques</h3>
             <Divider />
             <Typography>
