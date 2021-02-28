@@ -36,6 +36,5 @@ export const loadUserData = (): UserData => {
     return localStorageGet()
 }
 export const storeUserData = (data: UserData) => {
-    console.log(data)
     localStorageSet(data)
 }

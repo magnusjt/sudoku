@@ -34,8 +34,8 @@ const DigitCircle = (props: DigitProps) => {
                 outline: 'inherit',
 
                 borderRadius: '50%',
-                height: 40,
-                width: 40,
+                height: 35,
+                width: 35,
                 margin: 0,
             }}
         >
@@ -67,7 +67,7 @@ export const DigitSelector = (props: DigitSelectorProps) => {
 
     return (
       <div
-        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}
+        style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap' }}
       >
         {allCandidates.map(digit => {
             return (

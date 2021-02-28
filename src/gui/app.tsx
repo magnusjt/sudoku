@@ -17,6 +17,7 @@ import { selectHasError, selectIsComplete, selectSolution } from '../selectors'
 import { actions } from '../index'
 import { Hints } from './hints'
 import { State } from '../state'
+import { getContrastText, setValueColor } from '../theme'
 
 export const mobileMediaQuery = '(max-width:960px)'
 
@@ -111,8 +112,8 @@ export function App(){
                     </Paper>
                     <Paper style={{ padding: 16, paddingLeft: isMobile ? 4 : 16, paddingRight: isMobile ? 4 : 16, flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         {boardMetaData &&
-                        <div style={{ display: 'flex', justifyContent: 'center' }}>
-                            <h4 style={{ margin: 0, paddingBottom: 16 }}>Puzzle: {boardMetaData.name} - Difficulty: {boardMetaData.difficulty.difficulty}</h4>
+                        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 16 }}>
+                            <h4 style={{ margin: 0 }}>Puzzle: {boardMetaData.name} - Difficulty: {boardMetaData.difficulty.difficulty}</h4>
                         </div>
                         }
                         <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', justifyContent: 'center' }}>
@@ -122,41 +123,98 @@ export function App(){
                                 celebration={isComplete && !hasError}
                             />
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'center' }}>
-                            <Button onClick={() => actions.setInputMode('value')} disabled={inputMode === 'value'}>
+                        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', paddingBottom: 16 }}>
+                            <Button
+                                onClick={() => actions.setInputMode('value')}
+                                disabled={inputMode === 'value'}
+                                variant={'outlined'}
+                                size={'small'}
+                                style={{
+                                    ...inputMode === 'value'
+                                        ? {
+                                            backgroundColor: setValueColor,
+                                            color: getContrastText(setValueColor)
+                                        } : undefined,
+                                }}
+                            >
                                 {isMobile
                                     ? 'Digit'
                                     : 'Digit (a)'
                                 }
                             </Button>
-                            <Button onClick={() => actions.setInputMode('candidates')} disabled={inputMode === 'candidates'}>
+                            <Button
+                                onClick={() => actions.setInputMode('candidates')}
+                                disabled={inputMode === 'candidates'}
+                                variant={'outlined'}
+                                size={'small'}
+                                style={{
+                                    ...inputMode === 'candidates'
+                                        ? {
+                                            backgroundColor: setValueColor,
+                                            color: getContrastText(setValueColor)
+                                        } : undefined,
+                                }}
+                            >
                                 {isMobile
                                     ? 'Candidate'
                                     : 'Candidate (s)'
                                 }
                             </Button>
-                            <Button onClick={actions.undo} disabled={boardStack.length === 0}>
+                            <Button
+                                onClick={actions.undo}
+                                disabled={boardStack.length === 0}
+                                variant={'outlined'}
+                                size={'small'}
+                            >
                                 {isMobile
                                     ? 'Undo'
                                     : 'Undo (n)'
                                 }
                             </Button>
-                            <Button onClick={clearSelected} disabled={selectedCells.length === 0}>
+                            <Button
+                                onClick={clearSelected}
+                                disabled={selectedCells.length === 0}
+                                variant={'outlined'}
+                                size={'small'}
+                            >
                                 {isMobile
                                     ? 'Deselect all'
                                     : 'Deselect all (d)'
                                 }
                             </Button>
-                            <Button onClick={toggleHints}>
+                            <Button
+                                onClick={toggleHints}
+                                variant={'outlined'}
+                                size={'small'}
+                                style={{
+                                    ...hintsOpen
+                                        ? {
+                                            backgroundColor: setValueColor,
+                                            color: getContrastText(setValueColor)
+                                        } : undefined,
+                                }}
+                            >
                                 {isMobile
                                     ? 'Hints'
-                                    : hintsOpen ? 'Hide hints (h)' : 'Show hints (h)'
+                                    : 'Hints (h)'
                                 }
                             </Button>
-                            <Button onClick={toggleSolver} disabled={hasError ?? false}>
+                            <Button
+                                onClick={toggleSolver}
+                                disabled={hasError ?? false}
+                                variant={'outlined'}
+                                size={'small'}
+                                style={{
+                                    ...!!solverState
+                                        ? {
+                                            backgroundColor: setValueColor,
+                                            color: getContrastText(setValueColor)
+                                        } : undefined,
+                                }}
+                            >
                                 {isMobile
                                     ? 'Solver'
-                                    : !!solverState ? 'Hide solver (c)' : 'Show solver (c)'
+                                    : 'Solver (c)'
                                 }
                             </Button>
                         </div>
