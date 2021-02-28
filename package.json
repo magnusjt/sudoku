@@ -12,6 +12,7 @@
     "@types/jest": "^26.0.19",
     "@types/react-redux": "^7.1.16",
     "@use-it/event-listener": "^0.1.6",
+    "date-fns": "^2.17.0",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-dropzone": "^11.3.1",

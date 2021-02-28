@@ -11,6 +11,7 @@ import { UserData } from '../state'
 import { unique, uniqueBy } from '../core/utils/misc'
 import { useSelector } from 'react-redux'
 import { selectUserData } from '../selectors'
+import format from 'date-fns/format'
 
 export type ImportExportProps = {}
 
@@ -80,8 +81,7 @@ export const ImportExport = (props: ImportExportProps) => {
     }, [importBoardStr, userData])
 
     const onExport = React.useCallback(() => {
-        const now = new Date()
-        const time = [now.getFullYear(), now.getMonth(), now.getDay()].join('')
+        const time = format(new Date(), 'yyyyMMdd')
         downloadJsonStr(JSON.stringify(userData, null, 2), `sudoku_${time}.json`)
     }, [userData])
 
