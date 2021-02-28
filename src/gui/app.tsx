@@ -112,18 +112,18 @@ export function App(){
                     </Paper>
                     <Paper style={{ padding: 16, paddingLeft: isMobile ? 4 : 16, paddingRight: isMobile ? 4 : 16, flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }}>
                         {boardMetaData &&
-                        <div style={{ display: 'flex', justifyContent: 'center', paddingBottom: 16 }}>
-                            <h4 style={{ margin: 0 }}>Puzzle: {boardMetaData.name} - Difficulty: {boardMetaData.difficulty.difficulty}</h4>
+                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
+                            <h4 style={{ margin: 0 }}>{boardMetaData.name} - {boardMetaData.difficulty.difficulty}</h4>
                         </div>
                         }
-                        <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', justifyContent: 'center' }}>
+                        <div style={{ flex: '1 1 auto', minHeight: 0, display: 'flex', justifyContent: 'center', marginBottom: 16 }}>
                             <BoardDisplay
                                 board={solverState ? solverState.boardBeforeSolve : board}
                                 solveResult={solverState?.solveResult ?? null}
                                 celebration={isComplete && !hasError}
                             />
                         </div>
-                        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', paddingBottom: 16 }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', marginBottom: 16 }}>
                             <Button
                                 onClick={() => actions.setInputMode('value')}
                                 disabled={inputMode === 'value'}

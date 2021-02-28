@@ -23,7 +23,7 @@ export const actions = createActions(store.dispatch)
 
 actions.setUserData(loadUserData())
 
-fetch(process.env.PUBLIC_URL + '/boards/boardsV6.txt')
+fetch(process.env.PUBLIC_URL + '/boards/boardsV7.txt')
     .then(x => x.text())
     .then(x => x
         .split('\n')

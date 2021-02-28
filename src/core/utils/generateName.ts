@@ -1,14 +1,14 @@
+import { capitalize } from './misc'
+
 const adjectives = {
-    beginner: [
+    easy: [
         'tame',
         'friendly',
         'hopeful',
         'brief',
         'lucky',
         'blissful',
-        'adorable'
-    ],
-    easy: [
+        'adorable',
         'nice',
         'well meaning',
         'agreeable',
@@ -16,7 +16,8 @@ const adjectives = {
         'careless',
         'relaxed',
         'breathless',
-        'cute'
+        'cute',
+        'blue eyed'
     ],
     medium: [
         'aspiring',
@@ -27,6 +28,16 @@ const adjectives = {
         'secretive',
         'lovely',
         'speedy',
+        'gentle',
+        'witty',
+        'faint',
+        'whispering',
+        'cozy',
+        'happy',
+        'fresh',
+        'fancy',
+        'prickly',
+        'non allergic'
     ],
     hard: [
         'bold',
@@ -36,7 +47,17 @@ const adjectives = {
         'courageous',
         'brainy',
         'alluring',
-        'careful'
+        'careful',
+        'brave',
+        'lively',
+        'wooden',
+        'uneven',
+        'pickled',
+        'flaky',
+        'scarce',
+        'numeric',
+        'ragged',
+        'covert'
     ],
     expert: [
         'murky',
@@ -47,7 +68,17 @@ const adjectives = {
         'passionate',
         'outrageous',
         'mysterious',
-        'sizable'
+        'sizable',
+        'incalculable',
+        'substantial',
+        'sparse',
+        'algorithmic',
+        'ingenious',
+        'interesting',
+        'draconian',
+        'glorious',
+        'major',
+        'obscure'
     ],
     artisan: [
         'artisanal',
@@ -57,7 +88,18 @@ const adjectives = {
         'determined',
         'diligent',
         'cumbersome',
-        'majestic'
+        'majestic',
+        'astonishing',
+        'indescribable',
+        'incomparable',
+        'prestigious',
+        'malnourished',
+        'inexplicable',
+        'wondrous',
+        'immovable',
+        'fortified',
+        'bothersome',
+        'concealed'
     ],
     master: [
         'vast',
@@ -67,7 +109,20 @@ const adjectives = {
         'astronomical',
         'enchanting',
         'erratic',
-        'massive'
+        'massive',
+        'divine',
+        'unnatural',
+        'dark',
+        'impenetrable',
+        'elusive',
+        'epic',
+        'absurd',
+        'great',
+        'immortal',
+        'perfected',
+        'engineered',
+        'gigantic',
+        'veiled'
     ],
     jedi: [
         'incredulous',
@@ -76,12 +131,22 @@ const adjectives = {
         'immense',
         'combative',
         'disastrous',
-        'ruthless'
+        'ruthless',
+        'imperial',
+        'biblical',
+        'awe inspiring',
+        'terror inducing',
+        'insurmountable',
+        'unfathomable',
+        'mind bending',
+        'malicious',
+        'measureless',
+        'boundless',
     ]
 }
 
 const subject = {
-    beginner: [
+    easy: [
         'teddy bear',
         'child',
         'companion',
@@ -89,9 +154,7 @@ const subject = {
         'gungan',
         'disney character',
         'mouse',
-        'cat'
-    ],
-    easy: [
+        'cat',
         'neighbor',
         'friend',
         'farm animal',
@@ -110,6 +173,17 @@ const subject = {
         'meerkat',
         'swimming pool',
         'loud speaker',
+        'pillow',
+        'blanket',
+        'rain forrest',
+        'willow tree',
+        'broomstick',
+        'pyjamas',
+        'birthday cake',
+        'hitch hiker',
+        'forrest canopy',
+        'sloth',
+        'cuisine',
     ],
     hard: [
         'candidate',
@@ -121,6 +195,17 @@ const subject = {
         'vehicle',
         'lion',
         'elephant',
+        'cheetah',
+        'coral reef',
+        'engineer',
+        'barracks',
+        'house',
+        'coil',
+        'equipment',
+        'gadget',
+        'person of interest',
+        'shell',
+        'gorilla'
     ],
     expert: [
         'skyscraper',
@@ -130,7 +215,18 @@ const subject = {
         'detective',
         'commission',
         'adventure',
-        'legend'
+        'legend',
+        'catacomb',
+        'craftsman',
+        'spell',
+        'problem',
+        'ransom',
+        'cathedral',
+        'hall',
+        'myth',
+        'investigator',
+        'quest',
+        'wood elf'
     ],
     artisan: [
         'sea monster',
@@ -140,7 +236,18 @@ const subject = {
         'president',
         'warden',
         'alien',
-        'space ship'
+        'space ship',
+        'ghost',
+        'emperor',
+        'dictator',
+        'creature',
+        'mind',
+        'eyes',
+        'spirit',
+        'diamond',
+        'fire',
+        'fortress',
+        'bunker'
     ],
     master: [
         'mountain',
@@ -149,8 +256,16 @@ const subject = {
         'earthquake',
         'tsunami',
         'avalanche',
-        'erruption',
-        'prisoner'
+        'eruption',
+        'hurricane',
+        'lightning',
+        'prisoner',
+        'antagonist',
+        'power bolt',
+        'moon',
+        'aurora',
+        'aftermath',
+        'energy'
     ],
     jedi: [
         'sith lord',
@@ -159,7 +274,17 @@ const subject = {
         'galaxy',
         'solar storm',
         'super nova',
-        'black hole'
+        'black hole',
+        'hero killer',
+        'chasm',
+        'tomb',
+        'omen',
+        'dreamscape',
+        'dimension',
+        'destiny',
+        'force',
+        'ascension',
+        'light'
     ]
 }
 
@@ -167,7 +292,7 @@ const rand = (n: number) => Math.floor((Math.random()*n))
 
 export const generateName = (difficulty: string) => {
     return [
-        adjectives[difficulty][rand(adjectives[difficulty].length)],
+        capitalize(adjectives[difficulty][rand(adjectives[difficulty].length)]),
         subject[difficulty][rand(subject[difficulty].length)],
     ].join(' ')
 }

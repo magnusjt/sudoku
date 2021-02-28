@@ -32,7 +32,8 @@
     "deploy": "npm run build && gh-pages -d build",
     "generate": "node --experimental-specifier-resolution=node --loader ts-node/esm ./generate.ts",
     "combine": "node --experimental-specifier-resolution=node --loader ts-node/esm ./combine.ts",
-    "reanalyze": "node --experimental-specifier-resolution=node --loader ts-node/esm ./reanalyze.ts"
+    "reanalyze": "node --experimental-specifier-resolution=node --loader ts-node/esm ./reanalyze.ts",
+    "rename": "node --experimental-specifier-resolution=node --loader ts-node/esm ./rename.ts"
   },
   "eslintConfig": {
     "extends": "react-app"

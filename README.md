@@ -52,6 +52,7 @@ Generate sudokus:
 - Require a certain technique
 - Choose difficulty (adds techniques into different difficulty buckets, and requires them for solutions randomly based on difficulty)
 - Re-analyze boards when added more solvers etc.
+- Name generation
 
 Optimize solvers:
 - Don't generate rows/cols each time. Can be precalculated. (didn't actually do much)
@@ -70,7 +71,6 @@ GUI:
 - Filter on technique instead of difficulty
 
 Generate sudokus:
-- Better name generation
 - Check for duplicate boards
 - Check for symmetrically identical boards? (rotation, mirroring, digit shift)
 - Find more rare techniques like jellyfish
