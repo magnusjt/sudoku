@@ -55,12 +55,12 @@ export function App(){
     }, [solutionBoard])
 
     const onSelectDigit = React.useCallback((digit: number) => {
-        if (isMobile && selectedCells.length > 0) {
+        if (selectedCells.length > 0) {
             actions.setDigit(digit, selectedCells, solutionBoard)
         } else {
             actions.selectDigit(digit)
         }
-    }, [isMobile, selectedCells, solutionBoard])
+    }, [selectedCells, solutionBoard])
 
     const clearSelected = React.useCallback(() => {
         actions.setSelectedCells([])
