@@ -8,7 +8,7 @@ const jedi3 = '20003096740000708500708003082001360000360000000002400330014079610
 // Had error because of bug in grouped continuous nice loop. Should be fixed now.
 const errorInGroups = '000700001000000030401630058300980200005204000000060085006000000070102090100590800'
 
-// This one got stuck on xy chains because there so many bi value points, and we allowed a depth of 20
+// This one got stuck on xy chains because there is so many bi value points, and we allowed a depth of 20
 const hangs = '800000004509604072000070510000201340200300085300780000120007060000400108460000057'
 
 const run = (str: string) => {

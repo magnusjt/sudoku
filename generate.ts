@@ -17,9 +17,9 @@ const countPerTechnique = techniques.map(t => t.type)
         return x
     }, {})
 
-const minimumDifficulty = difficultyLevels['hard']
+const minimumDifficulty = difficultyLevels['easy']
 
-for(let board of generateBoardsWithMaxGivens(50, true)){
+for(let board of generateBoardsWithMaxGivens(50, false, true)){
     let meta
     try {
         meta = getBoardMetaData(board)
@@ -49,5 +49,5 @@ for(let board of generateBoardsWithMaxGivens(50, true)){
     console.log(countPerTechnique)
     console.log(countPerDifficulty)
 
-    fs.appendFileSync('./boards/boards8.txt', JSON.stringify(meta) + '\n')
+    fs.appendFileSync('./boards/boards0306_2.txt', JSON.stringify(meta) + '\n')
 }

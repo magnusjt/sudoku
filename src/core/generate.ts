@@ -2,6 +2,7 @@ import { allCandidates, canPutDigit, cloneBoard, getAllPoints, getPointId } from
 import { Board, Cell, Point } from './types'
 import { hasUniqueSolution } from './utils/hasUniqueSolution'
 import { rand, randomOrder } from './utils/misc'
+import { createPatterns } from './utils/patterns'
 
 const getEmptyBoard = () => {
     const board: Board = []
@@ -15,24 +16,27 @@ const getEmptyBoard = () => {
     return board
 }
 
-export function *generateRandomBoards(seedBoardRefresh = 10){
+export function *generateRandomBoards(usePattern, seedBoardRefresh = 10){
     let seedBoard = generateSeedBoard(getEmptyBoard(), randomOrder(allCandidates), 0, 0)
     let n = 0
 
     while(true){
-        const points = randomOrder(getAllPoints())
+        const patterns = createPatterns()
+        const points = usePattern
+            ? patterns[rand(patterns.length)]
+            : randomOrder(getAllPoints())
+
         yield findSmallestUniqueBoard(seedBoard, points)
 
         if(n%seedBoardRefresh === 0){
             seedBoard = generateSeedBoard(getEmptyBoard(), randomOrder(allCandidates), 0, 0)
         }
         n++
-
     }
 }
 
-export function *generateBoardsWithMaxGivens(maxGivens = 50, randomGivens: boolean = false): Generator<Board>{
-    for(let {board, givens} of generateRandomBoards()){
+export function *generateBoardsWithMaxGivens(maxGivens: number, randomGivens: boolean, usePattern: boolean): Generator<Board>{
+    for(let {board, givens} of generateRandomBoards(usePattern)){
         if(randomGivens){
             maxGivens = 30 + rand(20)
         }
