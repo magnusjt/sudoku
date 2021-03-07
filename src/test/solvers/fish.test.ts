@@ -68,7 +68,7 @@ test('jellyfish 1', () => {
         'hiddenTriple',
         'nakedQuad',
         'hiddenQuad',
-        'xwing',
+        'xWing',
         'swordfish'
     ])
     const result = jellyfish(board)
