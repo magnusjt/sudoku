@@ -25,7 +25,7 @@ import {
     removeCandidatesFromPoints,
     uniqueEffects
 } from '../utils/effects'
-import { difference, intersectionOfAll, unique, uniqueBy } from '../utils/misc'
+import { difference, intersection, unique, uniqueBy } from '../utils/misc'
 
 export const getPointKey = (point: Point) => point.id
 export const getGroupId = (group: Point[]) => group.map(p => p.id).join('-')
@@ -208,7 +208,7 @@ const getGroupFalseGroupEffects = (board: SolverBoard, falseGroup: Point[], cand
 
 // If group is true, i.e. one of the points is true, what single point effects are there?
 const getGroupTrueSingleEffects = (board: SolverBoard, points: Point[], cand: number): EliminationEffect[] => {
-    return intersectionOfAll(points.map(point => getSingleTrueSingleEffects(board, point, cand)), effectsEqual)
+    return intersection(points.map(point => getSingleTrueSingleEffects(board, point, cand)), effectsEqual)
 }
 
 // If group is true, what group effects are there?

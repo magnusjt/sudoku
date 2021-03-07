@@ -1,5 +1,5 @@
 import { Point, SolverBoard } from '../types'
-import { allResults, difference, first, getCombinations, groupBy, intersectionOfAll } from '../utils/misc'
+import { allResults, difference, first, getCombinations, groupBy, intersection } from '../utils/misc'
 import {
     getAffectedPointsInCommon,
     getAllUnfilledPoints, getColNumber,
@@ -65,7 +65,7 @@ function *finnedFishGenerator(board: SolverBoard, len: number, allowSashimi: boo
             const pointsToRemoveIfRegularFish = difference(fishLinePoints, fishPoints, pointsEqual)
             const pointsToRemoveIfFin = getAffectedPointsInCommon(fins)
 
-            const pointsToRemove = intersectionOfAll([pointsToRemoveIfRegularFish, pointsToRemoveIfFin], pointsEqual)
+            const pointsToRemove = intersection([pointsToRemoveIfRegularFish, pointsToRemoveIfFin], pointsEqual)
 
             const effects = removeCandidateFromPoints(board, pointsToRemove, cand)
             const actors = [

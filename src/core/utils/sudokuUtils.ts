@@ -1,5 +1,5 @@
 import { Point, Board, Cell, TechniqueResult, Effect } from '../types'
-import { arraysEqual, difference, intersectionOfAll, memoize } from './misc'
+import { arraysEqual, difference, intersection, memoize } from './misc'
 
 export const pointsEqual = (pointA: Point, pointB: Point) => pointA.id === pointB.id
 export const pointListsEqual = (pointsA: Point[], pointsB: Point[]) => arraysEqual(pointsA, pointsB, pointsEqual)
@@ -126,7 +126,7 @@ export const getColsOutsideBox = boxNumber => {
 
 // Finds every point which "sees" all of the given points
 export const getAffectedPointsInCommon = (points: Point[]): Point[] => {
-    return intersectionOfAll(points.map(getAffectedPoints), pointsEqual)
+    return intersection(points.map(getAffectedPoints), pointsEqual)
 }
 
 export const getRowNumber = (point: Point) => point.y
