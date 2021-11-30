@@ -1,5 +1,7 @@
 # Sudoku
 
+Play here: https://magnusjt.github.io/sudoku/
+
 Done:
 
 GUI:
